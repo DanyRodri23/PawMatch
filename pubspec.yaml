@@ -1,0 +1,49 @@
+name: pawmatch
+description: PawMatch App
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # VIDEO BACKGROUND
+  video_player: ^2.11.0
+
+  # FIREBASE
+  firebase_core: ^4.5.0
+  firebase_auth: ^6.2.0
+
+  # GOOGLE LOGIN
+  google_sign_in: ^6.2.1
+
+  # CAMERA & GALLERY
+  image_picker: ^1.0.7
+
+  # LOCATION
+  geolocator: ^12.0.0
+
+  # CONFETTI EFFECT (MATCH SCREEN)
+  confetti: ^0.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo.png
+    - assets/google_icon.png
+    - assets/videos/
+    - assets/location_icon.png
+    - assets/earth.png

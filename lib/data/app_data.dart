@@ -39,10 +39,12 @@ class AppData {
             "text": "¡Hola! 🐶",
             "isMe": false,
             "time": getTime(),
+            "status": "seen",
           }
         ],
         "time": getTime(),
         "typing": false,
+        "unread": 0,
       });
     }
   }
@@ -56,24 +58,31 @@ class AppData {
 
       final chat = chats[index];
 
-      chat["messages"].add({
+      final msg = {
         "text": message,
         "isMe": true,
         "time": getTime(),
-      });
+        "status": "sent",
+      };
 
-      /// 🔥 DETECTAR AUDIO
-      if (message.startsWith("🎤")) {
-        chat["lastMessage"] = "🎤 Audio";
-      } else {
-        chat["lastMessage"] = message;
-      }
+      chat["messages"].add(msg);
 
+      /// 🔥 MENSAJE NORMAL (SIN AUDIO REAL)
+      chat["lastMessage"] = message;
       chat["time"] = getTime();
 
       /// 🔥 SUBIR CHAT ARRIBA
       chats.removeAt(index);
       chats.insert(0, chat);
+
+      /// 🔥 SIMULACIÓN WHATSAPP
+      Future.delayed(const Duration(seconds: 1), () {
+        msg["status"] = "delivered";
+      });
+
+      Future.delayed(const Duration(seconds: 2), () {
+        msg["status"] = "seen";
+      });
     }
   }
 
@@ -97,10 +106,14 @@ class AppData {
           "text": "¡Qué lindo! 🐾",
           "isMe": false,
           "time": getTime(),
+          "status": "seen",
         });
 
         chat["lastMessage"] = "¡Qué lindo! 🐾";
         chat["time"] = getTime();
+
+        /// 🔥 SUMAR NO LEÍDOS
+        chat["unread"] = (chat["unread"] ?? 0) + 1;
       });
     }
   }

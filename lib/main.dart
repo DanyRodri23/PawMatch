@@ -1,8 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:record/record.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../data/app_data.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -23,9 +20,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   final TextEditingController controller = TextEditingController();
   final ScrollController scrollController = ScrollController();
-
-  final recorder = AudioRecorder();
-  final player = AudioPlayer();
 
   bool isRecording = false;
   int recordSeconds = 0;
@@ -49,16 +43,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     );
   }
 
-  /// 🎤 GRABAR AUDIO (FIX)
-  Future<void> startRecording() async {
-    final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-    await recorder.start(
-      const RecordConfig(),
-      path: path,
-    );
-
+  /// ❌ AUDIO DESACTIVADO (solo animación visual)
+  void startRecording() {
     setState(() {
       isRecording = true;
       recordSeconds = 0;
@@ -69,49 +55,36 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
   }
 
-  /// 🛑 DETENER AUDIO
-  Future<void> stopRecording() async {
+  void stopRecording() {
     timer?.cancel();
-
-    final path = await recorder.stop();
 
     setState(() => isRecording = false);
 
-    if (path != null) {
+    /// 🔥 SOLO SIMULA MENSAJE (sin audio real)
+    final msg = {
+      "text": "🎤 Audio",
+      "isMe": true,
+      "time": AppData.getTime(),
+      "status": "sent",
+    };
 
-      final msg = {
-        "audio": path,
-        "isMe": true,
-        "time": AppData.getTime(),
-        "status": "sent",
-      };
+    chat["messages"].add(msg);
+    chat["lastMessage"] = "🎤 Audio";
+    chat["time"] = AppData.getTime();
 
-      chat["messages"].add(msg);
-      chat["lastMessage"] = "🎤 Audio";
-      chat["time"] = AppData.getTime();
-
-      Future.delayed(const Duration(seconds: 1), () {
-        msg["status"] = "delivered";
-        setState(() {});
-      });
-
-      Future.delayed(const Duration(seconds: 2), () {
-        msg["status"] = "seen";
-        setState(() {});
-      });
-
+    Future.delayed(const Duration(seconds: 1), () {
+      msg["status"] = "delivered";
       setState(() {});
-    }
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      msg["status"] = "seen";
+      setState(() {});
+    });
 
     scrollToBottom();
   }
 
-  /// ▶️ REPRODUCIR AUDIO
-  Future<void> playAudio(String path) async {
-    await player.play(DeviceFileSource(path));
-  }
-
-  /// 📩 MENSAJE TEXTO
   void sendMessage() {
     if (controller.text.trim().isEmpty) return;
 
@@ -188,7 +161,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
                 final msg = messages[index];
                 final isMe = msg["isMe"];
-                final isAudio = msg["audio"] != null;
 
                 return Align(
                   alignment:
@@ -207,18 +179,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
 
-                        if (isAudio)
-                          GestureDetector(
-                            onTap: () => playAudio(msg["audio"]),
-                            child: const Icon(Icons.play_arrow),
-                          )
-                        else
-                          Text(
-                            msg["text"],
-                            style: TextStyle(
-                              color: isMe ? Colors.white : Colors.black,
-                            ),
+                        Text(
+                          msg["text"],
+                          style: TextStyle(
+                            color: isMe ? Colors.white : Colors.black,
                           ),
+                        ),
 
                         const SizedBox(height: 4),
 
@@ -232,7 +198,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ),
           ),
 
-          /// GRABANDO
+          /// GRABANDO VISUAL
           if (isRecording)
             Container(
               padding: const EdgeInsets.all(10),
@@ -248,6 +214,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             child: Row(
               children: [
 
+                /// 🎤 ICONO SE MANTIENE
                 GestureDetector(
                   onLongPressStart: (_) => startRecording(),
                   onLongPressEnd: (_) => stopRecording(),

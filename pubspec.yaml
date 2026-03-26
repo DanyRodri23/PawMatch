@@ -13,24 +13,29 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # VIDEO BACKGROUND
+  # VIDEO
   video_player: ^2.11.0
 
   # FIREBASE
   firebase_core: ^4.5.0
   firebase_auth: ^6.2.0
 
-  # GOOGLE LOGIN
+  # GOOGLE
   google_sign_in: ^6.2.1
 
-  # CAMERA & GALLERY
+  # MEDIA
   image_picker: ^1.0.7
 
   # LOCATION
   geolocator: ^12.0.0
 
-  # CONFETTI EFFECT (MATCH SCREEN)
+  # UI
   confetti: ^0.7.0
+
+  # 🔥 AUDIO REAL
+  record: ^5.0.0
+  audioplayers: ^5.2.0
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:

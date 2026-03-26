@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/app_data.dart';
 
 class ChatDetailPage extends StatefulWidget {
-
   final String name;
   final String image;
 
@@ -19,9 +19,13 @@ class ChatDetailPage extends StatefulWidget {
 class _ChatDetailPageState extends State<ChatDetailPage> {
 
   final TextEditingController controller = TextEditingController();
+  final ScrollController scrollController = ScrollController();
+
+  bool isRecording = false;
+  int recordSeconds = 0;
+  Timer? timer;
 
   List<Map<String, dynamic>> get messages {
-
     final chat = AppData.chats.firstWhere(
       (c) => c["name"] == widget.name,
       orElse: () => {},
@@ -30,20 +34,113 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     if (chat.isNotEmpty) {
       return List<Map<String, dynamic>>.from(chat["messages"]);
     }
-
     return [];
+  }
+
+  Map<String, dynamic> get chat {
+    return AppData.chats.firstWhere(
+      (c) => c["name"] == widget.name,
+      orElse: () => {},
+    );
+  }
+
+  /// 🎤 AUDIO
+  void startRecording() {
+    setState(() {
+      isRecording = true;
+      recordSeconds = 0;
+    });
+
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      setState(() => recordSeconds++);
+    });
+  }
+
+  void stopRecording() {
+    timer?.cancel();
+
+    setState(() => isRecording = false);
+
+    /// 🔥 MENSAJE AUDIO
+    final msg = {
+      "text": "🎤 Audio (${recordSeconds}s)",
+      "isMe": true,
+      "time": AppData.getTime(),
+      "status": "sent",
+    };
+
+    final chat = this.chat;
+    chat["messages"].add(msg);
+    chat["lastMessage"] = "🎤 Audio";
+    chat["time"] = AppData.getTime();
+
+    /// 🔥 SIMULACIÓN WHATSAPP
+    Future.delayed(const Duration(seconds: 1), () {
+      msg["status"] = "delivered";
+      setState(() {});
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      msg["status"] = "seen";
+      setState(() {});
+    });
+
+    scrollToBottom();
   }
 
   void sendMessage() {
     if (controller.text.trim().isEmpty) return;
 
+    final msg = {
+      "text": controller.text,
+      "isMe": true,
+      "time": AppData.getTime(),
+      "status": "sent",
+    };
+
+    final chat = this.chat;
+
     setState(() {
-      AppData.sendMessage(widget.name, controller.text);
+      chat["messages"].add(msg);
+      chat["lastMessage"] = controller.text;
+      chat["time"] = AppData.getTime();
     });
 
-    AppData.autoReply(widget.name);
-
     controller.clear();
+
+    /// 🔥 SIMULAR WHATSAPP
+    Future.delayed(const Duration(seconds: 1), () {
+      msg["status"] = "delivered";
+      setState(() {});
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      msg["status"] = "seen";
+      setState(() {});
+    });
+
+    scrollToBottom();
+  }
+
+  void scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 200), () {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  /// 🔥 ICONO CHECK
+  Widget buildCheck(String status) {
+    if (status == "sent") {
+      return const Icon(Icons.check, size: 16, color: Colors.white70);
+    } else if (status == "delivered") {
+      return const Icon(Icons.done_all, size: 16, color: Colors.white70);
+    } else {
+      return const Icon(Icons.done_all, size: 16, color: Colors.blue);
+    }
   }
 
   @override
@@ -55,12 +152,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
-
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-
         title: Row(
           children: [
             CircleAvatar(
@@ -69,8 +164,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             const SizedBox(width: 10),
             Text(widget.name,
                 style: const TextStyle(color: Colors.black)),
-            const SizedBox(width: 5),
-            const Icon(Icons.verified, color: Colors.blue, size: 18),
           ],
         ),
       ),
@@ -78,56 +171,54 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       body: Column(
         children: [
 
-          /// 🔥 MENSAJES
+          /// 💬 MENSAJES
           Expanded(
             child: ListView.builder(
+              controller: scrollController,
               padding: const EdgeInsets.all(15),
               itemCount: messages.length,
+
               itemBuilder: (context, index) {
 
                 final msg = messages[index];
                 final isMe = msg["isMe"];
+                final text = msg["text"];
 
                 return Align(
                   alignment:
                       isMe ? Alignment.centerRight : Alignment.centerLeft,
 
-                  child: FractionallySizedBox(
-                    widthFactor: 0.7, // 🔥 CLAVE (sin errores)
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    padding: const EdgeInsets.all(12),
 
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 5),
-                      padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? const Color(0xffFF9F1C)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
 
-                      decoration: BoxDecoration(
-                        color: isMe
-                            ? const Color(0xffFF9F1C)
-                            : Colors.white,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
 
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(18),
-                          topRight: const Radius.circular(18),
-                          bottomLeft:
-                              Radius.circular(isMe ? 18 : 4),
-                          bottomRight:
-                              Radius.circular(isMe ? 4 : 18),
+                        /// TEXTO
+                        Text(
+                          text,
+                          style: TextStyle(
+                            color: isMe
+                                ? Colors.white
+                                : Colors.black,
+                          ),
                         ),
 
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 5,
-                          )
-                        ],
-                      ),
+                        const SizedBox(height: 4),
 
-                      child: Text(
-                        msg["text"],
-                        style: TextStyle(
-                          color: isMe ? Colors.white : Colors.black,
-                          fontSize: 15,
-                        ),
-                      ),
+                        /// CHECK
+                        if (isMe)
+                          buildCheck(msg["status"] ?? "sent"),
+                      ],
                     ),
                   ),
                 );
@@ -135,43 +226,54 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ),
           ),
 
-          /// 🔥 INPUT
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(color: Colors.black12, blurRadius: 5)
-              ],
+          /// 🎤 GRABANDO
+          if (isRecording)
+            Container(
+              padding: const EdgeInsets.all(10),
+              color: Colors.red.withValues(alpha: 0.1),
+              child: Text("Grabando... $recordSeconds s"),
             ),
+
+          /// 📩 INPUT PRO
+          Container(
+            padding: const EdgeInsets.all(10),
+            color: Colors.white,
 
             child: Row(
               children: [
 
-                Expanded(
+                /// 🎤 AUDIO
+                GestureDetector(
+                  onLongPressStart: (_) => startRecording(),
+                  onLongPressEnd: (_) => stopRecording(),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 15),
-
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xffF2F2F2),
-                      borderRadius: BorderRadius.circular(30),
+                      color: isRecording ? Colors.red : Colors.grey[200],
+                      shape: BoxShape.circle,
                     ),
-
-                    child: TextField(
-                      controller: controller,
-                      decoration: const InputDecoration(
-                        hintText: "Escribe un mensaje...",
-                        border: InputBorder.none,
-                      ),
+                    child: Icon(
+                      isRecording ? Icons.mic : Icons.mic_none,
                     ),
                   ),
                 ),
 
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
 
+                /// INPUT
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      hintText: "Mensaje...",
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                /// BOTÓN ENVIAR
                 GestureDetector(
                   onTap: sendMessage,
                   child: Container(
@@ -180,8 +282,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       color: Color(0xffFF9F1C),
                       shape: BoxShape.circle,
                     ),
-                    child:
-                        const Icon(Icons.send, color: Colors.white),
+                    child: const Icon(Icons.send, color: Colors.white),
                   ),
                 )
               ],

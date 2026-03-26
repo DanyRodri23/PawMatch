@@ -18,13 +18,19 @@ class AppData {
   /// 🔥 CHATS
   static List<Map<String, dynamic>> chats = [];
 
-  /// 🔥 CREAR CHAT (desde match)
+  /// 🕒 FORMATO DE HORA
+  static String getTime() {
+    final now = DateTime.now();
+    return "${now.hour}:${now.minute.toString().padLeft(2, '0')}";
+  }
+
+  /// 🔥 CREAR CHAT
   static void createChat(Map<String, dynamic> pet) {
 
     final exists = chats.any((c) => c["name"] == pet["name"]);
 
     if (!exists) {
-      chats.add({
+      chats.insert(0, {
         "name": pet["name"],
         "image": pet["images"][0],
         "lastMessage": "¡Hicieron match! 🐾",
@@ -32,9 +38,11 @@ class AppData {
           {
             "text": "¡Hola! 🐶",
             "isMe": false,
+            "time": getTime(),
           }
         ],
-        "time": "Ahora"
+        "time": getTime(),
+        "typing": false,
       });
     }
   }
@@ -42,24 +50,34 @@ class AppData {
   /// 🔥 ENVIAR MENSAJE
   static void sendMessage(String name, String message) {
 
-    final chat = chats.firstWhere(
-      (c) => c["name"] == name,
-      orElse: () => {},
-    );
+    final index = chats.indexWhere((c) => c["name"] == name);
 
-    if (chat.isNotEmpty) {
+    if (index != -1) {
+
+      final chat = chats[index];
 
       chat["messages"].add({
         "text": message,
         "isMe": true,
+        "time": getTime(),
       });
 
-      chat["lastMessage"] = message;
-      chat["time"] = "Ahora";
+      /// 🔥 DETECTAR AUDIO
+      if (message.startsWith("🎤")) {
+        chat["lastMessage"] = "🎤 Audio";
+      } else {
+        chat["lastMessage"] = message;
+      }
+
+      chat["time"] = getTime();
+
+      /// 🔥 SUBIR CHAT ARRIBA
+      chats.removeAt(index);
+      chats.insert(0, chat);
     }
   }
 
-  /// 🔥 RESPUESTA FAKE (para demo 🔥)
+  /// 🔥 RESPUESTA AUTOMÁTICA PRO
   static void autoReply(String name) {
 
     final chat = chats.firstWhere(
@@ -69,15 +87,21 @@ class AppData {
 
     if (chat.isNotEmpty) {
 
-      Future.delayed(const Duration(seconds: 1), () {
+      chat["typing"] = true;
+
+      Future.delayed(const Duration(seconds: 2), () {
+
+        chat["typing"] = false;
 
         chat["messages"].add({
           "text": "¡Qué lindo! 🐾",
           "isMe": false,
+          "time": getTime(),
         });
 
+        chat["lastMessage"] = "¡Qué lindo! 🐾";
+        chat["time"] = getTime();
       });
     }
   }
-
 }

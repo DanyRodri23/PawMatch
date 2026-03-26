@@ -21,6 +21,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final TextEditingController controller = TextEditingController();
   final ScrollController scrollController = ScrollController();
 
+  /// 🔥 AUDIO DESACTIVADO (solo visual)
   bool isRecording = false;
   int recordSeconds = 0;
   Timer? timer;
@@ -44,48 +45,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     );
   }
 
-  /// 🎤 AUDIO
+  /// 🎤 AUDIO (DESACTIVADO)
   void startRecording() {
+    // ❌ ya no hace nada real
     setState(() {
       isRecording = true;
-      recordSeconds = 0;
-    });
-
-    timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      setState(() => recordSeconds++);
     });
   }
 
   void stopRecording() {
-    timer?.cancel();
-
-    setState(() => isRecording = false);
-
-    /// 🔥 MENSAJE AUDIO
-    final msg = {
-      "text": "🎤 Audio (${recordSeconds}s)",
-      "isMe": true,
-      "time": AppData.getTime(),
-      "status": "sent",
-    };
-
-    final chat = this.chat;
-    chat["messages"].add(msg);
-    chat["lastMessage"] = "🎤 Audio";
-    chat["time"] = AppData.getTime();
-
-    /// 🔥 SIMULACIÓN WHATSAPP
-    Future.delayed(const Duration(seconds: 1), () {
-      msg["status"] = "delivered";
-      setState(() {});
+    // ❌ no guarda audio ni mensaje
+    setState(() {
+      isRecording = false;
     });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      msg["status"] = "seen";
-      setState(() {});
-    });
-
-    scrollToBottom();
   }
 
   void sendMessage() {
@@ -226,12 +198,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ),
           ),
 
-          /// 🎤 GRABANDO
+          /// 🎤 INDICADOR VISUAL
           if (isRecording)
             Container(
               padding: const EdgeInsets.all(10),
               color: Colors.red.withValues(alpha: 0.1),
-              child: Text("Grabando... $recordSeconds s"),
+              child: const Text("Grabando..."),
             ),
 
           /// 📩 INPUT PRO
@@ -242,10 +214,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             child: Row(
               children: [
 
-                /// 🎤 AUDIO
+                /// 🎤 BOTÓN (SOLO VISUAL)
                 GestureDetector(
-                  onLongPressStart: (_) => startRecording(),
-                  onLongPressEnd: (_) => stopRecording(),
+                  onTap: () {
+                    setState(() {
+                      isRecording = !isRecording;
+                    });
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(

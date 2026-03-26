@@ -45,9 +45,9 @@ class ChatsPage extends StatelessWidget {
 
                   final chat = chats[index];
 
-                  /// 🔥 DETECTAR AUDIO
+                  /// 🔥 AHORA SOLO VISUAL (NO FUNCIONAL)
                   final lastMessage = chat["lastMessage"] ?? "";
-                  final isAudio = lastMessage.startsWith("🎤");
+                  final isAudio = lastMessage.contains("🎤");
 
                   return TweenAnimationBuilder(
                     duration: Duration(milliseconds: 300 + (index * 50)),
@@ -150,7 +150,7 @@ class ChatsPage extends StatelessWidget {
 
                                   const SizedBox(height: 4),
 
-                                  /// 🔥 MENSAJE PRO
+                                  /// 🔥 SOLO VISUAL (NO AUDIO REAL)
                                   Row(
                                     children: [
 

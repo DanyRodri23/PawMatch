@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-// 🔥 TU LOGIN REAL
+// TU LOGIN
 import 'screens/login_screen.dart';
 
-// 🔥 TU INTRO REAL (IMPORTANTE)
-import 'screens/onboarding/onboarding_intro.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const PawMatchApp());
 }
 
@@ -23,13 +28,7 @@ class PawMatchApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
       ),
 
-      /// 🔥 INICIO
       home: const LoginScreen(),
-
-      /// 🔥 CLAVE PARA GOOGLE LOGIN
-      routes: {
-        '/intro': (context) => const OnboardingIntro(),
-      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pet_photos_screen.dart';
 import 'pet_pedigree_screen.dart';
 import 'pet_breed_type_screen.dart';
+import 'pet_vaccine_card_screen.dart';
 
 class PetVaccinesScreen extends StatefulWidget {
 
@@ -58,14 +59,30 @@ class _PetVaccinesScreenState extends State<PetVaccinesScreen> {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PetPhotosScreen(
-          isBreedDog: widget.isBreedDog,
+    /// 🔥 SI TIENE VACUNAS → VA AL CARNET
+    if(hasVaccines == true){
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PetVaccineCardScreen(),
         ),
-      ),
-    );
+      );
+
+    } else {
+
+      /// 🔥 SI NO TIENE → VA DIRECTO A FOTOS
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PetPhotosScreen(
+            isBreedDog: widget.isBreedDog,
+            fromVaccineCard: false, // 🔥 ESTE ERA EL ERROR
+          ),
+        ),
+      );
+
+    }
 
   }
 

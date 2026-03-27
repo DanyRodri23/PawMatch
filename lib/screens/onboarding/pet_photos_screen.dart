@@ -5,14 +5,15 @@ import 'pet_vaccines_screen.dart';
 class PetPhotosScreen extends StatelessWidget {
 
   final bool isBreedDog;
+  final bool fromVaccineCard;
 
   const PetPhotosScreen({
     super.key,
     required this.isBreedDog,
+    this.fromVaccineCard = false,
   });
 
   void goNext(BuildContext context){
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -21,20 +22,44 @@ class PetPhotosScreen extends StatelessWidget {
         ),
       ),
     );
-
   }
 
   void goBack(BuildContext context){
+    if(fromVaccineCard){
+      Navigator.pop(context); // 🔥 vuelve a carnet
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PetVaccinesScreen(
+            isBreedDog: isBreedDog,
+          ),
+        ),
+      );
+    }
+  }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PetVaccinesScreen(
-          isBreedDog: isBreedDog,
+  Widget photoBox() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+          )
+        ],
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.add_a_photo,
+          size: 28,
+          color: Colors.black54,
         ),
       ),
     );
-
   }
 
   @override
@@ -70,16 +95,16 @@ class PetPhotosScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height:20),
+            const SizedBox(height:10),
 
             const Text(
-              "Agrega fotos de tu mascota para que otros usuarios puedan conocerla mejor.",
+              "Agrega al menos una foto para que tu mascota destaque 🐾",
               style: TextStyle(
                 color: Colors.black54,
               ),
             ),
 
-            const SizedBox(height:30),
+            const SizedBox(height:25),
 
             Expanded(
               child: GridView.builder(
@@ -88,27 +113,18 @@ class PetPhotosScreen extends StatelessWidget {
 
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount:3,
-                  crossAxisSpacing:10,
-                  mainAxisSpacing:10,
+                  crossAxisSpacing:12,
+                  mainAxisSpacing:12,
                 ),
 
                 itemBuilder: (context,index){
-
-                  return Container(
-
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-
-                    child: const Icon(Icons.add_a_photo),
-
-                  );
-
+                  return photoBox();
                 },
 
               ),
             ),
+
+            const SizedBox(height:10),
 
             SizedBox(
               width: double.infinity,
@@ -118,11 +134,21 @@ class PetPhotosScreen extends StatelessWidget {
 
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
 
                 onPressed: ()=>goNext(context),
 
-                child: const Text("Continuar"),
+                child: const Text(
+                  "Continuar",
+                  style: TextStyle(
+                    fontSize:18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
               ),
             )

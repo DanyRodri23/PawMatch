@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'pet_personality_screen.dart';
-import 'pet_vaccines_screen.dart';
 
 class PetPhotosScreen extends StatelessWidget {
 
@@ -25,18 +24,7 @@ class PetPhotosScreen extends StatelessWidget {
   }
 
   void goBack(BuildContext context){
-    if(fromVaccineCard){
-      Navigator.pop(context); // 🔥 vuelve a carnet
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PetVaccinesScreen(
-            isBreedDog: isBreedDog,
-          ),
-        ),
-      );
-    }
+    Navigator.pop(context); // 🔥 SIEMPRE pop (flujo correcto)
   }
 
   Widget photoBox() {
@@ -73,8 +61,8 @@ class PetPhotosScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back,color:Colors.black),
-          onPressed: ()=>goBack(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => goBack(context),
         ),
       ),
 
@@ -85,17 +73,17 @@ class PetPhotosScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            const SizedBox(height:40),
+            const SizedBox(height: 40),
 
             const Text(
               "Fotos de tu mascota",
               style: TextStyle(
-                fontSize:32,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height:10),
+            const SizedBox(height: 10),
 
             const Text(
               "Agrega al menos una foto para que tu mascota destaque 🐾",
@@ -104,27 +92,27 @@ class PetPhotosScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height:25),
+            const SizedBox(height: 25),
 
             Expanded(
               child: GridView.builder(
 
-                itemCount:6,
+                itemCount: 6,
 
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:3,
-                  crossAxisSpacing:12,
-                  mainAxisSpacing:12,
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                 ),
 
-                itemBuilder: (context,index){
+                itemBuilder: (context, index){
                   return photoBox();
                 },
 
               ),
             ),
 
-            const SizedBox(height:10),
+            const SizedBox(height: 10),
 
             SizedBox(
               width: double.infinity,
@@ -145,7 +133,7 @@ class PetPhotosScreen extends StatelessWidget {
                 child: const Text(
                   "Continuar",
                   style: TextStyle(
-                    fontSize:18,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

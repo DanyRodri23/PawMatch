@@ -79,7 +79,7 @@ class _ProfilePhotoScreenState extends State<ProfilePhotoScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LocationPermissionScreen(),
+        builder: (context) => const LocationPermissionScreen(),
       ),
     );
   }
@@ -94,7 +94,6 @@ class _ProfilePhotoScreenState extends State<ProfilePhotoScreen> {
         child: Column(
           children: [
 
-            /// BARRA DE PROGRESO
             const UserProgressBar(step: 4),
 
             Expanded(
@@ -160,31 +159,20 @@ class _ProfilePhotoScreenState extends State<ProfilePhotoScreen> {
 
                     const Spacer(),
 
-                    /// BOTON CONTINUAR
+                    /// BOTÓN
                     SizedBox(
                       width: double.infinity,
                       height: 55,
 
                       child: ElevatedButton(
-
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
                         ),
 
                         onPressed: goNext,
 
-                        child: const Text(
-                          "Continuar",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
+                        child: const Text("Continuar"),
                       ),
                     ),
 

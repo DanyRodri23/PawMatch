@@ -3,7 +3,6 @@ import 'pet_photos_screen.dart';
 import 'pet_vaccine_card_screen.dart';
 
 class PetVaccinesScreen extends StatefulWidget {
-
   final bool isBreedDog;
 
   const PetVaccinesScreen({
@@ -17,16 +16,11 @@ class PetVaccinesScreen extends StatefulWidget {
 
 class _PetVaccinesScreenState extends State<PetVaccinesScreen> {
 
-  bool? hasVaccines;
-  int vaccineCount = 1;
-
-  void goBack() {
-    Navigator.pop(context);
-  }
+  String? selectedOption;
 
   void goNext() {
 
-    if (hasVaccines == null) {
+    if (selectedOption == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Selecciona una opción"),
@@ -35,8 +29,7 @@ class _PetVaccinesScreenState extends State<PetVaccinesScreen> {
       return;
     }
 
-    if (hasVaccines == true) {
-
+    if (selectedOption == "si") {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -45,62 +38,98 @@ class _PetVaccinesScreenState extends State<PetVaccinesScreen> {
           ),
         ),
       );
-
     } else {
-
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => PetPhotosScreen(
             isBreedDog: widget.isBreedDog,
+            fromVaccineCard: false,
           ),
         ),
       );
-
     }
   }
 
-  Widget option(bool value, String label) {
+  Widget optionCard({
+    required String value,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
 
-    final selected = hasVaccines == value;
+    final isSelected = selectedOption == value;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          hasVaccines = value;
+          selectedOption = value;
         });
       },
+
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(vertical: 10),
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+        padding: const EdgeInsets.all(20),
+
         decoration: BoxDecoration(
-          color: selected ? Colors.black : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(18),
+          color: isSelected ? Colors.black : Colors.white,
+          borderRadius: BorderRadius.circular(25),
           border: Border.all(
-            color: selected ? Colors.black : Colors.grey.shade300,
+            color: isSelected ? Colors.black : Colors.grey.shade300,
           ),
+          boxShadow: [
+            if (isSelected)
+              const BoxShadow(
+                color: Colors.black26,
+                blurRadius: 12,
+                offset: Offset(0, 5),
+              )
+          ],
         ),
+
         child: Row(
           children: [
 
             Icon(
-              selected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_off,
-              color: selected ? Colors.white : Colors.black54,
+              icon,
+              size: 28,
+              color: isSelected ? Colors.white : Colors.black,
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 15),
 
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: selected ? Colors.white : Colors.black,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white70
+                          : Colors.black54,
+                    ),
+                  ),
+
+                ],
               ),
             ),
+
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Colors.white),
 
           ],
         ),
@@ -119,91 +148,84 @@ class _PetVaccinesScreenState extends State<PetVaccinesScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: goBack,
+          onPressed: () => Navigator.pop(context),
         ),
       ),
 
       body: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
             const Text(
               "Vacunas de tu mascota",
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
             ),
 
             const SizedBox(height: 10),
 
             const Text(
-              "Indica si tu mascota tiene vacunas registradas.",
-              style: TextStyle(fontSize: 16, color: Colors.black54),
+              "Esto ayuda a garantizar matches más seguros y confiables.",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black54,
+              ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
 
-            option(true, "Sí tiene vacunas"),
-            option(false, "No tiene vacunas"),
+            optionCard(
+              value: "si",
+              title: "Sí tiene vacunas",
+              subtitle: "Cuenta con control veterinario",
+              icon: Icons.verified,
+            ),
 
-            if (hasVaccines == true) ...[
-              const SizedBox(height: 20),
-
-              const Text(
-                "¿Cuántas vacunas tiene?",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-
-              const SizedBox(height: 10),
-
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: DropdownButton<int>(
-                  value: vaccineCount,
-                  underline: const SizedBox(),
-                  isExpanded: true,
-                  items: List.generate(10, (index) {
-                    final value = index + 1;
-                    return DropdownMenuItem(
-                      value: value,
-                      child: Text("$value vacunas"),
-                    );
-                  }),
-                  onChanged: (value) {
-                    setState(() {
-                      vaccineCount = value!;
-                    });
-                  },
-                ),
-              ),
-            ],
+            optionCard(
+              value: "no",
+              title: "No tiene vacunas",
+              subtitle: "Se puede completar después",
+              icon: Icons.warning_amber_rounded,
+            ),
 
             const Spacer(),
 
             SizedBox(
               width: double.infinity,
-              height: 55,
+              height: 60,
+
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: selectedOption != null
+                      ? Colors.black
+                      : Colors.grey.shade300,
+                  foregroundColor: Colors.white,
+                  elevation: selectedOption != null ? 8 : 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: goNext,
+
+                onPressed: selectedOption != null ? goNext : null,
+
                 child: const Text(
                   "Continuar",
-                  style: TextStyle(fontSize: 18),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
+
+            const SizedBox(height: 25),
 
           ],
         ),

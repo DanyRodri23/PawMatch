@@ -10,8 +10,9 @@ class PetPedigreeScreen extends StatefulWidget {
 
 class _PetPedigreeScreenState extends State<PetPedigreeScreen> {
 
-  void uploadFile(){
+  bool isLoading = false;
 
+  void uploadFile(){
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
@@ -19,19 +20,17 @@ class _PetPedigreeScreenState extends State<PetPedigreeScreen> {
         ),
       ),
     );
-
   }
 
   void cannotUpload(){
-
     showDialog(
       context: context,
       builder: (context){
-
         return AlertDialog(
-
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Text("Información importante"),
-
           content: const Text(
             "Sube el certificado de pedigrí de tu mascota para validar que "
             "tu mascota es 100% de raza.\n\n"
@@ -42,36 +41,54 @@ class _PetPedigreeScreenState extends State<PetPedigreeScreen> {
             "Si no puedes subirlo ahora, podrás hacerlo más adelante desde "
             "el perfil de tu mascota."
           ),
-
           actions: [
-
             TextButton(
               onPressed: (){
                 Navigator.pop(context);
               },
               child: const Text("Entendido"),
             )
-
           ],
-
         );
-
       },
     );
-
   }
 
-  void continueNext(){
+  void continueNext() async {
+
+    setState(() {
+      isLoading = true;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 900));
+
+    if (!mounted) return; // 🔥 SOLUCIÓN DEL WARNING
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const PetVaccinesScreen(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (_, __, ___) => const PetVaccinesScreen(
           isBreedDog: true,
         ),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween(
+                begin: const Offset(0.1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
       ),
     );
 
+    setState(() {
+      isLoading = false;
+    });
   }
 
   void goBack(){
@@ -82,13 +99,11 @@ class _PetPedigreeScreenState extends State<PetPedigreeScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-
       backgroundColor: Colors.white,
 
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-
         leading: IconButton(
           icon: const Icon(Icons.arrow_back,color: Colors.black),
           onPressed: goBack,
@@ -100,7 +115,6 @@ class _PetPedigreeScreenState extends State<PetPedigreeScreen> {
 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-
           children: [
 
             const SizedBox(height: 10),
@@ -118,62 +132,67 @@ class _PetPedigreeScreenState extends State<PetPedigreeScreen> {
             const Text(
               "Sube el certificado de pedigrí de tu mascota para validar "
               "que tu mascota es 100% de raza.\n\n"
-              "Esta información solo será visible para PawMatch y no será "
-              "compartida con otros usuarios.\n\n"
-              "En el perfil de tu mascota aparecerá un check azul que "
-              "indicará que su pedigrí ha sido verificado.",
+              "Esta información solo será visible para PawMatch.",
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.black54,
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
             GestureDetector(
-
               onTap: uploadFile,
-
               child: Container(
-
                 width: double.infinity,
-                height: 140,
-
+                height: 150,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFF7F7F7),
+                      Color(0xFFEDEDED),
+                    ],
+                  ),
                   border: Border.all(color: Colors.grey.shade300),
                 ),
-
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
 
-                    Icon(Icons.upload_file,
-                        size:40,
-                        color:Colors.black54),
+                    Icon(Icons.cloud_upload_rounded,
+                        size: 45,
+                        color: Colors.black87),
 
-                    SizedBox(height:10),
+                    SizedBox(height: 12),
 
                     Text(
                       "Subir certificado",
-                      style: TextStyle(fontSize:16),
-                    )
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
 
+                    SizedBox(height: 6),
+
+                    Text(
+                      "PDF, imagen o documento",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.black45,
+                      ),
+                    ),
                   ],
                 ),
-
               ),
-
             ),
 
-            const SizedBox(height:15),
+            const SizedBox(height: 18),
 
             Center(
               child: GestureDetector(
-
                 onTap: cannotUpload,
-
                 child: const Text(
                   "No puedo subirlo en este momento",
                   style: TextStyle(
@@ -182,50 +201,75 @@ class _PetPedigreeScreenState extends State<PetPedigreeScreen> {
                     decoration: TextDecoration.underline,
                   ),
                 ),
-
               ),
             ),
 
             const Spacer(),
 
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-
-              child: ElevatedButton(
-
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+            /// 🔥 BOTÓN MODO UNICORNIO
+            GestureDetector(
+              onTap: isLoading ? null : continueNext,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: double.infinity,
+                height: 65,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF000000),
+                      Color(0xFF1C1C1E),
+                    ],
                   ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 15,
+                      offset: Offset(0, 6),
+                    )
+                  ],
                 ),
+                child: Center(
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
 
-                onPressed: continueNext,
+                            Text(
+                              "Continuar",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                                color: Colors.white,
+                              ),
+                            ),
 
-                child: const Text(
-                  "Continuar",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                            SizedBox(width: 10),
+
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
                 ),
-
               ),
-
             ),
 
-            const SizedBox(height:20),
+            const SizedBox(height: 20),
 
           ],
-
         ),
-
       ),
-
     );
-
   }
-
 }

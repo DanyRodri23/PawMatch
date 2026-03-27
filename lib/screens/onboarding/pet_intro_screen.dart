@@ -39,7 +39,9 @@ class _PetIntroScreenState extends State<PetIntroScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const PetNameScreen(),
+        builder: (context) => PetNameScreen(
+          isBreedDog: false, // 🔥 SOLUCIÓN
+        ),
       ),
     );
 
@@ -66,7 +68,7 @@ class _PetIntroScreenState extends State<PetIntroScreen> {
                 : Container(color: Colors.black),
           ),
 
-          /// OSCURECER VIDEO (SIN withOpacity)
+          /// OSCURECER VIDEO
           Container(
             color: const Color.fromRGBO(0, 0, 0, 0.35),
           ),

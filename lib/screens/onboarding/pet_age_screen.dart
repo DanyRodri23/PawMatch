@@ -1,38 +1,134 @@
 import 'package:flutter/material.dart';
-import 'pet_breed_type_screen.dart';
+import 'package:pawmatch/screens/onboarding/pet_gender_screen.dart';
 
 class PetAgeScreen extends StatefulWidget {
-  const PetAgeScreen({super.key});
+
+  final bool isBreedDog;
+
+  const PetAgeScreen({
+    super.key,
+    required this.isBreedDog,
+  });
 
   @override
   State<PetAgeScreen> createState() => _PetAgeScreenState();
 }
 
-class _PetAgeScreenState extends State<PetAgeScreen> {
+class _PetAgeScreenState extends State<PetAgeScreen>
+    with SingleTickerProviderStateMixin {
 
-  final TextEditingController ageController = TextEditingController();
-
+  int age = 1;
   String selectedUnit = "años";
 
-  void goNext() {
+  late AnimationController _controller;
 
-    if (ageController.text.trim().isEmpty) {
+  @override
+  void initState() {
+    super.initState();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Ingresa la edad de tu mascota"),
-        ),
-      );
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+      lowerBound: 0.9,
+      upperBound: 1.0,
+    )..forward();
+  }
 
-      return;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void animatePress() {
+    _controller.reverse().then((_) => _controller.forward());
+  }
+
+  void increase() {
+    animatePress();
+    setState(() {
+      age++;
+    });
+  }
+
+  void decrease() {
+    if (age > 0) {
+      animatePress();
+      setState(() {
+        age--;
+      });
     }
+  }
+
+  String getPetMessage() {
+    if (age <= 1) return "🐶 Es un bebé aún";
+    if (age <= 5) return "🐕 En su mejor etapa";
+    if (age <= 10) return "🐾 Lleno de energía";
+    return "🦴 Un veterano lleno de amor";
+  }
+
+  void goNext() {
+    if (age == 0) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (BuildContext context) {
-          return const PetBreedTypeScreen();
-        },
+        builder: (context) => PetGenderScreen(
+          isBreedDog: widget.isBreedDog,
+        ),
+      ),
+    );
+  }
+
+  Widget unitSelector(String text) {
+    final isSelected = selectedUnit == text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedUnit = text;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 28),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.black : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget counterButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ScaleTransition(
+        scale: _controller,
+        child: Container(
+          width: 55,
+          height: 55,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            shape: BoxShape.circle,
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              )
+            ],
+          ),
+          child: Icon(icon, size: 28),
+        ),
       ),
     );
   }
@@ -45,110 +141,130 @@ class _PetAgeScreenState extends State<PetAgeScreen> {
 
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
 
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
               const SizedBox(height: 40),
 
-              const Text(
-                "¿Qué edad tiene tu mascota?",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "¿Qué edad tiene tu mascota?",
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
 
               const SizedBox(height: 10),
 
-              const Text(
-                "Esto nos ayuda a encontrar mascotas compatibles.",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Esto nos ayuda a encontrar mascotas compatibles.",
+                  style: TextStyle(color: Colors.black54),
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 60),
 
-              /// INPUT EDAD
-              TextField(
-                controller: ageController,
-                keyboardType: TextInputType.number,
-
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              /// TARJETA CENTRAL PREMIUM
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    )
+                  ],
                 ),
 
-                decoration: InputDecoration(
-                  hintText: "Edad",
+                child: Column(
+                  children: [
 
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
+                    /// CONTADOR
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
 
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
-                  ),
+                        counterButton(Icons.remove, decrease),
 
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2,
+                        const SizedBox(width: 25),
+
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) =>
+                              ScaleTransition(scale: animation, child: child),
+
+                          child: Text(
+                            "$age",
+                            key: ValueKey(age),
+                            style: const TextStyle(
+                              fontSize: 70,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 25),
+
+                        counterButton(Icons.add, increase),
+
+                      ],
                     ),
-                  ),
+
+                    const SizedBox(height: 20),
+
+                    /// TEXTO INTELIGENTE
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Text(
+                        getPetMessage(),
+                        key: ValueKey(age),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        unitSelector("años"),
+                        const SizedBox(width: 15),
+                        unitSelector("meses"),
+                      ],
+                    ),
+
+                  ],
                 ),
-              ),
-
-              const SizedBox(height: 25),
-
-              /// AÑOS O MESES
-              Row(
-                children: [
-
-                  ChoiceChip(
-                    label: const Text("años"),
-                    selected: selectedUnit == "años",
-                    onSelected: (value) {
-                      setState(() {
-                        selectedUnit = "años";
-                      });
-                    },
-                  ),
-
-                  const SizedBox(width: 10),
-
-                  ChoiceChip(
-                    label: const Text("meses"),
-                    selected: selectedUnit == "meses",
-                    onSelected: (value) {
-                      setState(() {
-                        selectedUnit = "meses";
-                      });
-                    },
-                  ),
-
-                ],
               ),
 
               const Spacer(),
 
-              /// BOTÓN CONTINUAR
+              /// BOTÓN FINAL PREMIUM
               SizedBox(
                 width: double.infinity,
-                height: 55,
+                height: 60,
 
                 child: ElevatedButton(
 
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
+                    elevation: 10,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(30),
                     ),
                   ),
 
@@ -161,11 +277,10 @@ class _PetAgeScreenState extends State<PetAgeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
             ],
           ),

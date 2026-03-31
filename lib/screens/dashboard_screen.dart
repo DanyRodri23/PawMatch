@@ -4,6 +4,7 @@ import 'discover/discover_page.dart';
 import 'profile/profile_page.dart';
 import '../data/app_data.dart';
 import 'chats/chats_page.dart'; // 🔥 IMPORTANTE
+import 'community/community_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -24,7 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     MatchPage(key: matchKey),
     const LikesPage(),
     const ChatsPage(),
-    const CommunityPage(),
+    const CommunityScreen(),
   ];
 
   @override

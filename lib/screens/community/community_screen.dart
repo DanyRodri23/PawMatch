@@ -1,20 +1,5 @@
 import 'package:flutter/material.dart';
-
-class PetPost {
-  final String name;
-  final String image;
-  final String description;
-  int likes;
-  bool isLiked;
-
-  PetPost({
-    required this.name,
-    required this.image,
-    required this.description,
-    this.likes = 0,
-    this.isLiked = false,
-  });
-}
+import '../../data/social_data.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -25,148 +10,263 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
 
-  List<PetPost> posts = [
-
-    PetPost(
-      name: "Rocky 🐶",
-      image: "https://images.unsplash.com/photo-1558788353-f76d92427f16",
-      description: "Le encanta correr en el parque 🌳",
-      likes: 120,
-    ),
-
-    PetPost(
-      name: "Luna 🐾",
-      image: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b",
-      description: "Súper cariñosa y juguetona 💕",
-      likes: 89,
-    ),
-
-    PetPost(
-      name: "Max 🐕",
-      image: "https://images.unsplash.com/photo-1507149833265-60c372daea22",
-      description: "El más travieso 😈",
-      likes: 200,
-    ),
-
-  ];
-
-  void toggleLike(int index) {
-
+  /// 🔥 LIKE
+  void toggleLike(String postId) {
     setState(() {
-
-      posts[index].isLiked = !posts[index].isLiked;
-
-      if (posts[index].isLiked) {
-        posts[index].likes++;
-      } else {
-        posts[index].likes--;
-      }
-
+      SocialData.toggleLike(postId);
     });
   }
 
-  Widget buildPost(PetPost post, int index) {
+  /// 🔥 FOLLOW
+  void toggleFollow(String userId) {
+    setState(() {
+      final currentUser = SocialData.users
+          .firstWhere((u) => u.id == SocialData.currentUserId);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      if (currentUser.following.contains(userId)) {
+        currentUser.following.remove(userId);
+      } else {
+        SocialData.follow(userId);
+      }
+    });
+  }
 
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 15,
-          )
-        ],
-      ),
+  /// 🔥 STORIES
+  Widget buildStories() {
+    return SizedBox(
+      height: 95,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: SocialData.users.length,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        itemBuilder: (_, i) {
 
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          final user = SocialData.users[i];
 
-          /// 🔥 HEADER
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Column(
               children: [
 
-                const CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.grey,
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Colors.orange, Colors.red],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white,
+                  ),
                 ),
 
-                const SizedBox(width: 10),
+                const SizedBox(height: 6),
 
                 Text(
-                  post.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
+                  user.name,
+                  style: const TextStyle(fontSize: 12),
+                )
               ],
             ),
-          ),
+          );
+        },
+      ),
+    );
+  }
 
-          /// 🔥 IMAGE
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Image.network(
-              post.image,
-              height: 220,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
+  /// 🔥 POST REAL
+  Widget buildPost(PostModel post) {
 
-          /// 🔥 ACTIONS
-          Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 10),
+    final user = SocialData.users
+        .firstWhere((u) => u.id == post.userId);
 
-            child: Row(
-              children: [
+    final isLiked = post.likes.contains(SocialData.currentUserId);
 
-                GestureDetector(
-                  onTap: () => toggleLike(index),
+    final currentUser = SocialData.users
+        .firstWhere((u) => u.id == SocialData.currentUserId);
 
-                  child: Icon(
-                    post.isLiked
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: post.isLiked ? Colors.red : Colors.black,
+    final isFollowing = currentUser.following.contains(user.id);
+
+    return GestureDetector(
+      onDoubleTap: () => toggleLike(post.id),
+
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 22),
+
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 20,
+            )
+          ],
+        ),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            /// 🔥 HEADER INSTAGRAM
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+
+                  const CircleAvatar(radius: 20),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: Text(
+                      user.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
+
+                  /// 🔥 FOLLOW BUTTON
+                  GestureDetector(
+                    onTap: () => toggleFollow(user.id),
+
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+
+                      decoration: BoxDecoration(
+                        color: isFollowing
+                            ? Colors.grey.shade300
+                            : Colors.black,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+
+                      child: Text(
+                        isFollowing ? "Siguiendo" : "Seguir",
+                        style: TextStyle(
+                          color: isFollowing
+                              ? Colors.black
+                              : Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  const Icon(Icons.more_vert)
+                ],
+              ),
+            ),
+
+            /// 🔥 IMAGE
+            ClipRRect(
+              borderRadius: BorderRadius.circular(25),
+              child: Stack(
+                children: [
+
+                  Image.network(
+                    post.image,
+                    height: 280,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.center,
+                          colors: [
+                            Colors.black45,
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// 🔥 ACTIONS
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
+
+              child: Row(
+                children: [
+
+                  GestureDetector(
+                    onTap: () => toggleLike(post.id),
+
+                    child: AnimatedScale(
+                      scale: isLiked ? 1.3 : 1,
+                      duration: const Duration(milliseconds: 200),
+
+                      child: Icon(
+                        isLiked
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: isLiked
+                            ? Colors.red
+                            : Colors.black,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  const Icon(Icons.chat_bubble_outline),
+
+                  const SizedBox(width: 10),
+
+                  const Icon(Icons.send),
+
+                  const Spacer(),
+
+                  const Icon(Icons.bookmark_border),
+                ],
+              ),
+            ),
+
+            /// 🔥 LIKES
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Text(
+                "${post.likes.length} likes",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            /// 🔥 DESCRIPTION
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.black),
+                  children: [
+                    TextSpan(
+                      text: "${user.name} ",
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: post.description),
+                  ],
                 ),
-
-                const SizedBox(width: 6),
-
-                Text("${post.likes}"),
-
-                const SizedBox(width: 16),
-
-                const Icon(Icons.chat_bubble_outline),
-
-                const SizedBox(width: 6),
-
-                const Text("Comentar"),
-
-              ],
+              ),
             ),
-          ),
 
-          /// 🔥 DESCRIPTION
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-
-            child: Text(
-              post.description,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-        ],
+            const SizedBox(height: 15),
+          ],
+        ),
       ),
     );
   }
@@ -174,28 +274,68 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
 
+    final posts = SocialData.posts;
+
     return Scaffold(
 
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF7F7F7),
 
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+      body: SafeArea(
+        child: Column(
+          children: [
 
-        title: const Text(
-          "Comunidad 🐾",
-          style: TextStyle(color: Colors.black),
+            /// 🔥 HEADER PRO
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 14,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                  )
+                ],
+              ),
+              child: Row(
+                children: [
+
+                  const Text(
+                    "Comunidad",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  const Icon(Icons.search),
+                  const SizedBox(width: 12),
+                  const Icon(Icons.notifications_none),
+                ],
+              ),
+            ),
+
+            /// STORIES
+            buildStories(),
+
+            const Divider(height: 1),
+
+            /// FEED REAL
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: posts.length,
+                itemBuilder: (context, index) {
+                  return buildPost(posts[index]);
+                },
+              ),
+            ),
+          ],
         ),
-      ),
-
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-
-        itemCount: posts.length,
-
-        itemBuilder: (context, index) {
-          return buildPost(posts[index], index);
-        },
       ),
     );
   }

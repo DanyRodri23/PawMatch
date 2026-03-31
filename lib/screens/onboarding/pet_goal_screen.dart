@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'pet_personality_screen.dart';
+import 'package:flutter/services.dart';
 import 'pet_profile_success_screen.dart';
 
 class PetGoalScreen extends StatefulWidget {
-
   final bool isBreedDog;
 
   const PetGoalScreen({
@@ -15,105 +14,125 @@ class PetGoalScreen extends StatefulWidget {
   State<PetGoalScreen> createState() => _PetGoalScreenState();
 }
 
-class _PetGoalScreenState extends State<PetGoalScreen> {
+class _PetGoalScreenState extends State<PetGoalScreen>
+    with TickerProviderStateMixin {
 
   String? selectedGoal;
 
-  final List<Map<String,String>> goals = [
-
-    {"emoji":"🐶","text":"Compañero de juego"},
-    {"emoji":"🐾","text":"Socializar mascotas"},
-    {"emoji":"🚶","text":"Compañero de paseo"},
-    {"emoji":"❤️","text":"Reproducción"},
-    {"emoji":"🌳","text":"Actividades"},
-    {"emoji":"🐕","text":"Nuevos amigos"}
-
+  final List<Map<String, String>> goals = [
+    {"emoji": "🐶", "text": "Compañero de juego"},
+    {"emoji": "🐾", "text": "Socializar mascotas"},
+    {"emoji": "🚶", "text": "Compañero de paseo"},
+    {"emoji": "❤️", "text": "Reproducción"},
+    {"emoji": "🌳", "text": "Actividades"},
+    {"emoji": "🐕", "text": "Nuevos amigos"}
   ];
 
-  void goBack(){
+  void goNext() {
+    if (selectedGoal == null) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PetPersonalityScreen(
-          isBreedDog: widget.isBreedDog,
-        ),
-      ),
-    );
-
-  }
-
-  void goNext(){
-
-    if(selectedGoal == null){
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Selecciona una opción"),
-        ),
-      );
-
-      return;
-    }
-
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const PetProfileSuccessScreen(),
       ),
     );
-
   }
 
-  Widget goalCard(String emoji,String text){
-
+  Widget goalCard(String emoji, String text, int index) {
     final selected = selectedGoal == text;
 
-    return GestureDetector(
+    return TweenAnimationBuilder(
+      duration: Duration(milliseconds: 300 + (index * 80)),
+      tween: Tween<double>(begin: 0.8, end: 1),
+      curve: Curves.easeOutBack,
 
-      onTap: (){
-        setState(() {
-          selectedGoal = text;
-        });
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: child,
+        );
       },
 
-      child: Container(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact(); // 🔥 vibración pro
 
-        decoration: BoxDecoration(
+          setState(() {
+            selectedGoal = text;
+          });
+        },
 
-          color: selected
-              ? Colors.black
-              : const Color(0xffF1F1F1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
 
-          borderRadius: BorderRadius.circular(18),
+          decoration: BoxDecoration(
+            color: selected ? Colors.black : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(24),
 
-        ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+          ),
 
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 200),
+            scale: selected ? 1.08 : 1.0,
 
-            Text(
-              emoji,
-              style: const TextStyle(fontSize:34),
-            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
 
-            const SizedBox(height:10),
+                AnimatedScale(
+                  duration: const Duration(milliseconds: 200),
+                  scale: selected ? 1.3 : 1.0,
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal:10),
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize:16,
-                  fontWeight: FontWeight.w500,
-                  color: selected ? Colors.white : Colors.black,
+                  child: Text(
+                    emoji,
+                    style: const TextStyle(fontSize: 36),
+                  ),
                 ),
-              ),
-            )
 
-          ],
+                const SizedBox(height: 10),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ),
+
+                if (selected)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  )
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -123,16 +142,15 @@ class _PetGoalScreenState extends State<PetGoalScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-
       backgroundColor: Colors.white,
 
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation:0,
+        elevation: 0,
 
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back,color:Colors.black),
-          onPressed: goBack,
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context), // 🔥 FIX BACK REAL
         ),
       ),
 
@@ -141,102 +159,128 @@ class _PetGoalScreenState extends State<PetGoalScreen> {
 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-
           children: [
 
-            const SizedBox(height:10),
+            const SizedBox(height: 10),
 
             const Text(
               "¿Qué buscas para tu mascota?",
               style: TextStyle(
-                fontSize:32,
+                fontSize: 34,
                 fontWeight: FontWeight.bold,
+                letterSpacing: -1,
               ),
             ),
 
-            const SizedBox(height:8),
+            const SizedBox(height: 8),
 
             const Text(
-              "Selecciona el objetivo dentro de PawMatch.",
+              "Selecciona el objetivo dentro de PawMatch 🐾",
               style: TextStyle(
-                fontSize:16,
+                fontSize: 16,
                 color: Colors.black54,
               ),
             ),
 
-            const SizedBox(height:30),
+            const SizedBox(height: 30),
 
             Expanded(
-
               child: GridView.builder(
+                physics: const BouncingScrollPhysics(),
 
                 itemCount: goals.length,
 
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1,
-
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // 🔥 más premium
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.1,
                 ),
 
-                itemBuilder: (context,index){
-
+                itemBuilder: (context, index) {
                   final goal = goals[index];
 
                   return goalCard(
                     goal["emoji"]!,
                     goal["text"]!,
+                    index,
                   );
-
                 },
-
               ),
-
             ),
 
-            const SizedBox(height:10),
+            /// 🔥 BOTÓN PRO NIVEL APP GRANDE
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
 
-            SizedBox(
               width: double.infinity,
-              height:55,
+              height: 60,
+
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+
+                gradient: selectedGoal != null
+                    ? const LinearGradient(
+                        colors: [
+                          Color(0xFF000000),
+                          Color(0xFF1C1C1C),
+                        ],
+                      )
+                    : null,
+
+                color: selectedGoal == null
+                    ? Colors.grey.shade300
+                    : null,
+
+                boxShadow: selectedGoal != null
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        )
+                      ]
+                    : [],
+              ),
 
               child: ElevatedButton(
+                onPressed: selectedGoal == null ? null : goNext,
 
                 style: ElevatedButton.styleFrom(
-
-                  backgroundColor: selectedGoal == null
-                      ? Colors.grey.shade300
-                      : Colors.black,
-
-                  foregroundColor: selectedGoal == null
-                      ? Colors.grey
-                      : Colors.white,
-
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
-
                 ),
 
-                onPressed: selectedGoal == null
-                    ? null
-                    : goNext,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
 
-                child: const Text(
-                  "Siguiente",
-                  style: TextStyle(
-                    fontSize:18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                    Text(
+                      "Continuar",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+
+                    SizedBox(width: 8),
+
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                    ),
+                  ],
                 ),
-
               ),
             ),
 
-            const SizedBox(height:10),
-
+            const SizedBox(height: 10),
           ],
         ),
       ),

@@ -9,9 +9,10 @@ class UserModel {
     required this.id,
     required this.name,
     required this.image,
-    this.followers = const [],
-    this.following = const [],
-  });
+    List<String>? followers,
+    List<String>? following,
+  })  : followers = followers ?? [],
+        following = following ?? [];
 }
 
 class PostModel {
@@ -26,8 +27,8 @@ class PostModel {
     required this.userId,
     required this.image,
     required this.description,
-    this.likes = const [],
-  });
+    List<String>? likes,
+  }) : likes = likes ?? [];
 }
 
 class SocialData {
@@ -59,14 +60,19 @@ class SocialData {
     ),
   ];
 
-  /// 🔥 FOLLOW
-  static void follow(String targetId) {
+  /// 🔥 FOLLOW / UNFOLLOW
+  static void toggleFollow(String targetId) {
 
     final current = users.firstWhere((u) => u.id == currentUserId);
     final target = users.firstWhere((u) => u.id == targetId);
 
-    current.following.add(targetId);
-    target.followers.add(currentUserId);
+    if (current.following.contains(targetId)) {
+      current.following.remove(targetId);
+      target.followers.remove(currentUserId);
+    } else {
+      current.following.add(targetId);
+      target.followers.add(currentUserId);
+    }
   }
 
   /// 🔥 LIKE

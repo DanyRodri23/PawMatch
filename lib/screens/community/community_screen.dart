@@ -17,24 +17,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
     });
   }
 
-  /// 🔥 FOLLOW
+  /// 🔥 FOLLOW (LIMPIO Y CORRECTO)
   void toggleFollow(String userId) {
     setState(() {
-      final currentUser = SocialData.users
-          .firstWhere((u) => u.id == SocialData.currentUserId);
-
-      if (currentUser.following.contains(userId)) {
-        currentUser.following.remove(userId);
-      } else {
-        SocialData.follow(userId);
-      }
+      SocialData.toggleFollow(userId);
     });
   }
 
   /// 🔥 STORIES
   Widget buildStories() {
     return SizedBox(
-      height: 95,
+      height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: SocialData.users.length,
@@ -56,9 +49,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     ),
                     shape: BoxShape.circle,
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 28,
-                    backgroundColor: Colors.white,
+                    backgroundImage: user.image.isNotEmpty
+                        ? NetworkImage(user.image)
+                        : null,
+                    child: user.image.isEmpty
+                        ? const Icon(Icons.pets)
+                        : null,
                   ),
                 ),
 
@@ -76,7 +74,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  /// 🔥 POST REAL
+  /// 🔥 POST INSTAGRAM PRO
   Widget buildPost(PostModel post) {
 
     final user = SocialData.users
@@ -97,11 +95,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 20,
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 15,
             )
           ],
         ),
@@ -110,13 +108,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            /// 🔥 HEADER INSTAGRAM
+            /// HEADER
             Padding(
               padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
 
-                  const CircleAvatar(radius: 20),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage: user.image.isNotEmpty
+                        ? NetworkImage(user.image)
+                        : null,
+                    child: user.image.isEmpty
+                        ? const Icon(Icons.pets)
+                        : null,
+                  ),
 
                   const SizedBox(width: 10),
 
@@ -129,21 +135,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     ),
                   ),
 
-                  /// 🔥 FOLLOW BUTTON
+                  /// FOLLOW BUTTON
                   GestureDetector(
                     onTap: () => toggleFollow(user.id),
-
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
-
                       decoration: BoxDecoration(
                         color: isFollowing
                             ? Colors.grey.shade300
                             : Colors.black,
                         borderRadius: BorderRadius.circular(20),
                       ),
-
                       child: Text(
                         isFollowing ? "Siguiendo" : "Seguir",
                         style: TextStyle(
@@ -157,44 +160,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ),
 
                   const SizedBox(width: 10),
-
                   const Icon(Icons.more_vert)
                 ],
               ),
             ),
 
-            /// 🔥 IMAGE
+            /// IMAGE
             ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: Stack(
-                children: [
-
-                  Image.network(
-                    post.image,
-                    height: 280,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-
-                  Positioned.fill(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.center,
-                          colors: [
-                            Colors.black45,
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              borderRadius: BorderRadius.circular(20),
+              child: Image.network(
+                post.image,
+                height: 260,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
             ),
 
-            /// 🔥 ACTIONS
+            /// ACTIONS
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 10),
@@ -204,11 +186,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
                   GestureDetector(
                     onTap: () => toggleLike(post.id),
-
                     child: AnimatedScale(
                       scale: isLiked ? 1.3 : 1,
                       duration: const Duration(milliseconds: 200),
-
                       child: Icon(
                         isLiked
                             ? Icons.favorite
@@ -221,11 +201,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ),
 
                   const SizedBox(width: 10),
-
                   const Icon(Icons.chat_bubble_outline),
-
                   const SizedBox(width: 10),
-
                   const Icon(Icons.send),
 
                   const Spacer(),
@@ -235,7 +212,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
             ),
 
-            /// 🔥 LIKES
+            /// LIKES
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Text(
@@ -246,7 +223,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
             const SizedBox(height: 6),
 
-            /// 🔥 DESCRIPTION
+            /// DESCRIPTION
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: RichText(
@@ -277,7 +254,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final posts = SocialData.posts;
 
     return Scaffold(
-
       backgroundColor: const Color(0xFFF7F7F7),
 
       body: SafeArea(
@@ -300,21 +276,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ],
               ),
               child: Row(
-                children: [
+                children: const [
 
-                  const Text(
+                  Text(
                     "Comunidad",
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
 
-                  const Spacer(),
+                  Spacer(),
 
-                  const Icon(Icons.search),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.notifications_none),
+                  Icon(Icons.search),
+                  SizedBox(width: 12),
+                  Icon(Icons.notifications_none),
                 ],
               ),
             ),
@@ -322,9 +298,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
             /// STORIES
             buildStories(),
 
-            const Divider(height: 1), //Prueba Dani
+            const Divider(height: 1),
 
-            /// FEED REAL
+            /// FEED
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),

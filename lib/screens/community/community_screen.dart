@@ -322,7 +322,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             /// STORIES
             buildStories(),
 
-            const Divider(height: 1),
+            const Divider(height: 1), //Prueba Dani
 
             /// FEED REAL
             Expanded(

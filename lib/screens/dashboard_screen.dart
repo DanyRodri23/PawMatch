@@ -4,8 +4,6 @@ import 'discover/discover_page.dart';
 import 'profile/profile_page.dart';
 import '../data/app_data.dart';
 import 'chats/chats_page.dart';
-import 'home/home_screen.dart'; // ✅ CORRECTO
-import 'community/community_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,131 +12,86 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin {
 
-  int currentIndex = 0; // 🔥 EMPIEZA EN HOME
+  int currentIndex = 0;
 
   final GlobalKey<MatchPageState> matchKey = GlobalKey<MatchPageState>();
 
   late final List<Widget> pages = [
-    const HomeScreen(), // 🔥 HOME PRO
-    const DiscoverPage(),
     MatchPage(key: matchKey),
+    const DiscoverPage(),
     const LikesPage(),
     const ChatsPage(),
-    const CommunityScreen(),
-    const ProfilePage(),
+    ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasChats = AppData.chats.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xffF7F7F7),
+      extendBody: true,
 
-      /// 🔥 APPBAR DINÁMICA
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        backgroundColor: Colors.white,
+      /// 🔥 ADAPTADO A MODO CLARO / OSCURO
+      backgroundColor: isDark ? Colors.black : Colors.grey[100],
 
-        title: Row(
-          children: const [
-            Icon(Icons.pets, color: Color(0xffFF9F1C), size: 26),
-            SizedBox(width: 8),
-            Text(
-              "PawMatch",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Colors.black,
-              ),
-            ),
-          ],
-        ),
-
-        actions: [
-          if(currentIndex == 2)
-            IconButton(
-              icon: const Icon(Icons.tune, color: Colors.black),
-              onPressed: () {
-                final state = matchKey.currentState;
-                state?.openFilters();
-              },
-            ),
-          const SizedBox(width: 10)
-        ],
-      ),
-
-      /// 🔥 BODY
+      /// 🔥 TRANSICIÓN MÁS SUAVE
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: pages[currentIndex],
+        duration: const Duration(milliseconds: 250),
+        transitionBuilder: (child, animation) =>
+            FadeTransition(opacity: animation, child: child),
+        child: Container(
+          key: ValueKey(currentIndex),
+          child: pages[currentIndex],
+        ),
       ),
 
-      /// 🔥 NAVBAR PRO
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 10)
-          ],
-        ),
+      /// 🔥 NAVBAR MÁS CLEAN (TIPO APP MODERNA)
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
 
-        child: BottomNavigationBar(
-          currentIndex: currentIndex,
+        child: Container(
+          height: 65,
 
-          onTap: (index){
-            if(index == currentIndex) return;
-            setState(() => currentIndex = index);
-          },
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.grey[900]!.withOpacity(0.9)
+                : Colors.white.withOpacity(0.95),
 
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
+            borderRadius: BorderRadius.circular(30),
 
-          selectedItemColor: const Color(0xffFF9F1C),
-          unselectedItemColor: Colors.grey,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                blurRadius: 20,
+              )
+            ],
+          ),
 
-          selectedLabelStyle:
-              const TextStyle(fontWeight: FontWeight.bold),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
 
-          items: [
+              navItem(Icons.local_fire_department, 0, "Swipe", isDark),
+              navItem(Icons.explore, 1, "Explorar", isDark),
+              navItem(Icons.favorite, 2, "Likes", isDark),
 
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: "Inicio",
-            ),
-
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.explore),
-              label: "Descubre",
-            ),
-
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.star),
-              label: "Match",
-            ),
-
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.favorite),
-              label: "Likes",
-            ),
-
-            BottomNavigationBarItem(
-              icon: Stack(
+              /// 🔥 CHAT CON NOTIFICACIÓN
+              Stack(
                 children: [
-
-                  const Icon(Icons.chat),
+                  navItem(Icons.chat_bubble_outline, 3, "Chat", isDark),
 
                   if (hasChats)
                     Positioned(
-                      right: 0,
-                      top: 0,
+                      right: 6,
+                      top: 6,
                       child: Container(
-                        width: 10,
-                        height: 10,
+                        width: 8,
+                        height: 8,
                         decoration: const BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
@@ -147,35 +100,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     )
                 ],
               ),
-              label: "Chats",
-            ),
 
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.public),
-              label: "Comunidad",
-            ),
-
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: "Perfil",
-            ),
-          ],
+              navItem(Icons.person_outline, 4, "Perfil", isDark),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-/// 🔥 LIKES PAGE SIMPLE (SIN ERROR)
-class LikesPage extends StatelessWidget {
-  const LikesPage({super.key});
+  /// 🔥 ITEM NAVBAR MEJORADO
+  Widget navItem(IconData icon, int index, String label, bool isDark) {
 
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "Likes",
-        style: TextStyle(fontSize: 18),
+    final isSelected = currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        if (index == currentIndex) return;
+        setState(() => currentIndex = index);
+      },
+
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05))
+              : Colors.transparent,
+
+          borderRadius: BorderRadius.circular(16),
+        ),
+
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+
+            Icon(
+              icon,
+              color: isSelected
+                  ? (isDark ? Colors.white : Colors.black)
+                  : Colors.grey,
+              size: 22,
+            ),
+
+            const SizedBox(height: 3),
+
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected
+                    ? (isDark ? Colors.white : Colors.black)
+                    : Colors.grey,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

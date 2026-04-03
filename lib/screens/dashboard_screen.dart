@@ -4,6 +4,7 @@ import 'discover/discover_page.dart';
 import 'profile/profile_page.dart';
 import '../data/app_data.dart';
 import 'chats/chats_page.dart';
+import 'community/community_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,154 +13,239 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with SingleTickerProviderStateMixin {
+class _DashboardScreenState extends State<DashboardScreen> {
 
-  int currentIndex = 0;
+  int currentIndex = 2;
 
   final GlobalKey<MatchPageState> matchKey = GlobalKey<MatchPageState>();
 
   late final List<Widget> pages = [
-    MatchPage(key: matchKey),
+    const ProfilePage(),
     const DiscoverPage(),
-    const LikesPage(),
+    MatchPage(key: matchKey),
+    LikesPage(), // 🔥 SIN CONST (ARREGLADO)
     const ChatsPage(),
-    ProfilePage(),
+    const CommunityScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasChats = AppData.chats.isNotEmpty;
 
     return Scaffold(
-      extendBody: true,
+      backgroundColor: Colors.black,
 
-      /// 🔥 ADAPTADO A MODO CLARO / OSCURO
-      backgroundColor: isDark ? Colors.black : Colors.grey[100],
+      /// 🔥 APPBAR MINIMAL PRO
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        elevation: 0,
+        backgroundColor: Colors.black,
 
-      /// 🔥 TRANSICIÓN MÁS SUAVE
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        transitionBuilder: (child, animation) =>
-            FadeTransition(opacity: animation, child: child),
-        child: Container(
-          key: ValueKey(currentIndex),
-          child: pages[currentIndex],
+        title: Row(
+          children: const [
+            Icon(Icons.pets, color: Color(0xffFF9F1C), size: 26),
+            SizedBox(width: 8),
+            Text(
+              "PawMatch",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
+
+        actions: [
+          if(currentIndex == 2)
+            IconButton(
+              icon: const Icon(Icons.tune, color: Colors.white),
+              onPressed: () {
+                final state = matchKey.currentState;
+                if(state != null){
+                  state.openFilters(); // 🔥 ya no da error
+                }
+              },
+            ),
+          const SizedBox(width: 10)
+        ],
       ),
 
-      /// 🔥 NAVBAR MÁS CLEAN (TIPO APP MODERNA)
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+      /// 🔥 BODY
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: pages[currentIndex],
+      ),
 
-        child: Container(
-          height: 65,
+      /// 🔥 NAVBAR TIPO TINDER PRO
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: const [
+            BoxShadow(color: Colors.black26, blurRadius: 20)
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BottomNavigationBar(
+            currentIndex: currentIndex,
+            onTap: (index){
+              if(index == currentIndex) return;
+              setState(() => currentIndex = index);
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white38,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
 
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.grey[900]!.withOpacity(0.9)
-                : Colors.white.withOpacity(0.95),
+            items: [
 
-            borderRadius: BorderRadius.circular(30),
-
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
-                blurRadius: 20,
-              )
-            ],
-          ),
-
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-
-              navItem(Icons.local_fire_department, 0, "Swipe", isDark),
-              navItem(Icons.explore, 1, "Explorar", isDark),
-              navItem(Icons.favorite, 2, "Likes", isDark),
-
-              /// 🔥 CHAT CON NOTIFICACIÓN
-              Stack(
-                children: [
-                  navItem(Icons.chat_bubble_outline, 3, "Chat", isDark),
-
-                  if (hasChats)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                ],
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.pets),
+                label: "",
               ),
 
-              navItem(Icons.person_outline, 4, "Perfil", isDark),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.explore),
+                label: "",
+              ),
+
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.local_fire_department, size: 30),
+                label: "",
+              ),
+
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.favorite),
+                label: "",
+              ),
+
+              BottomNavigationBarItem(
+                icon: Stack(
+                  children: [
+                    const Icon(Icons.chat),
+                    if (hasChats)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                  ],
+                ),
+                label: "",
+              ),
+
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.public),
+                label: "",
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  /// 🔥 ITEM NAVBAR MEJORADO
-  Widget navItem(IconData icon, int index, String label, bool isDark) {
+/// 🔥 LIKES PAGE PRO
+class LikesPage extends StatelessWidget {
+  const LikesPage({super.key});
 
-    final isSelected = currentIndex == index;
+  @override
+  Widget build(BuildContext context) {
 
-    return GestureDetector(
-      onTap: () {
-        if (index == currentIndex) return;
-        setState(() => currentIndex = index);
-      },
+    final likes = AppData.likedPets;
 
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.05))
-              : Colors.transparent,
-
-          borderRadius: BorderRadius.circular(16),
+    if (likes.isEmpty) {
+      return const Center(
+        child: Text(
+          "No tienes likes aún 💔",
+          style: TextStyle(color: Colors.white),
         ),
+      );
+    }
 
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-
-            Icon(
-              icon,
-              color: isSelected
-                  ? (isDark ? Colors.white : Colors.black)
-                  : Colors.grey,
-              size: 22,
-            ),
-
-            const SizedBox(height: 3),
-
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: isSelected
-                    ? (isDark ? Colors.white : Colors.black)
-                    : Colors.grey,
-              ),
-            )
-          ],
-        ),
+    return GridView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: likes.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
+      itemBuilder: (context, index) {
+
+        final pet = likes[index];
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(color: Colors.black54, blurRadius: 10)
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+
+                Positioned.fill(
+                  child: Image.network(
+                    pet["images"][0],
+                    fit: BoxFit.cover,
+                  ),
+                ),
+
+                Positioned.fill(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.center,
+                        colors: [
+                          Colors.black87,
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  bottom: 10,
+                  left: 10,
+                  child: Text(
+                    pet["name"],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                const Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Icon(Icons.favorite, color: Colors.red),
+                ),
+
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

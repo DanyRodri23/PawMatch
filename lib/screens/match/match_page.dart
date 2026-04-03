@@ -20,7 +20,6 @@ class MatchPageState extends State<MatchPage> {
     {
       "name": "Luna",
       "age": 2,
-      "ageType": "a",
       "breed": "Golden Retriever",
       "distance": "3 km",
       "description": "Amigable, juguetona y muy cariñosa 🐶",
@@ -60,12 +59,12 @@ class MatchPageState extends State<MatchPage> {
   void handleSwipe() {
 
     if (position > 120) {
+
       AppData.addLike(pet);
 
       setState(() => position = 500);
 
       Future.delayed(const Duration(milliseconds: 200), () {
-
         if (!mounted) return;
 
         Navigator.push(
@@ -93,10 +92,38 @@ class MatchPageState extends State<MatchPage> {
     }
 
     Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() => position = 0);
-      }
+      if (mounted) setState(() => position = 0);
     });
+  }
+
+  /// 🔥 FILTROS (YA FUNCIONA CON DASHBOARD)
+  void openFilters() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (_) {
+        return const Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Filtros",
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text("Distancia", style: TextStyle(color: Colors.white70)),
+              Text("Edad", style: TextStyle(color: Colors.white70)),
+              Text("Raza", style: TextStyle(color: Colors.white70)),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -109,26 +136,22 @@ class MatchPageState extends State<MatchPage> {
         child: GestureDetector(
 
           onPanUpdate: (details) {
-            setState(() {
-              position += details.delta.dx;
-            });
+            setState(() => position += details.delta.dx);
           },
 
           onPanEnd: (_) => handleSwipe(),
 
           onTapUp: (details) {
             final width = MediaQuery.of(context).size.width;
-
-            if (details.localPosition.dx < width / 2) {
-              prevPhoto();
-            } else {
-              nextPhoto();
-            }
+            details.localPosition.dx < width / 2
+                ? prevPhoto()
+                : nextPhoto();
           },
 
           child: Stack(
             children: [
 
+              /// 🔥 TARJETA
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 transform: Matrix4.translationValues(position, 0, 0)
@@ -140,8 +163,9 @@ class MatchPageState extends State<MatchPage> {
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 25,
+                        color: Colors.black.withValues(alpha: 0.5), // ✅ FIX
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
                       )
                     ],
                   ),
@@ -151,6 +175,7 @@ class MatchPageState extends State<MatchPage> {
                     child: Stack(
                       children: [
 
+                        /// IMAGEN
                         Positioned.fill(
                           child: Image.network(
                             images[currentPhoto],
@@ -158,6 +183,7 @@ class MatchPageState extends State<MatchPage> {
                           ),
                         ),
 
+                        /// GRADIENTE
                         Positioned.fill(
                           child: Container(
                             decoration: const BoxDecoration(
@@ -165,7 +191,7 @@ class MatchPageState extends State<MatchPage> {
                                 begin: Alignment.bottomCenter,
                                 end: Alignment.center,
                                 colors: [
-                                  Colors.black,
+                                  Colors.black87,
                                   Colors.transparent,
                                 ],
                               ),
@@ -173,6 +199,7 @@ class MatchPageState extends State<MatchPage> {
                           ),
                         ),
 
+                        /// BARRA DE FOTOS
                         Positioned(
                           top: 12,
                           left: 12,
@@ -186,7 +213,7 @@ class MatchPageState extends State<MatchPage> {
                                   decoration: BoxDecoration(
                                     color: i == currentPhoto
                                         ? Colors.white
-                                        : Colors.white30,
+                                        : Colors.white24,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
@@ -195,6 +222,7 @@ class MatchPageState extends State<MatchPage> {
                           ),
                         ),
 
+                        /// INFO
                         Positioned(
                           bottom: 25,
                           left: 20,
@@ -208,19 +236,60 @@ class MatchPageState extends State<MatchPage> {
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 32,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
 
+                              const SizedBox(height: 4),
+
                               Text(
                                 pet["distance"],
-                                style: const TextStyle(color: Colors.white70),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
                               ),
                             ],
                           ),
                         ),
 
-                        /// 🔥 BOTÓN FLECHA
+                        /// LIKE
+                        if (position > 50)
+                          Positioned(
+                            top: 100,
+                            left: 40,
+                            child: Transform.rotate(
+                              angle: -0.3,
+                              child: const Text(
+                                "LIKE",
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        /// NOPE
+                        if (position < -50)
+                          Positioned(
+                            top: 100,
+                            right: 40,
+                            child: Transform.rotate(
+                              angle: 0.3,
+                              child: const Text(
+                                "NOPE",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        /// BOTÓN DETALLE
                         Positioned(
                           right: 20,
                           bottom: 140,
@@ -235,14 +304,23 @@ class MatchPageState extends State<MatchPage> {
                               );
                             },
                             child: Container(
-                              width: 45,
-                              height: 45,
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6), // ✅ FIX
                                 shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withValues(alpha: 0.2), // ✅ FIX
+                                    blurRadius: 10,
+                                  )
+                                ],
                               ),
-                              child: const Icon(Icons.keyboard_arrow_up,
-                                  color: Colors.white),
+                              child: const Icon(
+                                Icons.keyboard_arrow_up,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
                           ),
                         ),

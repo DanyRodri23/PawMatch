@@ -3,7 +3,8 @@ import 'match/match_page.dart';
 import 'discover/discover_page.dart';
 import 'profile/profile_page.dart';
 import '../data/app_data.dart';
-import 'chats/chats_page.dart'; // 🔥 IMPORTANTE
+import 'chats/chats_page.dart';
+import 'home/home_screen.dart'; // ✅ CORRECTO
 import 'community/community_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -15,17 +16,18 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
 
-  int currentIndex = 2;
+  int currentIndex = 0; // 🔥 EMPIEZA EN HOME
 
   final GlobalKey<MatchPageState> matchKey = GlobalKey<MatchPageState>();
 
   late final List<Widget> pages = [
-    ProfilePage(),
+    const HomeScreen(), // 🔥 HOME PRO
     const DiscoverPage(),
     MatchPage(key: matchKey),
     const LikesPage(),
     const ChatsPage(),
     const CommunityScreen(),
+    const ProfilePage(),
   ];
 
   @override
@@ -34,10 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final hasChats = AppData.chats.isNotEmpty;
 
     return Scaffold(
-
       backgroundColor: const Color(0xffF7F7F7),
 
-      /// APPBAR
+      /// 🔥 APPBAR DINÁMICA
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
@@ -51,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               "PawMatch",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 24,
+                fontSize: 22,
                 color: Colors.black,
               ),
             ),
@@ -59,32 +60,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
 
         actions: [
-
           if(currentIndex == 2)
             IconButton(
               icon: const Icon(Icons.tune, color: Colors.black),
               onPressed: () {
                 final state = matchKey.currentState;
-                if(state != null){
-                  state.openFilters();
-                }
+                state?.openFilters();
               },
             ),
-
           const SizedBox(width: 10)
         ],
       ),
 
-      /// BODY
+      /// 🔥 BODY
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: Container(
-          key: ValueKey(currentIndex),
-          child: pages[currentIndex],
-        ),
+        duration: const Duration(milliseconds: 300),
+        child: pages[currentIndex],
       ),
 
-      /// NAVBAR
+      /// 🔥 NAVBAR PRO
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -94,7 +88,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
 
         child: BottomNavigationBar(
-
           currentIndex: currentIndex,
 
           onTap: (index){
@@ -114,8 +107,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           items: [
 
             const BottomNavigationBarItem(
-              icon: Icon(Icons.pets),
-              label: "Perfil",
+              icon: Icon(Icons.home),
+              label: "Inicio",
             ),
 
             const BottomNavigationBarItem(
@@ -130,10 +123,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const BottomNavigationBarItem(
               icon: Icon(Icons.favorite),
-              label: "Me gustas",
+              label: "Likes",
             ),
 
-            /// 🔥 CHAT CON BADGE
             BottomNavigationBarItem(
               icon: Stack(
                 children: [
@@ -153,7 +145,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                     )
-
                 ],
               ),
               label: "Chats",
@@ -164,6 +155,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               label: "Comunidad",
             ),
 
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: "Perfil",
+            ),
           ],
         ),
       ),
@@ -171,170 +166,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-/// --------------------------------------------
-/// 🔥 LIKES PAGE (NO TOCADA)
-/// --------------------------------------------
-
+/// 🔥 LIKES PAGE SIMPLE (SIN ERROR)
 class LikesPage extends StatelessWidget {
   const LikesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-
-    final likes = AppData.likedPets;
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          const SizedBox(height: 10),
-
-          const Text(
-            "Te dieron like 💛",
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          if (likes.isEmpty)
-            const Expanded(
-              child: Center(
-                child: Text(
-                  "Aún no tienes likes",
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: GridView.builder(
-                itemCount: likes.length,
-
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.75,
-                ),
-
-                itemBuilder: (context, index) {
-
-                  final pet = likes[index];
-
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10,
-                        )
-                      ],
-                    ),
-
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-
-                      child: Stack(
-                        children: [
-
-                          Positioned.fill(
-                            child: Image.network(
-                              pet["images"][0],
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-
-                          Positioned.fill(
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.center,
-                                  colors: [
-                                    Colors.black54,
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Icon(Icons.favorite, color: Colors.red),
-                          ),
-
-                          Positioned(
-                            bottom: 10,
-                            left: 10,
-                            right: 10,
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-
-                                Text(
-                                  "${pet["name"]}, ${pet["age"]}${pet["ageType"]}",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-
-                                Text(
-                                  pet["breed"],
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-
-                                Text(
-                                  pet["distance"],
-                                  style: const TextStyle(
-                                    color: Colors.white54,
-                                  ),
-                                ),
-
-                              ],
-                            ),
-                          ),
-
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-        ],
-      ),
-    );
-  }
-}
-
-/// --------------------------------------------
-/// COMMUNITY
-/// --------------------------------------------
-
-class CommunityPage extends StatelessWidget {
-  const CommunityPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        "Comunidad PawMatch",
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        "Likes",
+        style: TextStyle(fontSize: 18),
       ),
     );
   }

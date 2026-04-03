@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/social_data.dart';
+import 'package:flutter/services.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -10,63 +11,87 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
 
-  /// 🔥 LIKE
+  Map<String, bool> showPaw = {};
+  Map<String, bool> savedPosts = {};
+
   void toggleLike(String postId) {
     setState(() {
       SocialData.toggleLike(postId);
     });
   }
 
-  /// 🔥 FOLLOW (LIMPIO Y CORRECTO)
   void toggleFollow(String userId) {
     setState(() {
       SocialData.toggleFollow(userId);
     });
   }
 
-  /// 🔥 STORIES
+  void toggleSave(String postId) {
+    setState(() {
+      savedPosts[postId] = !(savedPosts[postId] ?? false);
+    });
+  }
+
+  /// PERFIL REAL
+  void openProfile(UserModel user) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: Text(user.name)),
+          body: Center(
+            child: Text(
+              "Perfil de ${user.name}",
+              style: const TextStyle(fontSize: 22),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// STORIES
   Widget buildStories() {
     return SizedBox(
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: SocialData.users.length,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         itemBuilder: (_, i) {
 
           final user = SocialData.users[i];
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Column(
-              children: [
+          return GestureDetector(
+            onTap: () {},
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Column(
+                children: [
 
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Colors.orange, Colors.red],
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Colors.pink, Colors.orange],
+                      ),
+                      borderRadius: BorderRadius.circular(50),
                     ),
-                    shape: BoxShape.circle,
+                    child: const CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.pets, color: Colors.black),
+                    ),
                   ),
-                  child: CircleAvatar(
-                    radius: 28,
-                    backgroundImage: user.image.isNotEmpty
-                        ? NetworkImage(user.image)
-                        : null,
-                    child: user.image.isEmpty
-                        ? const Icon(Icons.pets)
-                        : null,
-                  ),
-                ),
 
-                const SizedBox(height: 6),
+                  const SizedBox(height: 6),
 
-                Text(
-                  user.name,
-                  style: const TextStyle(fontSize: 12),
-                )
-              ],
+                  Text(
+                    user.name,
+                    style: const TextStyle(fontSize: 11),
+                  )
+                ],
+              ),
             ),
           );
         },
@@ -74,7 +99,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  /// 🔥 POST INSTAGRAM PRO
+  /// POST PRO
   Widget buildPost(PostModel post) {
 
     final user = SocialData.users
@@ -82,168 +107,191 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
     final isLiked = post.likes.contains(SocialData.currentUserId);
 
+    final isSaved = savedPosts[post.id] ?? false;
+
     final currentUser = SocialData.users
         .firstWhere((u) => u.id == SocialData.currentUserId);
 
     final isFollowing = currentUser.following.contains(user.id);
 
-    return GestureDetector(
-      onDoubleTap: () => toggleLike(post.id),
-
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 22),
-
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 15,
-            )
-          ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 10),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEAEAEA)),
         ),
+      ),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
 
-            /// HEADER
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
+          /// HEADER
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
 
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: user.image.isNotEmpty
-                        ? NetworkImage(user.image)
-                        : null,
-                    child: user.image.isEmpty
-                        ? const Icon(Icons.pets)
-                        : null,
+                GestureDetector(
+                  onTap: () => openProfile(user),
+                  child: const CircleAvatar(
+                    radius: 18,
+                    child: Icon(Icons.pets, size: 18),
                   ),
+                ),
 
-                  const SizedBox(width: 10),
+                const SizedBox(width: 10),
 
-                  Expanded(
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => openProfile(user),
                     child: Text(
                       user.name,
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-
-                  /// FOLLOW BUTTON
-                  GestureDetector(
-                    onTap: () => toggleFollow(user.id),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isFollowing
-                            ? Colors.grey.shade300
-                            : Colors.black,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        isFollowing ? "Siguiendo" : "Seguir",
-                        style: TextStyle(
-                          color: isFollowing
-                              ? Colors.black
-                              : Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 10),
-                  const Icon(Icons.more_vert)
-                ],
-              ),
-            ),
-
-            /// IMAGE
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.network(
-                post.image,
-                height: 260,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-
-            /// ACTIONS
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 10),
-
-              child: Row(
-                children: [
-
-                  GestureDetector(
-                    onTap: () => toggleLike(post.id),
-                    child: AnimatedScale(
-                      scale: isLiked ? 1.3 : 1,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        isLiked
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: isLiked
-                            ? Colors.red
-                            : Colors.black,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 10),
-                  const Icon(Icons.chat_bubble_outline),
-                  const SizedBox(width: 10),
-                  const Icon(Icons.send),
-
-                  const Spacer(),
-
-                  const Icon(Icons.bookmark_border),
-                ],
-              ),
-            ),
-
-            /// LIKES
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Text(
-                "${post.likes.length} likes",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            /// DESCRIPTION
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: RichText(
-                text: TextSpan(
-                  style: const TextStyle(color: Colors.black),
-                  children: [
-                    TextSpan(
-                      text: "${user.name} ",
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(text: post.description),
-                  ],
                 ),
+
+                TextButton(
+                  onPressed: () => toggleFollow(user.id),
+                  child: Text(
+                    isFollowing ? "Siguiendo" : "Seguir",
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+
+                const Icon(Icons.more_horiz),
+              ],
+            ),
+          ),
+
+          /// IMAGE
+          GestureDetector(
+            onDoubleTap: () {
+              HapticFeedback.lightImpact();
+              toggleLike(post.id);
+
+              setState(() => showPaw[post.id] = true);
+
+              Future.delayed(const Duration(milliseconds: 800), () {
+                if (mounted) {
+                  setState(() => showPaw[post.id] = false);
+                }
+              });
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+
+                Image.network(
+                  post.image,
+                  height: 280,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+
+                if (showPaw[post.id] == true)
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOut,
+                    builder: (_, value, __) {
+                      return Opacity(
+                        opacity: 1 - value,
+                        child: Transform.scale(
+                          scale: 0.7 + value,
+                          child: const Icon(
+                            Icons.pets,
+                            color: Colors.red,
+                            size: 90,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+
+          /// ACTIONS
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Row(
+              children: [
+
+                IconButton(
+                  icon: Icon(
+                    Icons.favorite,
+                    color: isLiked ? Colors.red : Colors.black,
+                  ),
+                  onPressed: () => toggleLike(post.id),
+                ),
+
+                IconButton(
+                  icon: const Icon(Icons.mode_comment_outlined),
+                  onPressed: () {},
+                ),
+
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: () {},
+                ),
+
+                const Spacer(),
+
+                IconButton(
+                  icon: Icon(
+                    isSaved
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                  ),
+                  onPressed: () => toggleSave(post.id),
+                ),
+              ],
+            ),
+          ),
+
+          /// LIKES
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              "${post.likes.length} likes",
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          /// DESCRIPTION
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Colors.black),
+                children: [
+                  TextSpan(
+                    text: "${user.name} ",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: post.description),
+                ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 15),
-          ],
-        ),
+          const SizedBox(height: 4),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              "Hace 2 minutos",
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -254,62 +302,29 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final posts = SocialData.posts;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: Colors.white,
 
       body: SafeArea(
-        child: Column(
+        child: ListView(
           children: [
 
-            /// 🔥 HEADER PRO
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                  )
-                ],
-              ),
-              child: Row(
-                children: const [
-
-                  Text(
-                    "Comunidad",
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  Spacer(),
-
-                  Icon(Icons.search),
-                  SizedBox(width: 12),
-                  Icon(Icons.notifications_none),
-                ],
+            /// HEADER
+            const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                "PawMatch",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
 
-            /// STORIES
             buildStories(),
 
-            const Divider(height: 1),
+            const SizedBox(height: 10),
 
-            /// FEED
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: posts.length,
-                itemBuilder: (context, index) {
-                  return buildPost(posts[index]);
-                },
-              ),
-            ),
+            ...posts.map((post) => buildPost(post)),
           ],
         ),
       ),

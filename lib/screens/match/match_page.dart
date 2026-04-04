@@ -96,30 +96,19 @@ class MatchPageState extends State<MatchPage> {
     });
   }
 
-  /// 🔥 FILTROS (YA FUNCIONA CON DASHBOARD)
   void openFilters() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (_) {
         return const Padding(
           padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Filtros",
-                  style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              Text("Distancia", style: TextStyle(color: Colors.white70)),
-              Text("Edad", style: TextStyle(color: Colors.white70)),
-              Text("Raza", style: TextStyle(color: Colors.white70)),
-            ],
+          child: Text(
+            "Filtros próximamente 🐾",
+            style: TextStyle(fontSize: 18),
           ),
         );
       },
@@ -130,7 +119,7 @@ class MatchPageState extends State<MatchPage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFFF5F5F7), // 🔥 fondo gris premium
 
       body: SafeArea(
         child: GestureDetector(
@@ -158,13 +147,13 @@ class MatchPageState extends State<MatchPage> {
                   ..rotateZ(position * 0.0015),
 
                 child: Container(
-                  margin: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5), // ✅ FIX
-                        blurRadius: 30,
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 25,
                         offset: const Offset(0, 15),
                       )
                     ],
@@ -175,7 +164,7 @@ class MatchPageState extends State<MatchPage> {
                     child: Stack(
                       children: [
 
-                        /// IMAGEN
+                        /// IMAGEN FULL
                         Positioned.fill(
                           child: Image.network(
                             images[currentPhoto],
@@ -183,7 +172,7 @@ class MatchPageState extends State<MatchPage> {
                           ),
                         ),
 
-                        /// GRADIENTE
+                        /// GRADIENTE MÁS SUAVE
                         Positioned.fill(
                           child: Container(
                             decoration: const BoxDecoration(
@@ -191,7 +180,7 @@ class MatchPageState extends State<MatchPage> {
                                 begin: Alignment.bottomCenter,
                                 end: Alignment.center,
                                 colors: [
-                                  Colors.black87,
+                                  Color(0xCC000000),
                                   Colors.transparent,
                                 ],
                               ),
@@ -199,21 +188,21 @@ class MatchPageState extends State<MatchPage> {
                           ),
                         ),
 
-                        /// BARRA DE FOTOS
+                        /// BARRA DE FOTOS (MÁS PREMIUM)
                         Positioned(
-                          top: 12,
-                          left: 12,
-                          right: 12,
+                          top: 14,
+                          left: 14,
+                          right: 14,
                           child: Row(
                             children: List.generate(images.length, (i) {
                               return Expanded(
                                 child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                  margin: const EdgeInsets.symmetric(horizontal: 3),
                                   height: 4,
                                   decoration: BoxDecoration(
                                     color: i == currentPhoto
                                         ? Colors.white
-                                        : Colors.white24,
+                                        : Colors.white.withValues(alpha: 0.3),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
@@ -222,22 +211,38 @@ class MatchPageState extends State<MatchPage> {
                           ),
                         ),
 
-                        /// INFO
+                        /// INFO BONITA
                         Positioned(
-                          bottom: 25,
+                          bottom: 30,
                           left: 20,
                           right: 20,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
 
-                              Text(
-                                "${pet["name"]}, ${pet["age"]}",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    "${pet["name"]}, ${pet["age"]}",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 6),
+
+                                  /// 🐾 VERIFICACIÓN
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.blue,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.pets, size: 14, color: Colors.white),
+                                  )
+                                ],
                               ),
 
                               const SizedBox(height: 4),
@@ -264,7 +269,7 @@ class MatchPageState extends State<MatchPage> {
                                 "LIKE",
                                 style: TextStyle(
                                   color: Colors.green,
-                                  fontSize: 40,
+                                  fontSize: 42,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -282,14 +287,14 @@ class MatchPageState extends State<MatchPage> {
                                 "NOPE",
                                 style: TextStyle(
                                   color: Colors.red,
-                                  fontSize: 40,
+                                  fontSize: 42,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ),
 
-                        /// BOTÓN DETALLE
+                        /// BOTÓN DETALLE (GLASS)
                         Positioned(
                           right: 20,
                           bottom: 140,
@@ -304,17 +309,14 @@ class MatchPageState extends State<MatchPage> {
                               );
                             },
                             child: Container(
-                              width: 50,
-                              height: 50,
+                              width: 52,
+                              height: 52,
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6), // ✅ FIX
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.white.withValues(alpha: 0.2), // ✅ FIX
-                                    blurRadius: 10,
-                                  )
-                                ],
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                ),
                               ),
                               child: const Icon(
                                 Icons.keyboard_arrow_up,

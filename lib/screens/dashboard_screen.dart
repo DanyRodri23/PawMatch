@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+
+
 import 'match/match_page.dart';
 import 'discover/discover_page.dart';
 import 'profile/profile_page.dart';
-import '../data/app_data.dart';
 import 'chats/chats_page.dart';
 import 'community/community_screen.dart';
+import 'likes/likes_page.dart';
+import 'home/home_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,232 +23,168 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<MatchPageState> matchKey = GlobalKey<MatchPageState>();
 
   late final List<Widget> pages = [
-    const ProfilePage(),
+    const HomeScreen(),
     const DiscoverPage(),
     MatchPage(key: matchKey),
-    LikesPage(), // 🔥 SIN CONST (ARREGLADO)
+    const LikesPage(),
     const ChatsPage(),
     const CommunityScreen(),
+    const ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
 
-    final hasChats = AppData.chats.isNotEmpty;
-
     return Scaffold(
-      backgroundColor: Colors.black,
+      extendBody: true,
+      backgroundColor: Colors.white,
 
-      /// 🔥 APPBAR MINIMAL PRO
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        backgroundColor: Colors.black,
+      body: Stack(
+        children: [
 
-        title: Row(
-          children: const [
-            Icon(Icons.pets, color: Color(0xffFF9F1C), size: 26),
-            SizedBox(width: 8),
-            Text(
-              "PawMatch",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Colors.white,
+          /// 🔥 CONTENIDO
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: pages[currentIndex],
+          ),
+
+          /// 🔥 HEADER BLANCO PREMIUM (NO TRANSPARENTE)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Container(
+                margin: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                    )
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+
+                    /// FILTRO
+                    _circleButton(Icons.tune, () {
+                      if (currentIndex == 2) {
+                        matchKey.currentState?.openFilters();
+                      }
+                    }),
+
+                    /// TABS
+                    Row(
+                      children: [
+                        _tab("Para ti", 2),
+                        _tab("Noticias", 0),
+                        _tab("Comunidad", 5),
+                      ],
+                    ),
+
+                    _circleButton(Icons.settings, () {
+                      setState(() => currentIndex = 6);
+                    }),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-
-        actions: [
-          if(currentIndex == 2)
-            IconButton(
-              icon: const Icon(Icons.tune, color: Colors.white),
-              onPressed: () {
-                final state = matchKey.currentState;
-                if(state != null){
-                  state.openFilters(); // 🔥 ya no da error
-                }
-              },
-            ),
-          const SizedBox(width: 10)
+          ),
         ],
       ),
 
-      /// 🔥 BODY
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: pages[currentIndex],
-      ),
-
-      /// 🔥 NAVBAR TIPO TINDER PRO
+      /// 🔥 NAVBAR BLANCO PREMIUM
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: const [
-            BoxShadow(color: Colors.black26, blurRadius: 20)
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(35),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+            )
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BottomNavigationBar(
-            currentIndex: currentIndex,
-            onTap: (index){
-              if(index == currentIndex) return;
-              setState(() => currentIndex = index);
-            },
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white38,
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
 
-            items: [
-
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.pets),
-                label: "",
-              ),
-
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.explore),
-                label: "",
-              ),
-
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.local_fire_department, size: 30),
-                label: "",
-              ),
-
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.favorite),
-                label: "",
-              ),
-
-              BottomNavigationBarItem(
-                icon: Stack(
-                  children: [
-                    const Icon(Icons.chat),
-                    if (hasChats)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      )
-                  ],
-                ),
-                label: "",
-              ),
-
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.public),
-                label: "",
-              ),
-            ],
-          ),
+            _navItem(Icons.search, 1),
+            _mainButton(),
+            _navItem(Icons.favorite, 3),
+            _navItem(Icons.chat_bubble_outline, 4),
+            _navItem(Icons.public, 5),
+          ],
         ),
       ),
     );
   }
-}
 
-/// 🔥 LIKES PAGE PRO
-class LikesPage extends StatelessWidget {
-  const LikesPage({super.key});
+  Widget _navItem(IconData icon, int index) {
+    final isSelected = currentIndex == index;
 
-  @override
-  Widget build(BuildContext context) {
-
-    final likes = AppData.likedPets;
-
-    if (likes.isEmpty) {
-      return const Center(
-        child: Text(
-          "No tienes likes aún 💔",
-          style: TextStyle(color: Colors.white),
-        ),
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: likes.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+    return GestureDetector(
+      onTap: () => setState(() => currentIndex = index),
+      child: Icon(
+        icon,
+        size: 26,
+        color: isSelected ? Colors.deepPurple : Colors.grey,
       ),
-      itemBuilder: (context, index) {
+    );
+  }
 
-        final pet = likes[index];
-
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(color: Colors.black54, blurRadius: 10)
-            ],
+  Widget _mainButton() {
+    return GestureDetector(
+      onTap: () => setState(() => currentIndex = 2),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple, Colors.pinkAccent],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              children: [
+        ),
+        child: const Icon(Icons.pets, color: Colors.white, size: 30),
+      ),
+    );
+  }
 
-                Positioned.fill(
-                  child: Image.network(
-                    pet["images"][0],
-                    fit: BoxFit.cover,
-                  ),
-                ),
+  Widget _circleButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon),
+      ),
+    );
+  }
 
-                Positioned.fill(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.center,
-                        colors: [
-                          Colors.black87,
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+  Widget _tab(String text, int index) {
+    final isSelected = currentIndex == index;
 
-                Positioned(
-                  bottom: 10,
-                  left: 10,
-                  child: Text(
-                    pet["name"],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Icon(Icons.favorite, color: Colors.red),
-                ),
-
-              ],
-            ),
+    return GestureDetector(
+      onTap: () => setState(() => currentIndex = index),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.black : Colors.grey,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

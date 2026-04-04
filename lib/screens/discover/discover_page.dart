@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'discover_results_page.dart';
 
 class DiscoverPage extends StatelessWidget {
@@ -8,11 +9,10 @@ class DiscoverPage extends StatelessWidget {
     BuildContext context,
     String title,
     String emoji,
+    Color color,
   ) {
     return GestureDetector(
-
       onTap: () {
-
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -21,154 +21,116 @@ class DiscoverPage extends StatelessWidget {
             ),
           ),
         );
-
       },
-
-      child: Container(
-
-        padding: const EdgeInsets.all(22),
-
-        decoration: BoxDecoration(
-
-          color: Colors.white,
-
-          borderRadius: BorderRadius.circular(22),
-
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 12,
-              offset: Offset(0,4),
-            )
-          ],
-
-        ),
-
-        child: Column(
-
-          mainAxisAlignment: MainAxisAlignment.center,
-
-          children: [
-
-            Text(
-              emoji,
-              style: const TextStyle(
-                fontSize: 42,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
 
-            const SizedBox(height: 12),
+                /// 🔥 ICONO
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color.withValues(alpha: 0.2),
+                  ),
+                  child: Text(
+                    emoji,
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                ),
 
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+                const SizedBox(height: 12),
+
+                /// 🔥 TEXTO
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-
-          ],
-
+          ),
         ),
-
       ),
-
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
 
-    return Padding(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-      padding: const EdgeInsets.all(20),
+              const SizedBox(height: 10),
 
-      child: Column(
+              /// 🔥 TITULO
+              const Text(
+                "Descubre",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
 
-        crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 6),
 
-        children: [
+              const Text(
+                "¿Qué busca tu mascota?",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 15,
+                ),
+              ),
 
-          const SizedBox(height: 10),
+              const SizedBox(height: 30),
 
-          const Text(
-            "¿Qué busca tu mascota?",
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1,
+
+                  children: [
+
+                    categoryCard(context, "Compañero de juego", "🐾", Colors.blue),
+                    categoryCard(context, "Socializar", "🐕", Colors.orange),
+                    categoryCard(context, "Compañero de paseo", "🦮", Colors.green),
+                    categoryCard(context, "Actividades", "🎾", Colors.purple),
+                    categoryCard(context, "Nuevos amigos", "🐶", Colors.pink),
+                    categoryCard(context, "Reproducción", "❤️", Colors.red),
+
+                  ],
+                ),
+              ),
+            ],
           ),
-
-          const SizedBox(height: 8),
-
-          const Text(
-            "Encuentra mascotas que buscan lo mismo dentro de PawMatch.",
-            style: TextStyle(
-              color: Colors.black54,
-              fontSize: 15,
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          Expanded(
-
-            child: GridView.count(
-
-              crossAxisCount: 2,
-
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-
-              children: [
-
-                categoryCard(
-                  context,
-                  "Compañero de juego",
-                  "🐾",
-                ),
-
-                categoryCard(
-                  context,
-                  "Socializar",
-                  "🐕",
-                ),
-
-                categoryCard(
-                  context,
-                  "Compañero de paseo",
-                  "🦮",
-                ),
-
-                categoryCard(
-                  context,
-                  "Actividades",
-                  "🎾",
-                ),
-
-                categoryCard(
-                  context,
-                  "Nuevos amigos",
-                  "🐶",
-                ),
-
-                categoryCard(
-                  context,
-                  "Reproducción",
-                  "❤️",
-                ),
-
-              ],
-
-            ),
-
-          ),
-
-        ],
-
+        ),
       ),
-
     );
   }
 }

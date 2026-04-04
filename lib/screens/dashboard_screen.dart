@@ -42,78 +42,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Stack(
         children: [
 
-          /// CONTENIDO
+          /// 🔥 CONTENIDO
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: pages[currentIndex],
           ),
 
-          /// 🔥 HEADER TINDER PRO (GLASS REAL)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08), // 🔥 glass mejorado
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
+          /// 🔥 HEADER SOLO EN MATCH
+          if (currentIndex == 2)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08), // 🔥 vidrio
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
 
-                          /// FILTRO
-                          GestureDetector(
-                            onTap: () {
-                              if (currentIndex == 2) {
-                                matchKey.currentState?.openFilters();
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.1),
-                              ),
-                              child: const Icon(Icons.tune, color: Colors.white),
+                            IconButton(
+                              icon: const Icon(Icons.tune, color: Colors.white),
+                              onPressed: () {
+                                if (currentIndex == 2) {
+                                  matchKey.currentState?.openFilters();
+                                }
+                              },
                             ),
-                          ),
 
-                          /// TABS
-                          Row(
-                            children: [
-                              _tab("Para ti", 2),
-                              _tab("Noticias", 0),
-                              _tab("Comunidad", 5),
-                            ],
-                          ),
+                            Row(
+                              children: [
+                                _tab("Para ti", 2),
+                                _tab("Noticias", 0),
+                                _tab("Comunidad", 5),
+                              ],
+                            ),
 
-                          const SizedBox(width: 30),
-                        ],
+                            const SizedBox(width: 30),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
 
-      /// 🔥 NAVBAR GLASS PRO (COMO ARRIBA)
+      /// 🔥 NAVBAR VIDRIO (IGUAL ARRIBA)
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.all(14),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
@@ -121,10 +113,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Container(
               height: 70,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08), // 🔥 glass real
+                color: Colors.white.withValues(alpha: 0.08), // 🔥 igual que header
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withValues(alpha: 0.15),
                 ),
               ),
               child: Row(
@@ -146,31 +138,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔥 NAV ITEM PRO
   Widget _navItem(IconData icon, int index) {
     final isSelected = currentIndex == index;
 
     return GestureDetector(
       onTap: () => setState(() => currentIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected
-              ? Colors.white.withValues(alpha: 0.15)
-              : Colors.transparent,
-        ),
-        child: Icon(
-          icon,
-          size: 26,
-          color: isSelected ? Colors.white : Colors.white54,
-        ),
+      child: Icon(
+        icon,
+        size: 26,
+        color: isSelected ? Colors.pinkAccent : Colors.white54,
       ),
     );
   }
 
-  /// 🔥 TABS PRO
   Widget _tab(String text, int index) {
     final isSelected = currentIndex == index;
 
@@ -178,13 +158,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () => setState(() => currentIndex = index),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 200),
+        child: Text(
+          text,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: isSelected ? Colors.white : Colors.white54,
           ),
-          child: Text(text),
         ),
       ),
     );

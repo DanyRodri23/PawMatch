@@ -97,14 +97,14 @@ class MatchPageState extends State<MatchPage>
       body: Stack(
         children: [
 
-          /// 🔥 CARTA ATRÁS
+          /// CARTA ATRÁS
           if (pets.length > 1)
             Transform.scale(
               scale: 0.95,
               child: _buildCard((currentIndex + 1) % pets.length),
             ),
 
-          /// 🔥 CARTA PRINCIPAL
+          /// CARTA PRINCIPAL
           GestureDetector(
             onPanUpdate: (details) {
               setState(() {
@@ -139,7 +139,7 @@ class MatchPageState extends State<MatchPage>
             ),
           ),
 
-          /// 🔥 HEADER
+          /// HEADER
           Positioned(
             top: 0,
             left: 0,
@@ -178,9 +178,9 @@ class MatchPageState extends State<MatchPage>
             ),
           ),
 
-          /// 🔥 BOTONES
+          /// BOTONES
           Positioned(
-            bottom: 40,
+            bottom: MediaQuery.of(context).size.height * 0.14,
             left: 0,
             right: 0,
             child: Row(
@@ -197,7 +197,7 @@ class MatchPageState extends State<MatchPage>
     );
   }
 
-  /// 🔥 CARD PRO
+  /// CARD PRO
   Widget _buildCard(int index) {
     final data = pets[index];
     final imgs = List<String>.from(data["images"]);
@@ -224,6 +224,8 @@ class MatchPageState extends State<MatchPage>
               child: Image.network(
                 imgs[currentPhoto],
                 fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                filterQuality: FilterQuality.high,
               ),
             ),
 
@@ -243,22 +245,25 @@ class MatchPageState extends State<MatchPage>
               ),
             ),
 
-            /// BARRA DE FOTOS
+            /// 🔥 BARRA TINDER REAL
             Positioned(
-              top: 10,
-              left: 10,
-              right: 10,
+              top: 70,
+              left: 16,
+              right: 16,
               child: Row(
                 children: List.generate(imgs.length, (i) {
+                  final isActive = i == currentPhoto;
+
                   return Expanded(
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
                       margin: const EdgeInsets.symmetric(horizontal: 2),
-                      height: 4,
+                      height: 2,
                       decoration: BoxDecoration(
-                        color: i == currentPhoto
+                        color: isActive
                             ? Colors.white
-                            : Colors.white24,
-                        borderRadius: BorderRadius.circular(10),
+                            : Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                   );
@@ -268,7 +273,7 @@ class MatchPageState extends State<MatchPage>
 
             /// INFO
             Positioned(
-              bottom: 30,
+              bottom: 120,
               left: 20,
               right: 20,
               child: Column(
@@ -293,21 +298,39 @@ class MatchPageState extends State<MatchPage>
 
                   const SizedBox(height: 6),
 
-                  Text(
-                    data["distance"],
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on,
+                          color: Colors.white70, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        data["distance"],
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _tag("Juguetón"),
+                      _tag("Amigable"),
+                      _tag("Energético"),
+                    ],
                   ),
                 ],
               ),
             ),
 
-            /// 🔥 BOTÓN DETALLE (FLECHITA)
+            /// BOTÓN DETALLE
             Positioned(
               right: 20,
-              bottom: 140,
+              bottom: 200,
               child: GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -323,12 +346,6 @@ class MatchPageState extends State<MatchPage>
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        blurRadius: 10,
-                      )
-                    ],
                   ),
                   child: const Icon(
                     Icons.keyboard_arrow_up,
@@ -338,19 +355,66 @@ class MatchPageState extends State<MatchPage>
                 ),
               ),
             ),
+
+            /// LIKE
+            if (position > 20)
+              Positioned(
+                top: 100,
+                left: 20,
+                child: Transform.rotate(
+                  angle: -0.3,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.green, width: 3),
+                    ),
+                    child: const Text(
+                      "LIKE",
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            /// NOPE
+            if (position < -20)
+              Positioned(
+                top: 100,
+                right: 20,
+                child: Transform.rotate(
+                  angle: 0.3,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.red, width: 3),
+                    ),
+                    child: const Text(
+                      "NOPE",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  /// BOTONES
   Widget _actionButton(IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 70,
-        height: 70,
+        width: 58,
+        height: 58,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.black.withValues(alpha: 0.7),
@@ -362,6 +426,23 @@ class MatchPageState extends State<MatchPage>
           ],
         ),
         child: Icon(icon, color: color, size: 32),
+      ),
+    );
+  }
+
+  Widget _tag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+        ),
       ),
     );
   }

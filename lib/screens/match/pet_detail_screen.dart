@@ -7,126 +7,146 @@ class PetDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    final images = List<String>.from(pet["images"]);
+    final List images = pet["images"] ?? [];
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
 
-      body: Stack(
-        children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-          /// 🔥 SCROLL
-          SingleChildScrollView(
-            child: Column(
-              children: [
-
-                /// IMAGE
-                SizedBox(
-                  height: 500,
-                  child: PageView.builder(
-                    itemCount: images.length,
-                    itemBuilder: (_, i) {
-                      return Image.network(
-                        images[i],
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      );
-                    },
+              /// 🔥 IMAGEN PRINCIPAL
+              Stack(
+                children: [
+                  Image.network(
+                    images.isNotEmpty ? images[0] : '',
+                    height: 350,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   ),
-                ),
 
-                /// INFO
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF121212),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(25),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      Text(
-                        "${pet["name"]}, ${pet["age"]}",
-                        style: const TextStyle(
-                          fontSize: 28,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Text(
-                        "${pet["breed"]} • ${pet["distance"]}",
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      const Text(
-                        "Descripción",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 5),
-
-                      Text(
-                        pet["description"],
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      const Text(
-                        "Personalidad",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Wrap(
-                        spacing: 8,
-                        children: List.generate(
-                          (pet["personality"] as List).length,
-                          (i) => Chip(
-                            label: Text(pet["personality"][i]),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          /// 🔥 BOTÓN BACK
-          Positioned(
-            top: 40,
-            left: 15,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
+                ],
               ),
-            ),
+
+              /// 🔥 INFO
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    Text(
+                      "${pet["name"]}, ${pet["age"]}",
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      pet["distance"] ?? "",
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    /// DESCRIPCIÓN
+                    const Text(
+                      "Sobre la mascota",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(pet["description"] ?? ""),
+
+                    const SizedBox(height: 20),
+
+                    /// GALERÍA
+                    const Text(
+                      "Fotos",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    SizedBox(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: images.length,
+                        itemBuilder: (_, i) {
+                          return Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            width: 100,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                images[i],
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    /// INFO EXTRA
+                    const Text(
+                      "Detalles",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    _infoRow("Raza", pet["breed"]),
+                    _infoRow("Personalidad", "Juguetón"),
+                    _infoRow("Vacunas", "Al día"),
+                    _infoRow("Busca", "Compañero de juego"),
+                  ],
+                ),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String title, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(
+            "$title: ",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(value ?? ""),
         ],
       ),
     );

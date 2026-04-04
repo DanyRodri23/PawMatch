@@ -14,12 +14,13 @@ class ChatsPage extends StatelessWidget {
         (b["time"] ?? "").compareTo(a["time"] ?? ""));
 
     return Scaffold(
-      backgroundColor: const Color(0xffF7F7F7),
+      backgroundColor: Colors.black, // 🔥 DARK MODE
 
       body: SafeArea(
         child: Column(
           children: [
 
+            /// 🔥 HEADER
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
               child: Row(
@@ -29,198 +30,215 @@ class ChatsPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Colors.white, // 🔥 blanco
                     ),
                   ),
                 ],
               ),
             ),
 
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: chats.length,
+            /// 🔥 SI NO HAY CHATS
+            if (chats.isEmpty)
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    "No tienes mensajes aún 🐶",
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ),
+              )
 
-                itemBuilder: (context, index) {
+            /// 🔥 LISTA
+            else
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: chats.length,
 
-                  final chat = chats[index];
+                  itemBuilder: (context, index) {
 
-                  /// 🔥 AHORA SOLO VISUAL (NO FUNCIONAL)
-                  final lastMessage = chat["lastMessage"] ?? "";
-                  final isAudio = lastMessage.contains("🎤");
+                    final chat = chats[index];
 
-                  return TweenAnimationBuilder(
-                    duration: Duration(milliseconds: 300 + (index * 50)),
-                    tween: Tween<double>(begin: 0, end: 1),
+                    final lastMessage = chat["lastMessage"] ?? "";
+                    final isAudio = lastMessage.contains("🎤");
 
-                    builder: (context, value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset(0, 20 * (1 - value)),
-                          child: child,
-                        ),
-                      );
-                    },
+                    /// 🔥 PROTECCIÓN
+                    final image = chat["image"];
 
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatDetailPage(
-                              name: chat["name"],
-                              image: chat["image"],
-                            ),
+                    return TweenAnimationBuilder(
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      tween: Tween<double>(begin: 0, end: 1),
+
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 20 * (1 - value)),
+                            child: child,
                           ),
                         );
                       },
 
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(12),
-
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                            )
-                          ],
-                        ),
-
-                        child: Row(
-                          children: [
-
-                            /// FOTO
-                            Stack(
-                              children: [
-                                CircleAvatar(
-                                  radius: 28,
-                                  backgroundImage:
-                                      NetworkImage(chat["image"]),
-                                ),
-
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      color: Colors.green,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            /// INFO
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-
-                                  Row(
-                                    children: [
-                                      Text(
-                                        chat["name"],
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-
-                                      const SizedBox(width: 5),
-
-                                      const Icon(Icons.verified,
-                                          color: Colors.blue, size: 16),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 4),
-
-                                  /// 🔥 SOLO VISUAL (NO AUDIO REAL)
-                                  Row(
-                                    children: [
-
-                                      if (isAudio)
-                                        const Icon(Icons.play_arrow,
-                                            size: 16,
-                                            color: Colors.grey),
-
-                                      if (isAudio)
-                                        const SizedBox(width: 4),
-
-                                      Expanded(
-                                        child: Text(
-                                          isAudio
-                                              ? "Audio"
-                                              : lastMessage,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatDetailPage(
+                                name: chat["name"] ?? "",
+                                image: chat["image"] ?? "",
                               ),
                             ),
+                          );
+                        },
 
-                            /// DERECHA
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
 
-                                Text(
-                                  chat["time"] ?? "",
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05), // 🔥 glass
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.08),
+                            ),
+                          ),
+
+                          child: Row(
+                            children: [
+
+                              /// FOTO
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: Colors.grey[900],
+                                    backgroundImage: image != null
+                                        ? NetworkImage(image)
+                                        : null,
                                   ),
-                                ),
 
-                                const SizedBox(height: 6),
-
-                                if ((chat["unread"] ?? 0) > 0)
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Text(
-                                      chat["unread"].toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: Colors.greenAccent,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.black,
+                                          width: 2,
+                                        ),
                                       ),
                                     ),
+                                  )
+                                ],
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              /// INFO
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            chat["name"] ?? "",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color: Colors.white,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 5),
+
+                                        const Icon(Icons.verified,
+                                            color: Colors.blue, size: 16),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 4),
+
+                                    Row(
+                                      children: [
+
+                                        if (isAudio)
+                                          const Icon(Icons.play_arrow,
+                                              size: 16,
+                                              color: Colors.white54),
+
+                                        if (isAudio)
+                                          const SizedBox(width: 4),
+
+                                        Expanded(
+                                          child: Text(
+                                            isAudio
+                                                ? "Audio"
+                                                : lastMessage,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white54,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              /// DERECHA
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+
+                                  Text(
+                                    chat["time"] ?? "",
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white38,
+                                    ),
                                   ),
-                              ],
-                            )
-                          ],
+
+                                  const SizedBox(height: 6),
+
+                                  if ((chat["unread"] ?? 0) > 0)
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.redAccent,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Text(
+                                        chat["unread"].toString(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              )
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),

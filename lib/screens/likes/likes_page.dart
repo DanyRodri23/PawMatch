@@ -10,7 +10,7 @@ class LikesPage extends StatelessWidget {
     final likes = AppData.likedPets;
 
     return Scaffold(
-      backgroundColor: const Color(0xffF7F7F7),
+      backgroundColor: Colors.black, // 🔥 DARK MODE
 
       body: SafeArea(
         child: Padding(
@@ -26,6 +26,7 @@ class LikesPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white, // 🔥 blanco
                 ),
               ),
 
@@ -34,7 +35,7 @@ class LikesPage extends StatelessWidget {
               const Text(
                 "Estas mascotas están interesadas en la tuya",
                 style: TextStyle(
-                  color: Colors.black54,
+                  color: Colors.white54, // 🔥 gris claro
                 ),
               ),
 
@@ -49,7 +50,7 @@ class LikesPage extends StatelessWidget {
                       children: const [
 
                         Icon(Icons.favorite_border,
-                            size: 80, color: Colors.grey),
+                            size: 80, color: Colors.white38),
 
                         SizedBox(height: 15),
 
@@ -58,6 +59,7 @@ class LikesPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
 
@@ -65,7 +67,7 @@ class LikesPage extends StatelessWidget {
 
                         Text(
                           "Sigue explorando para encontrar matches 🐾",
-                          style: TextStyle(color: Colors.black54),
+                          style: TextStyle(color: Colors.white54),
                         ),
 
                       ],
@@ -91,18 +93,24 @@ class LikesPage extends StatelessWidget {
 
                       final pet = likes[index];
 
+                      /// 🔥 PROTECCIÓN ANTI-CRASH
+                      final images = pet["images"];
+                      final imageUrl = (images != null &&
+                              images is List &&
+                              images.isNotEmpty)
+                          ? images[0]
+                          : null;
+
                       return GestureDetector(
-                        onTap: () {
-                          // 🔥 después abrimos perfil completo
-                        },
+                        onTap: () {},
 
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
+                                color: Colors.black.withValues(alpha: 0.6),
+                                blurRadius: 20,
                               )
                             ],
                           ),
@@ -113,15 +121,19 @@ class LikesPage extends StatelessWidget {
                             child: Stack(
                               children: [
 
-                                /// 🔥 IMAGEN
+                                /// 🔥 IMAGEN SEGURA
                                 Positioned.fill(
-                                  child: Image.network(
-                                    pet["images"][0],
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: imageUrl != null
+                                      ? Image.network(
+                                          imageUrl,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Container(
+                                          color: Colors.grey[900],
+                                        ),
                                 ),
 
-                                /// 🔥 GRADIENTE
+                                /// 🔥 GRADIENTE PRO
                                 Positioned.fill(
                                   child: Container(
                                     decoration: const BoxDecoration(
@@ -129,7 +141,7 @@ class LikesPage extends StatelessWidget {
                                         begin: Alignment.bottomCenter,
                                         end: Alignment.center,
                                         colors: [
-                                          Colors.black54,
+                                          Colors.black87,
                                           Colors.transparent,
                                         ],
                                       ),
@@ -137,21 +149,21 @@ class LikesPage extends StatelessWidget {
                                   ),
                                 ),
 
-                                /// 🔥 CORAZÓN TOP
+                                /// 🔥 CORAZÓN
                                 const Positioned(
                                   top: 10,
                                   right: 10,
                                   child: Icon(
                                     Icons.favorite,
-                                    color: Colors.red,
+                                    color: Colors.redAccent,
                                   ),
                                 ),
 
                                 /// 🔥 INFO
                                 Positioned(
-                                  bottom: 10,
-                                  left: 10,
-                                  right: 10,
+                                  bottom: 12,
+                                  left: 12,
+                                  right: 12,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -159,16 +171,17 @@ class LikesPage extends StatelessWidget {
 
                                       Row(
                                         children: [
-                                          Text(
-                                            "${pet["name"]}, ${pet["age"]}${pet["ageType"]}",
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
+                                          Expanded(
+                                            child: Text(
+                                              "${pet["name"] ?? ""}, ${pet["age"] ?? ""}${pet["ageType"] ?? ""}",
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-
-                                          const SizedBox(width: 5),
 
                                           if (pet["pedigree"] == true)
                                             const Icon(
@@ -182,7 +195,7 @@ class LikesPage extends StatelessWidget {
                                       const SizedBox(height: 3),
 
                                       Text(
-                                        pet["breed"],
+                                        pet["breed"] ?? "",
                                         style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 13,
@@ -192,7 +205,7 @@ class LikesPage extends StatelessWidget {
                                       const SizedBox(height: 3),
 
                                       Text(
-                                        pet["distance"],
+                                        pet["distance"] ?? "",
                                         style: const TextStyle(
                                           color: Colors.white54,
                                           fontSize: 12,

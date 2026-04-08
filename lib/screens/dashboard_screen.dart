@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pawmatch/screens/hotels/hotels_screen.dart';
-import 'package:pawmatch/screens/parks/parks_screen.dart';
+import 'package:pawmatch/screens/hotels/hotels_entry_screen.dart';
+import 'package:pawmatch/screens/parks/parks_entry_screen.dart';
 import 'dart:ui';
 
 import 'match/match_page.dart';
@@ -32,8 +32,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const ChatsPage(),
     const CommunityScreen(),
     const ProfilePage(),
-    const ParksScreen(),
-    const HotelsScreen(),
+
+    /// 🔥 AQUÍ ESTÁ LA CLAVE
+    const ParksEntryScreen(),
+    const HotelsEntryScreen(),
   ];
 
   @override
@@ -63,13 +65,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               right: 0,
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // 🔥 MÁS FINO
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // 🔥 MÁS DELGADO
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(30),
@@ -78,13 +80,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
 
-                        /// 🔥 FILA PRINCIPAL
                         child: SizedBox(
                           height: 48,
                           child: Row(
                             children: [
 
-                              /// 🔥 BOTÓN FILTRO
+                              /// 🔥 FILTRO
                               IconButton(
                                 icon: const Icon(Icons.tune, color: Colors.white),
                                 onPressed: () {
@@ -94,7 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 },
                               ),
 
-                              /// 🔥 TABS SCROLL (CENTRADOS PERFECTO)
+                              /// 🔥 TABS
                               Expanded(
                                 child: Center(
                                   child: SizedBox(
@@ -173,7 +174,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔥 TAB ESTILO TINDER
   Widget _tab(String text, int index) {
     final isSelected = currentIndex == index;
 
@@ -191,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Text(
           text,
           style: TextStyle(
-            fontSize: 14, // 🔥 MÁS GRANDE
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: isSelected ? Colors.white : Colors.white54,
           ),

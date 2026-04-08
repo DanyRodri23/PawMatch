@@ -1,126 +1,130 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'hotels_screen.dart';
+import 'package:video_player/video_player.dart';
 
-class IntroHotelsScreen extends StatelessWidget {
-  const IntroHotelsScreen({super.key});
+class IntroHotelsScreen extends StatefulWidget {
+  final VoidCallback onFinish;
+
+  const IntroHotelsScreen({super.key, required this.onFinish});
+
+  @override
+  State<IntroHotelsScreen> createState() => _IntroHotelsScreenState();
+}
+
+class _IntroHotelsScreenState extends State<IntroHotelsScreen> {
+
+  late VideoPlayerController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = VideoPlayerController.asset("assets/videos/hotels_intro.mp4")
+      ..initialize().then((_) {
+        setState(() {});
+        controller.play();
+        controller.setLooping(true);
+      });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: Colors.black,
-
       body: Stack(
         children: [
 
-          /// 🌄 IMAGEN DE FONDO
-          Positioned.fill(
-            child: Image.network(
-              "https://images.unsplash.com/photo-1566073771259-6a8506099945",
-              fit: BoxFit.cover,
+          /// 🎬 VIDEO
+          if (controller.value.isInitialized)
+            Positioned.fill(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller.value.size.width,
+                  height: controller.value.size.height,
+                  child: VideoPlayer(controller),
+                ),
+              ),
             ),
-          ),
 
-          /// 🌑 OVERLAY MÁS PRO
+          /// 🌑 GRADIENTE
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
+                  end: Alignment.center,
                   colors: [
-                    Colors.black.withValues(alpha: 0.85),
-                    Colors.black.withValues(alpha: 0.3),
+                    Colors.black,
+                    Colors.transparent,
                   ],
                 ),
               ),
             ),
           ),
 
-          /// 📱 CONTENIDO
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          /// 🧠 TEXTO
+          Positioned(
+            bottom: 140,
+            left: 20,
+            right: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "Viaja sin límites 🏨",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "Encuentra hoteles pet-friendly para disfrutar con tu mascota.",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-                  const Spacer(),
-
-                  /// 🏨 TÍTULO
-                  const Text(
-                    "Pet-Friendly Hotels 🏨",
+          /// 🚀 BOTÓN
+          Positioned(
+            bottom: 50,
+            left: 20,
+            right: 20,
+            child: GestureDetector(
+              onTap: widget.onFinish,
+              child: Container(
+                height: 55,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.blueAccent, Colors.blue],
+                  ),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Center(
+                  child: Text(
+                    "Buscar hoteles",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      height: 1.2,
+                      fontSize: 18,
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
-                  /// 📄 DESCRIPCIÓN
-                  const Text(
-                    "Encuentra hoteles ideales para ti y tu mascota.",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 15,
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  /// 🔘 BOTÓN
-                  GestureDetector(
-                    onTap: () async {
-
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('seenHotelsIntro', true);
-
-                      /// 🔥 FIX WARNING
-                      if (!context.mounted) return;
-
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HotelsScreen(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Colors.blue, Colors.purple],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                          )
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          "Explorar hoteles",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

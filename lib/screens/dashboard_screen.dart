@@ -7,7 +7,11 @@ import 'profile/profile_page.dart';
 import 'chats/chats_page.dart';
 import 'community/community_screen.dart';
 import 'likes/likes_page.dart';
-import 'home/home_screen.dart';
+import 'package:pawmatch/screens/news/news_screen.dart';
+
+// 🔥 CAMBIO AQUÍ (IMPORTS)
+import 'package:pawmatch/screens/parks/parks_entry_screen.dart';
+import 'package:pawmatch/screens/hotels/hotels_entry_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,13 +27,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<MatchPageState> matchKey = GlobalKey<MatchPageState>();
 
   late final List<Widget> pages = [
-    const HomeScreen(),
-    const DiscoverPage(),
-    MatchPage(key: matchKey),
-    const LikesPage(),
-    const ChatsPage(),
-    const CommunityScreen(),
-    const ProfilePage(),
+    NewsScreen(), // 0
+    const DiscoverPage(), // 1
+    MatchPage(key: matchKey), // 2
+    const LikesPage(), // 3
+    const ChatsPage(), // 4
+    const CommunityScreen(), // 5
+    const ProfilePage(), // 6
+    IntroParksScreen(), // 🔥 CAMBIO
+    const HotelsEntryScreen(), // 🔥 CAMBIO
   ];
 
   @override
@@ -45,7 +51,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           /// 🔥 CONTENIDO
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
-            child: pages[currentIndex],
+            child: KeyedSubtree(
+              key: ValueKey(currentIndex),
+              child: pages[currentIndex],
+            ),
           ),
 
           /// 🔥 HEADER SOLO EN MATCH
@@ -64,14 +73,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08), // 🔥 vidrio
+                          color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
                             color: Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
 
                             IconButton(
@@ -83,15 +91,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               },
                             ),
 
-                            Row(
-                              children: [
-                                _tab("Para ti", 2),
-                                _tab("Noticias", 0),
-                                _tab("Comunidad", 5),
-                              ],
+                            /// 🔥 TABS SCROLL (IGUAL, NO CAMBIADO)
+                            Expanded(
+                              child: SizedBox(
+                                height: 40,
+                                child: ListView(
+                                  scrollDirection: Axis.horizontal,
+                                  children: [
+                                    _tab("Para ti", 2),
+                                    _tab("Noticias", 0),
+                                    _tab("Comunidad", 5),
+                                    _tab("Parques", 7),
+                                    _tab("Hoteles", 8),
+                                  ],
+                                ),
+                              ),
                             ),
 
-                            const SizedBox(width: 30),
                           ],
                         ),
                       ),
@@ -103,7 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
 
-      /// 🔥 NAVBAR VIDRIO (IGUAL ARRIBA)
+      /// 🔥 NAVBAR (SIN CAMBIOS)
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(14),
         child: ClipRRect(
@@ -113,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Container(
               height: 70,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08), // 🔥 igual que header
+                color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.15),
@@ -157,7 +173,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return GestureDetector(
       onTap: () => setState(() => currentIndex = index),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Text(
           text,
           style: TextStyle(

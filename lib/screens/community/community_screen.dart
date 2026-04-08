@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../data/social_data.dart';
 import 'package:flutter/services.dart';
@@ -32,66 +33,45 @@ class _CommunityScreenState extends State<CommunityScreen> {
     });
   }
 
-  /// PERFIL REAL
-  void openProfile(UserModel user) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(user.name)),
-          body: Center(
-            child: Text(
-              "Perfil de ${user.name}",
-              style: const TextStyle(fontSize: 22),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// STORIES
+  /// 🔥 STORIES
   Widget buildStories() {
     return SizedBox(
-      height: 100,
+      height: 110,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: SocialData.users.length,
         padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: SocialData.users.length,
         itemBuilder: (_, i) {
 
           final user = SocialData.users[i];
 
-          return GestureDetector(
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Column(
-                children: [
+          return Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: Column(
+              children: [
 
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Colors.pink, Colors.orange],
-                      ),
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.pets, color: Colors.black),
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Colors.blue, Colors.purple],
                     ),
                   ),
+                  child: const CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.black,
+                    child: Icon(Icons.pets, color: Colors.white),
+                  ),
+                ),
 
-                  const SizedBox(height: 6),
+                const SizedBox(height: 6),
 
-                  Text(
-                    user.name,
-                    style: const TextStyle(fontSize: 11),
-                  )
-                ],
-              ),
+                Text(
+                  user.name,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                )
+              ],
             ),
           );
         },
@@ -99,14 +79,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  /// POST PRO
+  /// 🔥 POST NIVEL DIOS
   Widget buildPost(PostModel post) {
 
-    final user = SocialData.users
-        .firstWhere((u) => u.id == post.userId);
-
+    final user = SocialData.users.firstWhere((u) => u.id == post.userId);
     final isLiked = post.likes.contains(SocialData.currentUserId);
-
     final isSaved = savedPosts[post.id] ?? false;
 
     final currentUser = SocialData.users
@@ -114,184 +91,211 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
     final isFollowing = currentUser.following.contains(user.id);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      padding: const EdgeInsets.only(bottom: 10),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFEAEAEA)),
-        ),
-      ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
 
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
 
-          /// HEADER
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
 
-                GestureDetector(
-                  onTap: () => openProfile(user),
-                  child: const CircleAvatar(
-                    radius: 18,
-                    child: Icon(Icons.pets, size: 18),
-                  ),
-                ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
 
-                const SizedBox(width: 10),
-
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => openProfile(user),
-                    child: Text(
-                      user.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-
-                TextButton(
-                  onPressed: () => toggleFollow(user.id),
-                  child: Text(
-                    isFollowing ? "Siguiendo" : "Seguir",
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-
-                const Icon(Icons.more_horiz),
-              ],
-            ),
-          ),
-
-          /// IMAGE
-          GestureDetector(
-            onDoubleTap: () {
-              HapticFeedback.lightImpact();
-              toggleLike(post.id);
-
-              setState(() => showPaw[post.id] = true);
-
-              Future.delayed(const Duration(milliseconds: 800), () {
-                if (mounted) {
-                  setState(() => showPaw[post.id] = false);
-                }
-              });
-            },
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-
-                Image.network(
-                  post.image,
-                  height: 280,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-
-                if (showPaw[post.id] == true)
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: 1),
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.easeOut,
-                    builder: (_, value, __) {
-                      return Opacity(
-                        opacity: 1 - value,
-                        child: Transform.scale(
-                          scale: 0.7 + value,
-                          child: const Icon(
-                            Icons.pets,
-                            color: Colors.red,
-                            size: 90,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ),
-
-          /// ACTIONS
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Row(
-              children: [
-
-                IconButton(
-                  icon: Icon(
-                    Icons.favorite,
-                    color: isLiked ? Colors.red : Colors.black,
-                  ),
-                  onPressed: () => toggleLike(post.id),
-                ),
-
-                IconButton(
-                  icon: const Icon(Icons.mode_comment_outlined),
-                  onPressed: () {},
-                ),
-
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () {},
-                ),
-
-                const Spacer(),
-
-                IconButton(
-                  icon: Icon(
-                    isSaved
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
-                  ),
-                  onPressed: () => toggleSave(post.id),
-                ),
-              ],
-            ),
-          ),
-
-          /// LIKES
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Text(
-              "${post.likes.length} likes",
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          /// DESCRIPTION
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(color: Colors.black),
-                children: [
-                  TextSpan(
-                    text: "${user.name} ",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: post.description),
-                ],
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
-          ),
 
-          const SizedBox(height: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
 
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14),
-            child: Text(
-              "Hace 2 minutos",
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+                /// HEADER
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+
+                      const CircleAvatar(
+                        backgroundColor: Colors.grey,
+                        child: Icon(Icons.pets, color: Colors.white),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: Text(
+                          user.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      GestureDetector(
+                        onTap: () => toggleFollow(user.id),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isFollowing ? Colors.grey[800] : Colors.blue,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            isFollowing ? "Siguiendo" : "Seguir",
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+                      const Icon(Icons.more_vert, color: Colors.white)
+                    ],
+                  ),
+                ),
+
+                /// IMAGEN + EFECTOS
+                GestureDetector(
+                  onDoubleTap: () {
+                    HapticFeedback.lightImpact();
+                    toggleLike(post.id);
+
+                    setState(() => showPaw[post.id] = true);
+
+                    Future.delayed(const Duration(milliseconds: 800), () {
+                      if (mounted) {
+                        setState(() => showPaw[post.id] = false);
+                      }
+                    });
+                  },
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.network(
+                          post.image,
+                          height: 320,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+
+                      /// 🐾 HUELLA GLOW
+                      if (showPaw[post.id] == true)
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 800),
+                          builder: (_, value, __) {
+                            return Opacity(
+                              opacity: 1 - value,
+                              child: Transform.scale(
+                                scale: 0.7 + value,
+                                child: const Icon(
+                                  Icons.pets,
+                                  color: Colors.red,
+                                  size: 110,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.red,
+                                      blurRadius: 40,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+
+                      /// 🔥 BOTONES FLOTANTES
+                      Positioned(
+                        bottom: 15,
+                        left: 15,
+                        right: 15,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            children: [
+
+                              IconButton(
+                                icon: Icon(
+                                  Icons.pets,
+                                  color: isLiked ? Colors.red : Colors.white,
+                                ),
+                                onPressed: () => toggleLike(post.id),
+                              ),
+
+                              IconButton(
+                                icon: const Icon(Icons.mode_comment_outlined, color: Colors.white),
+                                onPressed: () {},
+                              ),
+
+                              IconButton(
+                                icon: const Icon(Icons.send, color: Colors.white),
+                                onPressed: () {},
+                              ),
+
+                              const Spacer(),
+
+                              IconButton(
+                                icon: Icon(
+                                  isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () => toggleSave(post.id),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                /// TEXTO
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+
+                      Text(
+                        "${post.likes.length} likes",
+                        style: const TextStyle(color: Colors.white),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "${user.name} ",
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: post.description),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -302,21 +306,37 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final posts = SocialData.posts;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0D0D0D),
 
       body: SafeArea(
-        child: ListView(
+        child: Column(
           children: [
 
-            /// HEADER
-            const Padding(
-              padding: EdgeInsets.all(14),
-              child: Text(
-                "PawMatch",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+            /// HEADER PRO
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+
+                  const Text(
+                    "PawMatch",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.notifications_none, color: Colors.white),
+                  )
+                ],
               ),
             ),
 
@@ -324,7 +344,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
             const SizedBox(height: 10),
 
-            ...posts.map((post) => buildPost(post)),
+            Expanded(
+              child: ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                itemCount: posts.length,
+                itemBuilder: (_, i) => buildPost(posts[i]),
+              ),
+            )
           ],
         ),
       ),

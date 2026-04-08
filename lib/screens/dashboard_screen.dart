@@ -34,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const ChatsPage(), // 4
     const CommunityScreen(), // 5
     const ProfilePage(), // 6
-    IntroParksScreen(), // 🔥 CAMBIO
+    const ParksEntryScreen(), // 🔥 CAMBIO
     const HotelsEntryScreen(), // 🔥 CAMBIO
   ];
 
@@ -60,18 +60,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           /// 🔥 HEADER SOLO EN MATCH
           if (currentIndex == 2)
             Positioned(
-              top: 0,
+              top: 20,
               left: 0,
               right: 0,
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(30),

@@ -180,7 +180,7 @@ class MatchPageState extends State<MatchPage>
 
           /// BOTONES
           Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.14,
+            bottom: MediaQuery.of(context).size.height * 0.13,
             left: 0,
             right: 0,
             child: Row(

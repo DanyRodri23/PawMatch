@@ -26,7 +26,7 @@ class PetDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pet = ModalRoute.of(context)!.settings.arguments as Pet;
-    final gallery = pet.gallery ?? [];
+    final gallery = pet.gallery;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -49,7 +49,7 @@ class PetDetailScreen extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.9),
+                  Colors.black.withValues(alpha: 0.9),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,

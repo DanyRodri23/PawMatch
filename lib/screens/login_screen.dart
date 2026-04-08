@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:pawmatch/screens/dashboard_screen.dart';
 import 'register_screen.dart';
 import 'auth/phone_number_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -251,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        const RegisterScreen(),
+                                        const DashboardScreen(),
                                   ),
                                 );
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:pawmatch/screens/parks/parks_screen.dart';
-import 'package:pawmatch/screens/parks/intro_parks_screen.dart';
+import 'parks_screen.dart';
+import 'intro_parks_screen.dart';
 
 class ParksEntryScreen extends StatefulWidget {
   const ParksEntryScreen({super.key});
@@ -12,17 +12,18 @@ class ParksEntryScreen extends StatefulWidget {
 }
 
 class _ParksEntryScreenState extends State<ParksEntryScreen> {
+
   bool? seen;
 
   @override
   void initState() {
     super.initState();
-    _checkIntro();
+    checkIfSeen();
   }
 
-  Future<void> _checkIntro() async {
+  Future<void> checkIfSeen() async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getBool('seen_parks_intro') ?? false;
+    final value = prefs.getBool('parks_intro_seen') ?? false;
 
     setState(() {
       seen = value;
@@ -31,17 +32,29 @@ class _ParksEntryScreenState extends State<ParksEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    /// 🔄 LOADING
     if (seen == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
-    if (seen!) {
-      return const ParksScreen();
-    } else {
-      return const IntroParksScreen();
-    }
+    /// 🔥 FLUJO PRINCIPAL
+    return seen!
+        ? const ParksScreen()
+        : IntroParksScreen(
+            onFinish: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('parks_intro_seen', true);
+
+              setState(() {
+                seen = true;
+              });
+            },
+          );
   }
 }

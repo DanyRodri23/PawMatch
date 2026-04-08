@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pawmatch/screens/hotels/hotels_screen.dart';
+import 'package:pawmatch/screens/parks/parks_screen.dart';
 import 'dart:ui';
 
 import 'match/match_page.dart';
@@ -7,11 +9,7 @@ import 'profile/profile_page.dart';
 import 'chats/chats_page.dart';
 import 'community/community_screen.dart';
 import 'likes/likes_page.dart';
-import 'package:pawmatch/screens/news/news_screen.dart';
-
-// 🔥 CAMBIO AQUÍ (IMPORTS)
-import 'package:pawmatch/screens/parks/parks_entry_screen.dart';
-import 'package:pawmatch/screens/hotels/hotels_entry_screen.dart';
+import 'news/news_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,15 +25,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<MatchPageState> matchKey = GlobalKey<MatchPageState>();
 
   late final List<Widget> pages = [
-    NewsScreen(), // 0
-    const DiscoverPage(), // 1
-    MatchPage(key: matchKey), // 2
-    const LikesPage(), // 3
-    const ChatsPage(), // 4
-    const CommunityScreen(), // 5
-    const ProfilePage(), // 6
-    const ParksEntryScreen(), // 🔥 CAMBIO
-    const HotelsEntryScreen(), // 🔥 CAMBIO
+    NewsScreen(),
+    const DiscoverPage(),
+    MatchPage(key: matchKey),
+    const LikesPage(),
+    const ChatsPage(),
+    const CommunityScreen(),
+    const ProfilePage(),
+    const ParksScreen(),
+    const HotelsScreen(),
   ];
 
   @override
@@ -60,18 +58,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           /// 🔥 HEADER SOLO EN MATCH
           if (currentIndex == 2)
             Positioned(
-              top: 20,
+              top: 0,
               left: 0,
               right: 0,
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // 🔥 MÁS FINO
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // 🔥 MÁS DELGADO
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(30),
@@ -79,36 +77,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             color: Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
-                        child: Row(
-                          children: [
 
-                            IconButton(
-                              icon: const Icon(Icons.tune, color: Colors.white),
-                              onPressed: () {
-                                if (currentIndex == 2) {
-                                  matchKey.currentState?.openFilters();
-                                }
-                              },
-                            ),
+                        /// 🔥 FILA PRINCIPAL
+                        child: SizedBox(
+                          height: 48,
+                          child: Row(
+                            children: [
 
-                            /// 🔥 TABS SCROLL (IGUAL, NO CAMBIADO)
-                            Expanded(
-                              child: SizedBox(
-                                height: 40,
-                                child: ListView(
-                                  scrollDirection: Axis.horizontal,
-                                  children: [
-                                    _tab("Para ti", 2),
-                                    _tab("Noticias", 0),
-                                    _tab("Comunidad", 5),
-                                    _tab("Parques", 7),
-                                    _tab("Hoteles", 8),
-                                  ],
+                              /// 🔥 BOTÓN FILTRO
+                              IconButton(
+                                icon: const Icon(Icons.tune, color: Colors.white),
+                                onPressed: () {
+                                  if (currentIndex == 2) {
+                                    matchKey.currentState?.openFilters();
+                                  }
+                                },
+                              ),
+
+                              /// 🔥 TABS SCROLL (CENTRADOS PERFECTO)
+                              Expanded(
+                                child: Center(
+                                  child: SizedBox(
+                                    height: 40,
+                                    child: ListView(
+                                      scrollDirection: Axis.horizontal,
+                                      physics: const BouncingScrollPhysics(),
+                                      children: [
+                                        _tab("Para ti", 2),
+                                        _tab("Noticias", 0),
+                                        _tab("Comunidad", 5),
+                                        _tab("Parques", 7),
+                                        _tab("Hoteles", 8),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
 
-                          ],
+                              const SizedBox(width: 10),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -119,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
 
-      /// 🔥 NAVBAR (SIN CAMBIOS)
+      /// 🔥 NAVBAR
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(14),
         child: ClipRRect(
@@ -138,13 +146,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-
                   _navItem(Icons.pets, 2),
                   _navItem(Icons.search, 1),
                   _navItem(Icons.favorite, 3),
                   _navItem(Icons.chat_bubble_outline, 4),
                   _navItem(Icons.person, 6),
-
                 ],
               ),
             ),
@@ -167,16 +173,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  /// 🔥 TAB ESTILO TINDER
   Widget _tab(String text, int index) {
     final isSelected = currentIndex == index;
 
     return GestureDetector(
       onTap: () => setState(() => currentIndex = index),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.white.withValues(alpha: 0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Text(
           text,
           style: TextStyle(
+            fontSize: 14, // 🔥 MÁS GRANDE
             fontWeight: FontWeight.bold,
             color: isSelected ? Colors.white : Colors.white54,
           ),

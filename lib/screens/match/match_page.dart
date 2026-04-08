@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 
 import 'match_success_screen.dart';
 import '../../data/app_data.dart';
@@ -25,7 +24,7 @@ class MatchPageState extends State<MatchPage>
     {
       "name": "Luna",
       "age": 2,
-      "distance": "3 km",
+      "distance": "A 3 km de distancia",
       "images": [
         "https://images.unsplash.com/photo-1558788353-f76d92427f16",
         "https://images.unsplash.com/photo-1548199973-03cce0bbc87b",
@@ -91,6 +90,10 @@ class MatchPageState extends State<MatchPage>
 
   @override
   Widget build(BuildContext context) {
+
+    final size = MediaQuery.of(context).size;
+    final padding = MediaQuery.of(context).padding;
+
     return Scaffold(
       backgroundColor: Colors.black,
 
@@ -125,7 +128,7 @@ class MatchPageState extends State<MatchPage>
               }
             },
             onTapUp: (details) {
-              final width = MediaQuery.of(context).size.width;
+              final width = size.width;
               details.localPosition.dx < width / 2
                   ? prevPhoto()
                   : nextPhoto();
@@ -139,48 +142,9 @@ class MatchPageState extends State<MatchPage>
             ),
           ),
 
-          /// HEADER
+          /// 🔥 BOTONES PRO (BIEN POSICIONADOS)
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Icon(Icons.tune, color: Colors.white),
-                          Text(
-                            "Para ti",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          Icon(Icons.bolt, color: Colors.purple),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          /// BOTONES
-          Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.13,
+            bottom: padding.bottom + size.height * 0.01,
             left: 0,
             right: 0,
             child: Row(
@@ -199,11 +163,16 @@ class MatchPageState extends State<MatchPage>
 
   /// CARD PRO
   Widget _buildCard(int index) {
+
+    final size = MediaQuery.of(context).size;
     final data = pets[index];
     final imgs = List<String>.from(data["images"]);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 40),
+      margin: EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: size.height * 0.04,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
@@ -224,8 +193,6 @@ class MatchPageState extends State<MatchPage>
               child: Image.network(
                 imgs[currentPhoto],
                 fit: BoxFit.cover,
-                alignment: Alignment.topCenter,
-                filterQuality: FilterQuality.high,
               ),
             ),
 
@@ -245,9 +212,9 @@ class MatchPageState extends State<MatchPage>
               ),
             ),
 
-            /// 🔥 BARRA TINDER REAL
+            /// 🔥 BARRA FOTOS PRO
             Positioned(
-              top: 70,
+              top: size.height * 0.09,
               left: 16,
               right: 16,
               child: Row(
@@ -257,12 +224,12 @@ class MatchPageState extends State<MatchPage>
                   return Expanded(
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      height: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      height: 3,
                       decoration: BoxDecoration(
                         color: isActive
                             ? Colors.white
-                            : Colors.white.withValues(alpha: 0.2),
+                            : Colors.white.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
@@ -273,7 +240,7 @@ class MatchPageState extends State<MatchPage>
 
             /// INFO
             Positioned(
-              bottom: 120,
+              bottom: size.height * 0.22,
               left: 20,
               right: 20,
               child: Column(
@@ -286,7 +253,7 @@ class MatchPageState extends State<MatchPage>
                         "${data["name"]}, ${data["age"]}",
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 34,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -330,7 +297,7 @@ class MatchPageState extends State<MatchPage>
             /// BOTÓN DETALLE
             Positioned(
               right: 20,
-              bottom: 200,
+              bottom: size.height * 0.22,
               child: GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -355,54 +322,6 @@ class MatchPageState extends State<MatchPage>
                 ),
               ),
             ),
-
-            /// LIKE
-            if (position > 20)
-              Positioned(
-                top: 100,
-                left: 20,
-                child: Transform.rotate(
-                  angle: -0.3,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.green, width: 3),
-                    ),
-                    child: const Text(
-                      "LIKE",
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-            /// NOPE
-            if (position < -20)
-              Positioned(
-                top: 100,
-                right: 20,
-                child: Transform.rotate(
-                  angle: 0.3,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.red, width: 3),
-                    ),
-                    child: const Text(
-                      "NOPE",
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -413,8 +332,8 @@ class MatchPageState extends State<MatchPage>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 58,
-        height: 58,
+        width: 62,
+        height: 62,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.black.withValues(alpha: 0.7),
@@ -425,7 +344,7 @@ class MatchPageState extends State<MatchPage>
             )
           ],
         ),
-        child: Icon(icon, color: color, size: 32),
+        child: Icon(icon, color: color, size: 34),
       ),
     );
   }

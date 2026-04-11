@@ -4,25 +4,30 @@ import 'package:video_player/video_player.dart';
 class IntroParksScreen extends StatefulWidget {
   final VoidCallback onFinish;
 
-  const IntroParksScreen({super.key, required this.onFinish});
+  const IntroParksScreen({
+    super.key,
+    required this.onFinish,
+  });
 
   @override
   State<IntroParksScreen> createState() => _IntroParksScreenState();
 }
 
 class _IntroParksScreenState extends State<IntroParksScreen> {
-
   late VideoPlayerController controller;
 
   @override
   void initState() {
     super.initState();
 
-    controller = VideoPlayerController.asset("assets/videos/parks_intro.mp4")
-      ..initialize().then((_) {
+    controller = VideoPlayerController.asset(
+      "assets/videos/parks_intro.mp4",
+    )..initialize().then((_) {
         setState(() {});
-        controller.play();
-        controller.setLooping(true);
+        controller
+          ..play()
+          ..setLooping(true)
+          ..setVolume(0);
       });
   }
 
@@ -34,13 +39,14 @@ class _IntroParksScreenState extends State<IntroParksScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
 
-          /// 🎬 VIDEO
+          /// 🎬 VIDEO FULLSCREEN
           if (controller.value.isInitialized)
             Positioned.fill(
               child: FittedBox(
@@ -53,76 +59,114 @@ class _IntroParksScreenState extends State<IntroParksScreen> {
               ),
             ),
 
-          /// 🌑 GRADIENTE
+          /// 🌑 OVERLAY PREMIUM
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.center,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black,
-                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.15),
+                    Colors.black.withValues(alpha: 0.25),
+                    Colors.black.withValues(alpha: 0.88),
                   ],
                 ),
               ),
             ),
           ),
 
-          /// 🧠 TEXTO
+          /// 🌿 CONTENIDO
           Positioned(
-            bottom: 140,
-            left: 20,
-            right: 20,
+            left: 24,
+            right: 24,
+            bottom: bottomSafe + 105,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  "Explora nuevos mundos 🌿",
+              children: [
+
+                /// ICONO FEATURE
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.greenAccent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.greenAccent.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.park_rounded,
+                    color: Colors.greenAccent,
+                    size: 30,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                /// TITULO
+                const Text(
+                  "Explora nuevos\nmundos",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
+                    letterSpacing: -1,
                   ),
                 ),
-                SizedBox(height: 10),
-                Text(
-                  "Descubre parques increíbles y espacios ideales para tu mascota.",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          /// 🚀 BOTÓN
-          Positioned(
-            bottom: 50,
-            left: 20,
-            right: 20,
-            child: GestureDetector(
-              onTap: widget.onFinish,
-              child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.greenAccent, Colors.green],
+                const SizedBox(height: 14),
+
+                /// SUBTITULO
+                Text(
+                  "Descubre parques increíbles y espacios ideales para que tu mascota corra, juegue y socialice.",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontSize: 16,
+                    height: 1.5,
+                    fontWeight: FontWeight.w400,
                   ),
-                  borderRadius: BorderRadius.circular(30),
                 ),
-                child: const Center(
-                  child: Text(
-                    "Explorar parques",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+
+                const SizedBox(height: 28),
+
+                /// BOTON PRO
+                GestureDetector(
+                  onTap: widget.onFinish,
+                  child: Container(
+                    height: 58,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF7DFF9A),
+                          Color(0xFF32D957),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF32D957)
+                              .withValues(alpha: 0.35),
+                          blurRadius: 25,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "Explorar parques",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

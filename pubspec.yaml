@@ -40,6 +40,9 @@ dependencies:
   # ✅ INTRO STORAGE (IMPORTANTE)
   shared_preferences: ^2.2.2
 
+  # MAPS AND LINKS
+  url_launcher: ^6.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

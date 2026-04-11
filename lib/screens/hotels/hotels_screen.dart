@@ -1,131 +1,180 @@
 import 'package:flutter/material.dart';
+import 'hotels_by_region_screen.dart';
 
 class HotelsScreen extends StatelessWidget {
   const HotelsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-
-    final hotels = [
-      {
-        "name": "Hotel Pet Paradise",
-        "location": "Heredia",
-        "price": "₡15,000 / noche",
-        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945"
-      },
-      {
-        "name": "Dog Friendly Resort",
-        "location": "Guanacaste",
-        "price": "₡20,000 / noche",
-        "image": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b"
-      },
-      {
-        "name": "Pet Hotel Deluxe",
-        "location": "San José",
-        "price": "₡18,000 / noche",
-        "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267"
-      },
+    final provinces = [
+      {"name": "San José", "count": 3},
+      {"name": "Alajuela", "count": 3},
+      {"name": "Cartago", "count": 0},
+      {"name": "Heredia", "count": 3},
+      {"name": "Guanacaste", "count": 0},
+      {"name": "Puntarenas", "count": 0},
+      {"name": "Limón", "count": 0},
     ];
 
     return Scaffold(
       backgroundColor: Colors.black,
-
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Hotels 🏨",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
+            /// HEADER
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  const Text(
+                    "Hoteles Pet-Friendly 🏨",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    "Encuentra hospedajes ideales para tu mascota en Costa Rica.",
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// SELECTOR PAÍS
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111111),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.public, color: Colors.blueAccent),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Costa Rica",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.keyboard_arrow_down, color: Colors.white54),
+                ],
+              ),
+            ),
+
+            /// LABEL
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 10),
+              child: Text(
+                "Selecciona una región",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
 
+            /// GRID REGIONES
             Expanded(
-              child: ListView.builder(
-                itemCount: hotels.length,
+              child: GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: provinces.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 1.35,
+                ),
                 itemBuilder: (_, i) {
+                  final province = provinces[i];
 
-                  final hotel = hotels[i];
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: const Color(0xFF111111),
-                    ),
-
-                    child: Row(
-                      children: [
-
-                        ClipRRect(
-                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-                          child: Image.network(
-                            hotel["image"]!,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => HotelsByRegionScreen(
+                            region: province["name"].toString(),
                           ),
                         ),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111111),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
 
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-
-                                Text(
-                                  hotel["name"]!,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                Text(
-                                  hotel["location"]!,
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-
-                                const SizedBox(height: 8),
-
-                                Text(
-                                  hotel["price"]!,
-                                  style: const TextStyle(
-                                    color: Colors.greenAccent,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.location_city,
+                              color: Colors.blueAccent,
                             ),
                           ),
-                        ),
 
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.white.withValues(alpha: 0.6),
-                            size: 16,
+                          const Spacer(),
+
+                          Text(
+                            province["name"].toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
-                      ],
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            province["count"].toString() == "0"
+                                ? "Próximamente"
+                                : "${province["count"]} hoteles",
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.65),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
               ),
-            )
+            ),
           ],
         ),
       ),

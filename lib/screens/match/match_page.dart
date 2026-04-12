@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../data/likes_data.dart';
+import '../../data/matches_data.dart';
+
 import 'match_success_screen.dart';
-import '../../data/app_data.dart';
 import 'pet_detail_screen.dart';
 
 class MatchPage extends StatefulWidget {
@@ -22,18 +24,24 @@ class MatchPageState extends State<MatchPage>
 
   final List<Map<String, dynamic>> pets = [
     {
+      "id": "pet1",
       "name": "Luna",
       "age": 2,
       "distance": "A 3 km de distancia",
+      "pedigree": true,
+      "likedYou": true,
       "images": [
         "https://images.unsplash.com/photo-1558788353-f76d92427f16",
         "https://images.unsplash.com/photo-1548199973-03cce0bbc87b",
       ],
     },
     {
+      "id": "pet2",
       "name": "Max",
       "age": 3,
       "distance": "5 km",
+      "pedigree": true,
+      "likedYou": false,
       "images": [
         "https://images.unsplash.com/photo-1518717758536-85ae29035b6d",
       ],
@@ -41,7 +49,9 @@ class MatchPageState extends State<MatchPage>
   ];
 
   Map<String, dynamic> get pet => pets[currentIndex];
-  List<String> get images => List<String>.from(pet["images"]);
+
+  List<String> get images =>
+      List<String>.from(pet["images"]);
 
   void nextPhoto() {
     if (currentPhoto < images.length - 1) {
@@ -65,19 +75,25 @@ class MatchPageState extends State<MatchPage>
   }
 
   void swipeRight() {
-    AppData.addLike(pet);
+    final likedYou = pet["likedYou"] == true;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MatchSuccessScreen(
-          myPet: "Max",
-          otherPet: pet["name"],
-          image1: images[0],
-          image2: images[0],
+    if (likedYou) {
+      MatchesData.createMatch(pet);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MatchSuccessScreen(
+            myPet: "Max",
+            otherPet: pet["name"],
+            image1: images[0],
+            image2: images[0],
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      LikesData.sendLike(pet);
+    }
 
     nextPet();
   }
@@ -90,24 +106,22 @@ class MatchPageState extends State<MatchPage>
 
   @override
   Widget build(BuildContext context) {
-
     final size = MediaQuery.of(context).size;
     final padding = MediaQuery.of(context).padding;
 
     return Scaffold(
       backgroundColor: Colors.black,
-
       body: Stack(
         children: [
 
-          /// CARTA ATRÁS
           if (pets.length > 1)
             Transform.scale(
               scale: 0.95,
-              child: _buildCard((currentIndex + 1) % pets.length),
+              child: _buildCard(
+                (currentIndex + 1) % pets.length,
+              ),
             ),
 
-          /// CARTA PRINCIPAL
           GestureDetector(
             onPanUpdate: (details) {
               setState(() {
@@ -115,6 +129,7 @@ class MatchPageState extends State<MatchPage>
                 rotation = position * 0.001;
               });
             },
+
             onPanEnd: (_) {
               if (position > 120) {
                 swipeRight();
@@ -127,12 +142,15 @@ class MatchPageState extends State<MatchPage>
                 });
               }
             },
+
             onTapUp: (details) {
               final width = size.width;
+
               details.localPosition.dx < width / 2
                   ? prevPhoto()
                   : nextPhoto();
             },
+
             child: Transform.translate(
               offset: Offset(position, 0),
               child: Transform.rotate(
@@ -142,17 +160,29 @@ class MatchPageState extends State<MatchPage>
             ),
           ),
 
-          /// 🔥 BOTONES PRO (BIEN POSICIONADOS)
           Positioned(
             bottom: padding.bottom + size.height * 0.01,
             left: 0,
             right: 0,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceEvenly,
               children: [
-                _actionButton(Icons.close, Colors.red, swipeLeft),
-                _actionButton(Icons.star, Colors.blue, () {}),
-                _actionButton(Icons.favorite, Colors.green, swipeRight),
+                _actionButton(
+                  Icons.close,
+                  Colors.red,
+                  swipeLeft,
+                ),
+                _actionButton(
+                  Icons.star,
+                  Colors.blue,
+                  () {},
+                ),
+                _actionButton(
+                  Icons.favorite,
+                  Colors.green,
+                  swipeRight,
+                ),
               ],
             ),
           ),
@@ -161,12 +191,12 @@ class MatchPageState extends State<MatchPage>
     );
   }
 
-  /// CARD PRO
   Widget _buildCard(int index) {
-
     final size = MediaQuery.of(context).size;
+
     final data = pets[index];
-    final imgs = List<String>.from(data["images"]);
+    final imgs =
+        List<String>.from(data["images"]);
 
     return Container(
       margin: EdgeInsets.symmetric(
@@ -180,7 +210,7 @@ class MatchPageState extends State<MatchPage>
             color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 30,
             offset: const Offset(0, 20),
-          )
+          ),
         ],
       ),
       child: ClipRRect(
@@ -188,7 +218,6 @@ class MatchPageState extends State<MatchPage>
         child: Stack(
           children: [
 
-            /// IMAGEN
             Positioned.fill(
               child: Image.network(
                 imgs[currentPhoto],
@@ -196,12 +225,12 @@ class MatchPageState extends State<MatchPage>
               ),
             ),
 
-            /// GRADIENTE
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
+                    begin:
+                        Alignment.bottomCenter,
                     end: Alignment.center,
                     colors: [
                       Colors.black87,
@@ -212,54 +241,81 @@ class MatchPageState extends State<MatchPage>
               ),
             ),
 
-            /// 🔥 BARRA FOTOS PRO
             Positioned(
               top: size.height * 0.09,
               left: 16,
               right: 16,
               child: Row(
-                children: List.generate(imgs.length, (i) {
-                  final isActive = i == currentPhoto;
+                children: List.generate(
+                  imgs.length,
+                  (i) {
+                    final isActive =
+                        i == currentPhoto;
 
-                  return Expanded(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(20),
+                    return Expanded(
+                      child: AnimatedContainer(
+                        duration:
+                            const Duration(
+                          milliseconds: 300,
+                        ),
+                        margin:
+                            const EdgeInsets.symmetric(
+                          horizontal: 3,
+                        ),
+                        height: 3,
+                        decoration:
+                            BoxDecoration(
+                          color: isActive
+                              ? Colors.white
+                              : Colors.white
+                                  .withValues(
+                                  alpha: 0.3,
+                                ),
+                          borderRadius:
+                              BorderRadius.circular(
+                            20,
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
               ),
             ),
 
-            /// INFO
             Positioned(
               bottom: size.height * 0.22,
               left: 20,
               right: 20,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
 
                   Row(
                     children: [
                       Text(
                         "${data["name"]}, ${data["age"]}",
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.white,
                           fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
+
                       const SizedBox(width: 6),
-                      const Icon(Icons.verified,
-                          color: Colors.blue, size: 20),
+
+                      if (data["pedigree"] ==
+                          true)
+                        const Icon(
+                          Icons.verified,
+                          color:
+                              Colors.blue,
+                          size: 20,
+                        ),
                     ],
                   ),
 
@@ -267,13 +323,21 @@ class MatchPageState extends State<MatchPage>
 
                   Row(
                     children: [
-                      const Icon(Icons.location_on,
-                          color: Colors.white70, size: 16),
+                      const Icon(
+                        Icons.location_on,
+                        color:
+                            Colors.white70,
+                        size: 16,
+                      ),
+
                       const SizedBox(width: 4),
+
                       Text(
                         data["distance"],
-                        style: const TextStyle(
-                          color: Colors.white70,
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.white70,
                           fontSize: 15,
                         ),
                       ),
@@ -294,7 +358,6 @@ class MatchPageState extends State<MatchPage>
               ),
             ),
 
-            /// BOTÓN DETALLE
             Positioned(
               right: 20,
               bottom: size.height * 0.22,
@@ -303,20 +366,29 @@ class MatchPageState extends State<MatchPage>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => PetDetailScreen(pet: data),
+                      builder: (_) =>
+                          PetDetailScreen(
+                        pet: data,
+                      ),
                     ),
                   );
                 },
                 child: Container(
                   width: 55,
                   height: 55,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
+                  decoration:
+                      BoxDecoration(
+                    color: Colors.black
+                        .withValues(
+                            alpha: 0.6),
+                    shape:
+                        BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.keyboard_arrow_up,
-                    color: Colors.white,
+                    Icons
+                        .keyboard_arrow_up,
+                    color:
+                        Colors.white,
                     size: 30,
                   ),
                 ),
@@ -328,7 +400,11 @@ class MatchPageState extends State<MatchPage>
     );
   }
 
-  Widget _actionButton(IconData icon, Color color, VoidCallback onTap) {
+  Widget _actionButton(
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -336,25 +412,37 @@ class MatchPageState extends State<MatchPage>
         height: 62,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.black.withValues(alpha: 0.7),
+          color: Colors.black
+              .withValues(alpha: 0.7),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.4),
+              color: color.withValues(
+                  alpha: 0.4),
               blurRadius: 20,
             )
           ],
         ),
-        child: Icon(icon, color: color, size: 34),
+        child: Icon(
+          icon,
+          color: color,
+          size: 34,
+        ),
       ),
     );
   }
 
   Widget _tag(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.black
+            .withValues(alpha: 0.6),
+        borderRadius:
+            BorderRadius.circular(20),
       ),
       child: Text(
         text,

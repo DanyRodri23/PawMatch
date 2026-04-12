@@ -83,8 +83,16 @@ class _ChatsPageState extends State<ChatsPage> {
 
                       return GestureDetector(
                         onTap: () {
+                          /// CREA CHAT SI NO EXISTE
+                          ChatsData.createChat(pet);
+
+                          /// QUITA DE MATCHES NUEVOS
                           MatchesData.removeMatch(pet);
 
+                          /// REFRESH UI
+                          setState(() {});
+
+                          /// ABRE CHAT
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -94,8 +102,6 @@ class _ChatsPageState extends State<ChatsPage> {
                               ),
                             ),
                           );
-
-                          setState(() {});
                         },
                         child: Padding(
                           padding: const EdgeInsets.only(right: 14),

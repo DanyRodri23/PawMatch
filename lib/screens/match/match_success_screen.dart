@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
-import '../../data/app_data.dart'; // 🔥 AGREGADO
-import '../chats/chat_detail_page.dart'; // 🔥 AGREGADO
+
+import '../../data/chats_data.dart';
+import '../chats/chat_detail_page.dart';
 
 class MatchSuccessScreen extends StatefulWidget {
-
   final String myPet;
   final String otherPet;
   final String image1;
@@ -19,261 +19,283 @@ class MatchSuccessScreen extends StatefulWidget {
   });
 
   @override
-  State<MatchSuccessScreen> createState() => _MatchSuccessScreenState();
+  State<MatchSuccessScreen> createState() =>
+      _MatchSuccessScreenState();
 }
 
-class _MatchSuccessScreenState extends State<MatchSuccessScreen>
+class _MatchSuccessScreenState
+    extends State<MatchSuccessScreen>
     with TickerProviderStateMixin {
 
-  late ConfettiController _leftConfetti;
-  late ConfettiController _rightConfetti;
+  late ConfettiController leftConfetti;
+  late ConfettiController rightConfetti;
 
-  late AnimationController _zoomController;
-  late Animation<double> _zoomAnimation;
-
-  late AnimationController _pawController;
-  late Animation<double> _pawAnimation;
+  late AnimationController zoomController;
+  late Animation<double> zoomAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    _leftConfetti = ConfettiController(duration: const Duration(seconds: 3));
-    _rightConfetti = ConfettiController(duration: const Duration(seconds: 3));
-
-    _zoomController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
+    leftConfetti = ConfettiController(
+      duration: const Duration(seconds: 2),
     );
 
-    _zoomAnimation = CurvedAnimation(
-      parent: _zoomController,
+    rightConfetti = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
+
+    zoomController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+
+    zoomAnimation = CurvedAnimation(
+      parent: zoomController,
       curve: Curves.easeOutBack,
     );
 
-    _pawController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-
-    _pawAnimation = Tween<double>(begin: 0.9, end: 1.2).animate(_pawController);
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _zoomController.forward();
-      _leftConfetti.play();
-      _rightConfetti.play();
-    });
+    Future.delayed(
+      const Duration(milliseconds: 250),
+      () {
+        zoomController.forward();
+        leftConfetti.play();
+        rightConfetti.play();
+      },
+    );
   }
 
   @override
   void dispose() {
-    _leftConfetti.dispose();
-    _rightConfetti.dispose();
-    _zoomController.dispose();
-    _pawController.dispose();
+    leftConfetti.dispose();
+    rightConfetti.dispose();
+    zoomController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
-    final width = MediaQuery.of(context).size.width;
-
     return Scaffold(
+      backgroundColor: const Color(0xFF050505),
+
       body: Stack(
         children: [
 
           Positioned.fill(
-            child: Image.network(
-              widget.image1,
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          Positioned.fill(
             child: Container(
-              color: const Color.fromRGBO(0, 0, 0, 0.65),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1A1A1A),
+                    Color(0xFF050505),
+                  ],
+                ),
+              ),
             ),
           ),
 
           Align(
             alignment: Alignment.topLeft,
             child: ConfettiWidget(
-              confettiController: _leftConfetti,
+              confettiController: leftConfetti,
               blastDirection: 0.5,
+              gravity: 0.25,
               emissionFrequency: 0.05,
-              numberOfParticles: 20,
-              gravity: 0.3,
+              numberOfParticles: 18,
             ),
           ),
 
           Align(
             alignment: Alignment.topRight,
             child: ConfettiWidget(
-              confettiController: _rightConfetti,
-              blastDirection: 2.5,
+              confettiController: rightConfetti,
+              blastDirection: 2.6,
+              gravity: 0.25,
               emissionFrequency: 0.05,
-              numberOfParticles: 20,
-              gravity: 0.3,
+              numberOfParticles: 18,
             ),
           ),
 
           SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                children: [
 
-                const SizedBox(height: 40),
+                  const Spacer(),
 
-                const Text(
-                  "¡Tu mascota hizo Match!",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  const Text(
+                    "¡Es un Match!",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: Text(
+                  Text(
                     "${widget.otherPet} también le dio like a ${widget.myPet}",
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 18,
                       color: Colors.white70,
+                      fontSize: 17,
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 40),
+                  const SizedBox(height: 45),
 
-                ScaleTransition(
-                  scale: _zoomAnimation,
-                  child: SizedBox(
-                    width: width,
-                    height: 170,
-                    child: Stack(
-                      alignment: Alignment.center,
+                  ScaleTransition(
+                    scale: zoomAnimation,
+                    child: Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
                       children: [
 
-                        Positioned(
-                          left: width * 0.22,
-                          child: CircleAvatar(
-                            radius: 65,
-                            backgroundImage: NetworkImage(widget.image1),
-                          ),
-                        ),
+                        _petAvatar(widget.image1),
 
-                        Positioned(
-                          right: width * 0.22,
-                          child: CircleAvatar(
-                            radius: 65,
-                            backgroundImage: NetworkImage(widget.image2),
+                        Container(
+                          margin:
+                              const EdgeInsets.symmetric(
+                            horizontal: 14,
                           ),
-                        ),
-
-                        ScaleTransition(
-                          scale: _pawAnimation,
+                          padding:
+                              const EdgeInsets.all(14),
+                          decoration:
+                              BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.pinkAccent
+                                .withValues(
+                              alpha: 0.15,
+                            ),
+                          ),
                           child: const Icon(
-                            Icons.pets,
-                            color: Colors.pink,
-                            size: 48,
+                            Icons.favorite,
+                            color: Colors.pinkAccent,
+                            size: 32,
                           ),
                         ),
 
+                        _petAvatar(widget.image2),
                       ],
                     ),
                   ),
-                ),
 
-                const Spacer(),
+                  const Spacer(),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: Column(
-                    children: [
-
-                      /// 🔥 BOTÓN CORREGIDO
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          onPressed: () {
-
-                            /// 🔥 CREAR CHAT
-                            AppData.createChat({
-                              "name": widget.otherPet,
-                              "images": [widget.image2],
-                            });
-
-                            /// 🔥 IR AL CHAT
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatDetailPage(
-                                  name: widget.otherPet,
-                                  image: widget.image2,
-                                ),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "Enviar mensaje",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: ElevatedButton(
+                      style:
+                          ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.pinkAccent,
+                        shape:
+                            RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(
+                            20,
                           ),
                         ),
                       ),
+                      onPressed: () {
+                        ChatsData.createChat({
+                          "id": widget.otherPet,
+                          "name": widget.otherPet,
+                          "images": [widget.image2],
+                          "pedigree": true,
+                        });
 
-                      const SizedBox(height: 15),
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ChatDetailPage(
+                              name:
+                                  widget.otherPet,
+                              image:
+                                  widget.image2,
                             ),
                           ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text(
-                            "Seguir explorando",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Enviar mensaje",
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight:
+                              FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-
-                      const SizedBox(height: 40),
-
-                    ],
+                    ),
                   ),
-                )
 
-              ],
+                  const SizedBox(height: 14),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: OutlinedButton(
+                      style:
+                          OutlinedButton.styleFrom(
+                        foregroundColor:
+                            Colors.white,
+                        side: BorderSide(
+                          color: Colors.white
+                              .withValues(
+                            alpha: 0.2,
+                          ),
+                        ),
+                        shape:
+                            RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(
+                            20,
+                          ),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text(
+                        "Seguir explorando",
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+                ],
+              ),
             ),
-          )
-
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _petAvatar(String image) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.pinkAccent,
+          width: 2,
+        ),
+      ),
+      child: CircleAvatar(
+        radius: 56,
+        backgroundImage: NetworkImage(image),
       ),
     );
   }

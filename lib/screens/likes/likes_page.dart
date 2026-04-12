@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/app_data.dart';
+import '../../data/likes_data.dart';
 import '../profile/pet_full_profile.dart';
 
 class LikesPage extends StatelessWidget {
@@ -7,7 +7,7 @@ class LikesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final likes = AppData.likedPets;
+    final likes = LikesData.receivedLikes;
 
     return Scaffold(
       backgroundColor: const Color(0xFF050505),

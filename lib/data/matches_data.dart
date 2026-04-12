@@ -1,27 +1,27 @@
-import 'likes_data.dart';
-
 class MatchesData {
   static List<Map<String, dynamic>> matches = [];
 
-  static bool isMatch(Map<String, dynamic> pet) {
-    return LikesData.receivedLikes.contains(pet) &&
-        LikesData.sentLikes.contains(pet);
-  }
-
   static void createMatch(Map<String, dynamic> pet) {
-    if (isMatch(pet) && !matches.contains(pet)) {
-      matches.add(pet);
+    final exists = matches.any(
+      (m) => m["id"] == pet["id"],
+    );
 
-      LikesData.removeReceivedLike(pet);
-      LikesData.removeSentLike(pet);
+    if (!exists) {
+      matches.add(
+        Map<String, dynamic>.from(pet),
+      );
     }
   }
 
   static void removeMatch(Map<String, dynamic> pet) {
-    matches.remove(pet);
+    matches.removeWhere(
+      (m) => m["id"] == pet["id"],
+    );
   }
 
   static bool hasMatch(Map<String, dynamic> pet) {
-    return matches.contains(pet);
+    return matches.any(
+      (m) => m["id"] == pet["id"],
+    );
   }
 }

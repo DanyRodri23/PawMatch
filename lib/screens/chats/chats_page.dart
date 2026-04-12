@@ -24,24 +24,52 @@ class _ChatsPageState extends State<ChatsPage> {
       backgroundColor: const Color(0xFF050505),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// HEADER
-              const Text(
-                "Chats",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  fontWeight: FontWeight.w800,
-                ),
+              /// HEADER PREMIUM
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "Chats",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white10,
+                      ),
+                    ),
+                    child: Text(
+                      "${matches.length + chats.length}",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
-              /// NEW MATCHES
+              /// NUEVOS MATCHES
               const Text(
                 "Nuevos Matches",
                 style: TextStyle(
@@ -51,23 +79,32 @@ class _ChatsPageState extends State<ChatsPage> {
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               if (matches.isEmpty)
-                const SizedBox(
-                  height: 80,
-                  child: Center(
+                Container(
+                  height: 95,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white10,
+                    ),
+                  ),
+                  child: const Center(
                     child: Text(
                       "Sin matches nuevos",
                       style: TextStyle(
                         color: Colors.white38,
+                        fontSize: 14,
                       ),
                     ),
                   ),
                 )
               else
                 SizedBox(
-                  height: 110,
+                  height: 118,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: matches.length,
@@ -79,70 +116,64 @@ class _ChatsPageState extends State<ChatsPage> {
                                   pet["images"] is List &&
                                   pet["images"].isNotEmpty)
                               ? pet["images"][0]
-                              : null;
+                              : "";
 
                       return GestureDetector(
-                        onTap: () {
-                          /// CREA CHAT SI NO EXISTE
-                          ChatsData.createChat(pet);
-
-                          /// QUITA DE MATCHES NUEVOS
-                          MatchesData.removeMatch(pet);
-
-                          /// REFRESH UI
-                          setState(() {});
-
-                          /// ABRE CHAT
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => ChatDetailPage(
                                 name: pet["name"] ?? "",
-                                image: image ?? "",
+                                image: image,
+                                fromMatch: true,
+                                matchPet: pet,
                               ),
                             ),
                           );
+
+                          setState(() {});
                         },
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 14),
+                        child: Container(
+                          width: 86,
+                          margin: const EdgeInsets.only(right: 14),
                           child: Column(
                             children: [
 
                               Container(
                                 padding: const EdgeInsets.all(3),
                                 decoration: BoxDecoration(
-                                  borderRadius:
-                                      BorderRadius.circular(26),
+                                  shape: BoxShape.circle,
                                   gradient: const LinearGradient(
                                     colors: [
-                                      Colors.amber,
-                                      Colors.orange,
+                                      Color(0xFFFFC107),
+                                      Color(0xFFFF9800),
                                     ],
                                   ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.orange.withValues(alpha: 0.35),
+                                      blurRadius: 16,
+                                    ),
+                                  ],
                                 ),
                                 child: CircleAvatar(
-                                  radius: 34,
+                                  radius: 35,
                                   backgroundColor: Colors.black,
-                                  backgroundImage: image != null
-                                      ? NetworkImage(image)
-                                      : null,
+                                  backgroundImage: NetworkImage(image),
                                 ),
                               ),
 
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
 
-                              SizedBox(
-                                width: 70,
-                                child: Text(
-                                  pet["name"] ?? "",
-                                  maxLines: 1,
-                                  overflow:
-                                      TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
+                              Text(
+                                pet["name"] ?? "",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -153,8 +184,9 @@ class _ChatsPageState extends State<ChatsPage> {
                   ),
                 ),
 
-              const SizedBox(height: 26),
+              const SizedBox(height: 30),
 
+              /// MENSAJES
               const Text(
                 "Mensajes",
                 style: TextStyle(
@@ -164,22 +196,35 @@ class _ChatsPageState extends State<ChatsPage> {
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               if (chats.isEmpty)
-                const Expanded(
+                Expanded(
                   child: Center(
-                    child: Text(
-                      "No tienes mensajes aún",
-                      style: TextStyle(
-                        color: Colors.white54,
-                      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 70,
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          "No tienes mensajes aún",
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 )
               else
                 Expanded(
                   child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
                     itemCount: chats.length,
                     itemBuilder: (context, index) {
                       final chat = chats[index];
@@ -192,30 +237,38 @@ class _ChatsPageState extends State<ChatsPage> {
                               builder: (_) => ChatDetailPage(
                                 name: chat["name"] ?? "",
                                 image: chat["image"] ?? "",
+                                fromMatch: false,
                               ),
                             ),
                           );
                         },
                         child: Container(
-                          margin:
-                              const EdgeInsets.only(bottom: 14),
+                          margin: const EdgeInsets.only(bottom: 14),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: const Color(0xFF111111),
-                            borderRadius:
-                                BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: Colors.white10,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 14,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
                           child: Row(
                             children: [
 
-                              CircleAvatar(
-                                radius: 30,
-                                backgroundImage:
-                                    NetworkImage(
-                                  chat["image"] ?? "",
+                              Hero(
+                                tag: chat["name"],
+                                child: CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage: NetworkImage(
+                                    chat["image"] ?? "",
+                                  ),
                                 ),
                               ),
 
@@ -232,40 +285,32 @@ class _ChatsPageState extends State<ChatsPage> {
                                         Expanded(
                                           child: Text(
                                             chat["name"] ?? "",
-                                            style:
-                                                const TextStyle(
-                                              color:
-                                                  Colors.white,
-                                              fontWeight:
-                                                  FontWeight
-                                                      .bold,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
                                           ),
                                         ),
 
-                                        if (chat["verified"] ==
-                                            true)
+                                        if (chat["verified"] == true)
                                           const Icon(
                                             Icons.verified,
-                                            color: Colors
-                                                .blueAccent,
+                                            color: Colors.blueAccent,
                                             size: 17,
                                           ),
                                       ],
                                     ),
 
-                                    const SizedBox(height: 5),
+                                    const SizedBox(height: 6),
 
                                     Text(
                                       chat["lastMessage"] ?? "",
                                       maxLines: 1,
-                                      overflow:
-                                          TextOverflow.ellipsis,
-                                      style:
-                                          const TextStyle(
-                                        color:
-                                            Colors.white54,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ],
@@ -281,40 +326,27 @@ class _ChatsPageState extends State<ChatsPage> {
 
                                   Text(
                                     chat["time"] ?? "",
-                                    style:
-                                        const TextStyle(
-                                      color:
-                                          Colors.white38,
-                                      fontSize: 12,
+                                    style: const TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 11,
                                     ),
                                   ),
 
                                   const SizedBox(height: 8),
 
-                                  if ((chat["unread"] ?? 0) >
-                                      0)
+                                  if ((chat["unread"] ?? 0) > 0)
                                     Container(
-                                      padding:
-                                          const EdgeInsets
-                                              .all(7),
-                                      decoration:
-                                          const BoxDecoration(
-                                        color:
-                                            Colors.redAccent,
-                                        shape:
-                                            BoxShape.circle,
+                                      padding: const EdgeInsets.all(7),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.redAccent,
+                                        shape: BoxShape.circle,
                                       ),
                                       child: Text(
-                                        chat["unread"]
-                                            .toString(),
-                                        style:
-                                            const TextStyle(
-                                          color:
-                                              Colors.white,
+                                        chat["unread"].toString(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
                                           fontSize: 10,
-                                          fontWeight:
-                                              FontWeight
-                                                  .bold,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),

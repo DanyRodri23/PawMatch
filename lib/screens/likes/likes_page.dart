@@ -1,99 +1,151 @@
 import 'package:flutter/material.dart';
 import '../../data/app_data.dart';
+import '../profile/pet_full_profile.dart';
 
 class LikesPage extends StatelessWidget {
   const LikesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     final likes = AppData.likedPets;
 
     return Scaffold(
-      backgroundColor: Colors.black, // 🔥 DARK MODE
-
+      backgroundColor: const Color(0xFF050505),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
-
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// 🔥 TITULO
-              const Text(
-                "Te dieron like 💛",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white, // 🔥 blanco
+              /// HEADER PREMIUM
+              Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Likes",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "Mascotas interesadas en la tuya",
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      "${likes.length} Likes",
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 22),
+
+              /// PREMIUM BANNER
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFFFD54F),
+                      Color(0xFFFFB300),
+                    ],
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.workspace_premium,
+                      color: Colors.black,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "Próximamente: PawMatch Premium para ver quién te dio like primero.",
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
 
-              const Text(
-                "Estas mascotas están interesadas en la tuya",
-                style: TextStyle(
-                  color: Colors.white54, // 🔥 gris claro
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              /// 🔥 SI NO HAY LIKES
               if (likes.isEmpty)
-                Expanded(
+                const Expanded(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-
-                        Icon(Icons.favorite_border,
-                            size: 80, color: Colors.white38),
-
-                        SizedBox(height: 15),
-
+                      children: [
+                        Icon(
+                          Icons.favorite_border,
+                          size: 80,
+                          color: Colors.white24,
+                        ),
+                        SizedBox(height: 18),
                         Text(
                           "Aún no tienes likes",
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
                             color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-
-                        SizedBox(height: 5),
-
+                        SizedBox(height: 8),
                         Text(
-                          "Sigue explorando para encontrar matches 🐾",
-                          style: TextStyle(color: Colors.white54),
+                          "Sigue explorando para conseguir matches",
+                          style: TextStyle(
+                            color: Colors.white54,
+                          ),
                         ),
-
                       ],
                     ),
                   ),
                 )
-
-              /// 🔥 GRID DE LIKES
               else
                 Expanded(
                   child: GridView.builder(
                     itemCount: likes.length,
-
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.75,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: 0.72,
                     ),
-
                     itemBuilder: (context, index) {
-
                       final pet = likes[index];
 
-                      /// 🔥 PROTECCIÓN ANTI-CRASH
                       final images = pet["images"];
                       final imageUrl = (images != null &&
                               images is List &&
@@ -102,26 +154,33 @@ class LikesPage extends StatelessWidget {
                           : null;
 
                       return GestureDetector(
-                        onTap: () {},
-
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PetFullProfile(
+                                pet: pet,
+                                mode: ProfileMode.likes,
+                              ),
+                            ),
+                          );
+                        },
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                blurRadius: 20,
-                              )
+                                color: Colors.black.withValues(alpha: 0.45),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                              ),
                             ],
                           ),
-
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-
+                            borderRadius: BorderRadius.circular(28),
                             child: Stack(
                               children: [
 
-                                /// 🔥 IMAGEN SEGURA
                                 Positioned.fill(
                                   child: imageUrl != null
                                       ? Image.network(
@@ -133,7 +192,6 @@ class LikesPage extends StatelessWidget {
                                         ),
                                 ),
 
-                                /// 🔥 GRADIENTE PRO
                                 Positioned.fill(
                                   child: Container(
                                     decoration: const BoxDecoration(
@@ -149,21 +207,27 @@ class LikesPage extends StatelessWidget {
                                   ),
                                 ),
 
-                                /// 🔥 CORAZÓN
-                                const Positioned(
-                                  top: 10,
-                                  right: 10,
-                                  child: Icon(
-                                    Icons.favorite,
-                                    color: Colors.redAccent,
+                                Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: const Icon(
+                                      Icons.favorite,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
                                   ),
                                 ),
 
-                                /// 🔥 INFO
                                 Positioned(
-                                  bottom: 12,
-                                  left: 12,
-                                  right: 12,
+                                  bottom: 14,
+                                  left: 14,
+                                  right: 14,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -173,11 +237,11 @@ class LikesPage extends StatelessWidget {
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              "${pet["name"] ?? ""}, ${pet["age"] ?? ""}${pet["ageType"] ?? ""}",
+                                              "${pet["name"]}, ${pet["age"]}${pet["ageType"]}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 16,
+                                                fontSize: 17,
                                               ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -186,13 +250,13 @@ class LikesPage extends StatelessWidget {
                                           if (pet["pedigree"] == true)
                                             const Icon(
                                               Icons.verified,
-                                              color: Colors.blue,
-                                              size: 16,
+                                              color: Colors.blueAccent,
+                                              size: 17,
                                             ),
                                         ],
                                       ),
 
-                                      const SizedBox(height: 3),
+                                      const SizedBox(height: 5),
 
                                       Text(
                                         pet["breed"] ?? "",
@@ -202,7 +266,7 @@ class LikesPage extends StatelessWidget {
                                         ),
                                       ),
 
-                                      const SizedBox(height: 3),
+                                      const SizedBox(height: 4),
 
                                       Text(
                                         pet["distance"] ?? "",
@@ -211,11 +275,9 @@ class LikesPage extends StatelessWidget {
                                           fontSize: 12,
                                         ),
                                       ),
-
                                     ],
                                   ),
                                 ),
-
                               ],
                             ),
                           ),
@@ -224,7 +286,6 @@ class LikesPage extends StatelessWidget {
                     },
                   ),
                 ),
-
             ],
           ),
         ),

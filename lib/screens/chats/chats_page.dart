@@ -1,85 +1,184 @@
 import 'package:flutter/material.dart';
-import '../../data/app_data.dart';
+import '../../data/matches_data.dart';
+import '../../data/chats_data.dart';
 import 'chat_detail_page.dart';
 
-class ChatsPage extends StatelessWidget {
+class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
 
   @override
+  State<ChatsPage> createState() => _ChatsPageState();
+}
+
+class _ChatsPageState extends State<ChatsPage> {
+  @override
   Widget build(BuildContext context) {
+    final matches = [...MatchesData.matches];
+    final chats = [...ChatsData.chats];
 
-    final chats = [...AppData.chats];
-
-    chats.sort((a, b) =>
-        (b["time"] ?? "").compareTo(a["time"] ?? ""));
+    chats.sort(
+      (a, b) => (b["time"] ?? "").compareTo(a["time"] ?? ""),
+    );
 
     return Scaffold(
-      backgroundColor: Colors.black, // 🔥 DARK MODE
-
+      backgroundColor: const Color(0xFF050505),
       body: SafeArea(
-        child: Column(
-          children: [
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            /// 🔥 HEADER
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-              child: Row(
-                children: [
-                  Text(
-                    "Mensajes",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white, // 🔥 blanco
+              /// HEADER
+              const Text(
+                "Chats",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              /// NEW MATCHES
+              const Text(
+                "Nuevos Matches",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              if (matches.isEmpty)
+                const SizedBox(
+                  height: 80,
+                  child: Center(
+                    child: Text(
+                      "Sin matches nuevos",
+                      style: TextStyle(
+                        color: Colors.white38,
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
+                )
+              else
+                SizedBox(
+                  height: 110,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: matches.length,
+                    itemBuilder: (context, index) {
+                      final pet = matches[index];
 
-            /// 🔥 SI NO HAY CHATS
-            if (chats.isEmpty)
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    "No tienes mensajes aún 🐶",
-                    style: TextStyle(color: Colors.white54),
+                      final image =
+                          (pet["images"] != null &&
+                                  pet["images"] is List &&
+                                  pet["images"].isNotEmpty)
+                              ? pet["images"][0]
+                              : null;
+
+                      return GestureDetector(
+                        onTap: () {
+                          MatchesData.removeMatch(pet);
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatDetailPage(
+                                name: pet["name"] ?? "",
+                                image: image ?? "",
+                              ),
+                            ),
+                          );
+
+                          setState(() {});
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 14),
+                          child: Column(
+                            children: [
+
+                              Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius.circular(26),
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Colors.amber,
+                                      Colors.orange,
+                                    ],
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 34,
+                                  backgroundColor: Colors.black,
+                                  backgroundImage: image != null
+                                      ? NetworkImage(image)
+                                      : null,
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              SizedBox(
+                                width: 70,
+                                child: Text(
+                                  pet["name"] ?? "",
+                                  maxLines: 1,
+                                  overflow:
+                                      TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-              )
 
-            /// 🔥 LISTA
-            else
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: chats.length,
+              const SizedBox(height: 26),
 
-                  itemBuilder: (context, index) {
+              const Text(
+                "Mensajes",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
 
-                    final chat = chats[index];
+              const SizedBox(height: 14),
 
-                    final lastMessage = chat["lastMessage"] ?? "";
-                    final isAudio = lastMessage.contains("🎤");
+              if (chats.isEmpty)
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      "No tienes mensajes aún",
+                      style: TextStyle(
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: chats.length,
+                    itemBuilder: (context, index) {
+                      final chat = chats[index];
 
-                    /// 🔥 PROTECCIÓN
-                    final image = chat["image"];
-
-                    return TweenAnimationBuilder(
-                      duration: Duration(milliseconds: 300 + (index * 50)),
-                      tween: Tween<double>(begin: 0, end: 1),
-
-                      builder: (context, value, child) {
-                        return Opacity(
-                          opacity: value,
-                          child: Transform.translate(
-                            offset: Offset(0, 20 * (1 - value)),
-                            child: child,
-                          ),
-                        );
-                      },
-
-                      child: GestureDetector(
+                      return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
@@ -91,55 +190,31 @@ class ChatsPage extends StatelessWidget {
                             ),
                           );
                         },
-
                         child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-
+                          margin:
+                              const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05), // 🔥 glass
-                            borderRadius: BorderRadius.circular(18),
+                            color: const Color(0xFF111111),
+                            borderRadius:
+                                BorderRadius.circular(22),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
+                              color: Colors.white10,
                             ),
                           ),
-
                           child: Row(
                             children: [
 
-                              /// FOTO
-                              Stack(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 28,
-                                    backgroundColor: Colors.grey[900],
-                                    backgroundImage: image != null
-                                        ? NetworkImage(image)
-                                        : null,
-                                  ),
-
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: Colors.greenAccent,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.black,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                ],
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundImage:
+                                    NetworkImage(
+                                  chat["image"] ?? "",
+                                ),
                               ),
 
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 14),
 
-                              /// INFO
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment:
@@ -151,95 +226,103 @@ class ChatsPage extends StatelessWidget {
                                         Expanded(
                                           child: Text(
                                             chat["name"] ?? "",
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
+                                            style:
+                                                const TextStyle(
+                                              color:
+                                                  Colors.white,
+                                              fontWeight:
+                                                  FontWeight
+                                                      .bold,
                                               fontSize: 16,
-                                              color: Colors.white,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
 
-                                        const SizedBox(width: 5),
-
-                                        const Icon(Icons.verified,
-                                            color: Colors.blue, size: 16),
+                                        if (chat["verified"] ==
+                                            true)
+                                          const Icon(
+                                            Icons.verified,
+                                            color: Colors
+                                                .blueAccent,
+                                            size: 17,
+                                          ),
                                       ],
                                     ),
 
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 5),
 
-                                    Row(
-                                      children: [
-
-                                        if (isAudio)
-                                          const Icon(Icons.play_arrow,
-                                              size: 16,
-                                              color: Colors.white54),
-
-                                        if (isAudio)
-                                          const SizedBox(width: 4),
-
-                                        Expanded(
-                                          child: Text(
-                                            isAudio
-                                                ? "Audio"
-                                                : lastMessage,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white54,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      chat["lastMessage"] ?? "",
+                                      maxLines: 1,
+                                      overflow:
+                                          TextOverflow.ellipsis,
+                                      style:
+                                          const TextStyle(
+                                        color:
+                                            Colors.white54,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
 
-                              /// DERECHA
+                              const SizedBox(width: 12),
+
                               Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.end,
                                 children: [
 
                                   Text(
                                     chat["time"] ?? "",
-                                    style: const TextStyle(
+                                    style:
+                                        const TextStyle(
+                                      color:
+                                          Colors.white38,
                                       fontSize: 12,
-                                      color: Colors.white38,
                                     ),
                                   ),
 
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 8),
 
-                                  if ((chat["unread"] ?? 0) > 0)
+                                  if ((chat["unread"] ?? 0) >
+                                      0)
                                     Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.redAccent,
-                                        shape: BoxShape.circle,
+                                      padding:
+                                          const EdgeInsets
+                                              .all(7),
+                                      decoration:
+                                          const BoxDecoration(
+                                        color:
+                                            Colors.redAccent,
+                                        shape:
+                                            BoxShape.circle,
                                       ),
                                       child: Text(
-                                        chat["unread"].toString(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        chat["unread"]
+                                            .toString(),
+                                        style:
+                                            const TextStyle(
+                                          color:
+                                              Colors.white,
                                           fontSize: 10,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight:
+                                              FontWeight
+                                                  .bold,
                                         ),
                                       ),
                                     ),
                                 ],
-                              )
+                              ),
                             ],
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

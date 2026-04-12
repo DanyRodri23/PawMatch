@@ -17,14 +17,10 @@ class ChatDetailPage extends StatefulWidget {
 }
 
 class _ChatDetailPageState extends State<ChatDetailPage> {
-
   final TextEditingController controller = TextEditingController();
   final ScrollController scrollController = ScrollController();
 
-  /// 🔥 AUDIO DESACTIVADO (solo visual)
   bool isRecording = false;
-  int recordSeconds = 0;
-  Timer? timer;
 
   List<Map<String, dynamic>> get messages {
     final chat = AppData.chats.firstWhere(
@@ -35,6 +31,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     if (chat.isNotEmpty) {
       return List<Map<String, dynamic>>.from(chat["messages"]);
     }
+
     return [];
   }
 
@@ -43,21 +40,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       (c) => c["name"] == widget.name,
       orElse: () => {},
     );
-  }
-
-  /// 🎤 AUDIO (DESACTIVADO)
-  void startRecording() {
-    // ❌ ya no hace nada real
-    setState(() {
-      isRecording = true;
-    });
-  }
-
-  void stopRecording() {
-    // ❌ no guarda audio ni mensaje
-    setState(() {
-      isRecording = false;
-    });
   }
 
   void sendMessage() {
@@ -70,17 +52,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       "status": "sent",
     };
 
-    final chat = this.chat;
+    final currentChat = chat;
 
     setState(() {
-      chat["messages"].add(msg);
-      chat["lastMessage"] = controller.text;
-      chat["time"] = AppData.getTime();
+      currentChat["messages"].add(msg);
+      currentChat["lastMessage"] = controller.text;
+      currentChat["time"] = AppData.getTime();
     });
 
     controller.clear();
 
-    /// 🔥 SIMULAR WHATSAPP
     Future.delayed(const Duration(seconds: 1), () {
       msg["status"] = "delivered";
       setState(() {});
@@ -95,176 +76,349 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   void scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 200), () {
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (!scrollController.hasClients) return;
+
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 350),
         curve: Curves.easeOut,
       );
     });
   }
 
-  /// 🔥 ICONO CHECK
   Widget buildCheck(String status) {
     if (status == "sent") {
-      return const Icon(Icons.check, size: 16, color: Colors.white70);
+      return const Icon(Icons.check, size: 14, color: Colors.white70);
     } else if (status == "delivered") {
-      return const Icon(Icons.done_all, size: 16, color: Colors.white70);
-    } else {
-      return const Icon(Icons.done_all, size: 16, color: Colors.blue);
+      return const Icon(Icons.done_all, size: 14, color: Colors.white70);
     }
+
+    return const Icon(Icons.done_all, size: 14, color: Colors.lightBlueAccent);
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: const Color(0xffF7F7F7),
+      backgroundColor: const Color(0xFF05070D),
 
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
+      body: SafeArea(
+        child: Column(
           children: [
-            CircleAvatar(
-              backgroundImage: NetworkImage(widget.image),
-            ),
-            const SizedBox(width: 10),
-            Text(widget.name,
-                style: const TextStyle(color: Colors.black)),
-          ],
-        ),
-      ),
 
-      body: Column(
-        children: [
+            /// HEADER CUSTOM
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+              child: Column(
+                children: [
 
-          /// 💬 MENSAJES
-          Expanded(
-            child: ListView.builder(
-              controller: scrollController,
-              padding: const EdgeInsets.all(15),
-              itemCount: messages.length,
+                  Row(
+                    children: [
 
-              itemBuilder: (context, index) {
+                      _circleButton(
+                        Icons.arrow_back_ios_new,
+                        () => Navigator.pop(context),
+                      ),
 
-                final msg = messages[index];
-                final isMe = msg["isMe"];
-                final text = msg["text"];
+                      const Spacer(),
 
-                return Align(
-                  alignment:
-                      isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      _circleButton(
+                        Icons.more_horiz,
+                        () {},
+                      ),
+                    ],
+                  ),
 
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 5),
-                    padding: const EdgeInsets.all(12),
+                  const SizedBox(height: 18),
 
-                    decoration: BoxDecoration(
-                      color: isMe
-                          ? const Color(0xffFF9F1C)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(18),
+                  CircleAvatar(
+                    radius: 34,
+                    backgroundImage: NetworkImage(widget.image),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 8,
                     ),
-
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Colors.white10,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
 
-                        /// TEXTO
                         Text(
-                          text,
-                          style: TextStyle(
-                            color: isMe
-                                ? Colors.white
-                                : Colors.black,
+                          widget.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
 
-                        const SizedBox(height: 4),
+                        const SizedBox(width: 6),
 
-                        /// CHECK
-                        if (isMe)
-                          buildCheck(msg["status"] ?? "sent"),
+                        const Icon(
+                          Icons.verified,
+                          size: 16,
+                          color: Colors.blueAccent,
+                        ),
                       ],
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ),
 
-          /// 🎤 INDICADOR VISUAL
-          if (isRecording)
             Container(
-              padding: const EdgeInsets.all(10),
-              color: Colors.red.withValues(alpha: 0.1),
-              child: const Text("Grabando..."),
+              height: 1,
+              color: Colors.white.withValues(alpha: 0.06),
             ),
 
-          /// 📩 INPUT PRO
-          Container(
-            padding: const EdgeInsets.all(10),
-            color: Colors.white,
-
-            child: Row(
-              children: [
-
-                /// 🎤 BOTÓN (SOLO VISUAL)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      isRecording = !isRecording;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isRecording ? Colors.red : Colors.grey[200],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isRecording ? Icons.mic : Icons.mic_none,
-                    ),
-                  ),
+            /// MENSAJES
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 24,
                 ),
+                itemCount: messages.length + 1,
+                itemBuilder: (context, index) {
 
-                const SizedBox(width: 8),
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 30),
+                      child: Column(
+                        children: [
 
-                /// INPUT
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      hintText: "Mensaje...",
-                      border: InputBorder.none,
+                          Text(
+                            "HICISTE MATCH CON ${widget.name.toUpperCase()}",
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 13,
+                              letterSpacing: 1.1,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Text(
+                            "Hoy, ${AppData.getTime()}",
+                            style: const TextStyle(
+                              color: Colors.white30,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final msg = messages[index - 1];
+                  final isMe = msg["isMe"];
+
+                  return Align(
+                    alignment:
+                        isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment:
+                          isMe
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                      children: [
+
+                        Container(
+                          constraints: const BoxConstraints(
+                            maxWidth: 280,
+                          ),
+                          margin: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: isMe
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF2F6BFF),
+                                      Color(0xFF4A8DFF),
+                                    ],
+                                  )
+                                : null,
+                            color: isMe
+                                ? null
+                                : Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.05),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isMe
+                                    ? Colors.blue.withValues(alpha: 0.25)
+                                    : Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 15,
+                              )
+                            ],
+                          ),
+                          child: Text(
+                            msg["text"],
+                            style: TextStyle(
+                              color:
+                                  isMe ? Colors.white : Colors.white70,
+                              fontSize: 15,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+
+                        if (isMe)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              right: 8,
+                              bottom: 14,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+
+                                Text(
+                                  msg["time"] ?? "",
+                                  style: const TextStyle(
+                                    color: Colors.white30,
+                                    fontSize: 11,
+                                  ),
+                                ),
+
+                                const SizedBox(width: 4),
+
+                                buildCheck(
+                                  msg["status"] ?? "sent",
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          const SizedBox(height: 14),
+                      ],
                     ),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                /// BOTÓN ENVIAR
-                GestureDetector(
-                  onTap: sendMessage,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Color(0xffFF9F1C),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.send, color: Colors.white),
-                  ),
-                )
-              ],
+                  );
+                },
+              ),
             ),
-          )
-        ],
+
+            /// INPUT AREA
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+                child: Row(
+                  children: [
+
+                    _inputActionButton(Icons.gif_box_outlined),
+
+                    const SizedBox(width: 10),
+
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: Colors.white10,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: controller,
+                          style: const TextStyle(
+                            color: Colors.white,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "Escribe un mensaje",
+                            hintStyle: TextStyle(
+                              color: Colors.white38,
+                            ),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    GestureDetector(
+                      onTap: sendMessage,
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFF2F6BFF),
+                              Color(0xFF4A8DFF),
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withValues(alpha: 0.35),
+                              blurRadius: 15,
+                            )
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _circleButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.05),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Icon(icon, color: Colors.white70),
+      ),
+    );
+  }
+
+  Widget _inputActionButton(IconData icon) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Icon(icon, color: Colors.white70),
     );
   }
 }

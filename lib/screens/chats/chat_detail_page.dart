@@ -61,11 +61,46 @@ class _ChatDetailPageState
     return "${now.hour}:${now.minute.toString().padLeft(2, '0')}";
   }
 
-  String formatMatchDate(DateTime date) {
-    return
-        "${date.day.toString().padLeft(2, '0')}/"
-        "${date.month.toString().padLeft(2, '0')}/"
-        "${date.year}";
+  String getRelativeMatchTime(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays < 1) {
+      return "Hoy";
+    }
+
+    if (difference.inDays == 1) {
+      return "Ayer";
+    }
+
+    if (difference.inDays < 7) {
+      return "Hace ${difference.inDays} días";
+    }
+
+    if (difference.inDays < 30) {
+      final weeks =
+          (difference.inDays / 7).floor();
+
+      return weeks == 1
+          ? "Hace 1 semana"
+          : "Hace $weeks semanas";
+    }
+
+    if (difference.inDays < 365) {
+      final months =
+          (difference.inDays / 30).floor();
+
+      return months == 1
+          ? "Hace 1 mes"
+          : "Hace $months meses";
+    }
+
+    final years =
+        (difference.inDays / 365).floor();
+
+    return years == 1
+        ? "Hace 1 año"
+        : "Hace $years años";
   }
 
   void openPetProfile() {
@@ -166,13 +201,12 @@ class _ChatDetailPageState
                       BoxDecoration(
                     color: Colors.white24,
                     borderRadius:
-                        BorderRadius
-                            .circular(10),
+                        BorderRadius.circular(
+                      10,
+                    ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 const Text(
                   "Herramientas de seguridad",
                   style: TextStyle(
@@ -182,21 +216,17 @@ class _ChatDetailPageState
                         FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 _sheetOption(
                   "Cancelar Match",
                   "Ya no te interesa, elimínalo de tus matches",
                   cancelMatch,
                 ),
-
                 _sheetOption(
                   "Bloquear",
                   "No verás perfiles ni ellos te verán",
                   blockUser,
                 ),
-
                 _sheetOption(
                   "Denunciar",
                   "No te preocupes, lo contaremos",
@@ -308,8 +338,7 @@ class _ChatDetailPageState
     Future.delayed(
       const Duration(seconds: 2),
       () {
-        newMessage["status"] =
-            "seen";
+        newMessage["status"] = "seen";
 
         if (mounted) {
           setState(() {});
@@ -323,7 +352,8 @@ class _ChatDetailPageState
   void scrollToBottom() {
     Future.delayed(
       const Duration(
-          milliseconds: 250),
+        milliseconds: 250,
+      ),
       () {
         if (!scrollController.hasClients) {
           return;
@@ -371,7 +401,7 @@ class _ChatDetailPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
-          const Color(0xFF05070D),
+          const Color(0xFF050505),
       body: SafeArea(
         child: Column(
           children: [
@@ -404,7 +434,8 @@ class _ChatDetailPageState
               _circleButton(
                 Icons.arrow_back_ios_new,
                 () => Navigator.pop(
-                    context),
+                  context,
+                ),
               ),
               const Spacer(),
               _circleButton(
@@ -522,8 +553,9 @@ class _ChatDetailPageState
                 const SizedBox(height: 8),
                 Text(
                   matchDate != null
-                      ? formatMatchDate(
-                          matchDate)
+                      ? getRelativeMatchTime(
+                          matchDate,
+                        )
                       : "",
                   style:
                       const TextStyle(
@@ -562,8 +594,7 @@ class _ChatDetailPageState
                   bottom: 4,
                 ),
                 padding:
-                    const EdgeInsets
-                        .symmetric(
+                    const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 14,
                 ),
@@ -572,10 +603,8 @@ class _ChatDetailPageState
                   gradient: isMe
                       ? const LinearGradient(
                           colors: [
-                            Color(
-                                0xFF2F6BFF),
-                            Color(
-                                0xFF4A8DFF),
+                            Color(0xFF2F6BFF),
+                            Color(0xFF4A8DFF),
                           ],
                         )
                       : null,
@@ -583,8 +612,8 @@ class _ChatDetailPageState
                       ? null
                       : Colors.white
                           .withValues(
-                          alpha: 0.06,
-                        ),
+                        alpha: 0.06,
+                      ),
                   borderRadius:
                       BorderRadius.circular(
                     24,
@@ -592,8 +621,7 @@ class _ChatDetailPageState
                 ),
                 child: Text(
                   msg["text"] ?? "",
-                  style:
-                      TextStyle(
+                  style: TextStyle(
                     color: isMe
                         ? Colors.white
                         : Colors.white70,
@@ -601,7 +629,6 @@ class _ChatDetailPageState
                   ),
                 ),
               ),
-
               if (isMe)
                 Padding(
                   padding:
@@ -632,7 +659,8 @@ class _ChatDetailPageState
                 )
               else
                 const SizedBox(
-                    height: 14),
+                  height: 14,
+                ),
             ],
           ),
         );
@@ -656,8 +684,7 @@ class _ChatDetailPageState
             Expanded(
               child: Container(
                 padding:
-                    const EdgeInsets
-                        .symmetric(
+                    const EdgeInsets.symmetric(
                   horizontal: 18,
                 ),
                 decoration:
@@ -707,10 +734,8 @@ class _ChatDetailPageState
                   gradient:
                       LinearGradient(
                     colors: [
-                      Color(
-                          0xFF2F6BFF),
-                      Color(
-                          0xFF4A8DFF),
+                      Color(0xFF2F6BFF),
+                      Color(0xFF4A8DFF),
                     ],
                   ),
                 ),

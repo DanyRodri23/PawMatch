@@ -4,23 +4,37 @@ class ChatsData {
   static List<String> blockedUsers = [];
   static List<String> reports = [];
 
-  static void createChat(Map<String, dynamic> pet) {
-    if (!chats.any((chat) => chat["id"] == pet["id"])) {
+  static void createChat(
+    Map<String, dynamic> pet,
+  ) {
+    if (!chats.any(
+      (chat) => chat["id"] == pet["id"],
+    )) {
       chats.add({
         "id": pet["id"],
         "name": pet["name"],
+
         "image": (pet["images"] != null &&
                 pet["images"] is List &&
                 pet["images"].isNotEmpty)
             ? pet["images"][0]
             : "",
+
         "images": pet["images"] ?? [],
+
         "petData": pet,
+
         "lastMessage": "",
+
         "messages": [],
+
         "unread": 0,
+
         "time": "Ahora",
-        "verified": pet["pedigree"] ?? false,
+
+        "verified":
+            pet["pedigree"] ?? false,
+
         "matchDate": DateTime.now(),
       });
     }
@@ -40,15 +54,16 @@ class ChatsData {
       "time": DateTime.now(),
     };
 
-    (chat["messages"] as List).add(newMessage);
+    (chat["messages"] as List).add(
+      newMessage,
+    );
 
     chat["lastMessage"] = message;
     chat["time"] = "Ahora";
   }
 
-  static List<Map<String, dynamic>> getMessages(
-    String chatId,
-  ) {
+  static List<Map<String, dynamic>>
+      getMessages(String chatId) {
     final chat = chats.firstWhere(
       (chat) => chat["id"] == chatId,
     );
@@ -58,7 +73,9 @@ class ChatsData {
     );
   }
 
-  static void markAsRead(String chatId) {
+  static void markAsRead(
+    String chatId,
+  ) {
     final chat = chats.firstWhere(
       (chat) => chat["id"] == chatId,
     );
@@ -66,9 +83,8 @@ class ChatsData {
     chat["unread"] = 0;
   }
 
-  static Map<String, dynamic>? getChatById(
-    String chatId,
-  ) {
+  static Map<String, dynamic>?
+      getChatById(String chatId) {
     final exists = chats.any(
       (chat) => chat["id"] == chatId,
     );
@@ -101,13 +117,18 @@ class ChatsData {
   static void blockUser(
     String chatId,
   ) {
-    blockedUsers.add(chatId);
+    if (!blockedUsers.contains(chatId)) {
+      blockedUsers.add(chatId);
+    }
+
     removeChatById(chatId);
   }
 
   static void reportUser(
     String chatId,
   ) {
-    reports.add(chatId);
+    if (!reports.contains(chatId)) {
+      reports.add(chatId);
+    }
   }
 }

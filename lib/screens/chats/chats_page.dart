@@ -11,6 +11,46 @@ class ChatsPage extends StatefulWidget {
 }
 
 class _ChatsPageState extends State<ChatsPage> {
+
+  String getRelativeMatchTime(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays < 1) {
+      return "Hoy";
+    }
+
+    if (difference.inDays == 1) {
+      return "Ayer";
+    }
+
+    if (difference.inDays < 7) {
+      return "Hace ${difference.inDays} días";
+    }
+
+    if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+
+      return weeks == 1
+          ? "Hace 1 semana"
+          : "Hace $weeks semanas";
+    }
+
+    if (difference.inDays < 365) {
+      final months = (difference.inDays / 30).floor();
+
+      return months == 1
+          ? "Hace 1 mes"
+          : "Hace $months meses";
+    }
+
+    final years = (difference.inDays / 365).floor();
+
+    return years == 1
+        ? "Hace 1 año"
+        : "Hace $years años";
+  }
+
   @override
   Widget build(BuildContext context) {
     final matches = [...MatchesData.matches];
@@ -35,7 +75,6 @@ class _ChatsPageState extends State<ChatsPage> {
                 CrossAxisAlignment.start,
             children: [
 
-              /// HEADER PREMIUM
               Row(
                 children: [
                   const Expanded(
@@ -80,7 +119,6 @@ class _ChatsPageState extends State<ChatsPage> {
 
               const SizedBox(height: 28),
 
-              /// NUEVOS MATCHES
               const Text(
                 "Nuevos Matches",
                 style: TextStyle(
@@ -118,7 +156,7 @@ class _ChatsPageState extends State<ChatsPage> {
                 )
               else
                 SizedBox(
-                  height: 118,
+                  height: 132,
                   child: ListView.builder(
                     scrollDirection:
                         Axis.horizontal,
@@ -136,6 +174,10 @@ class _ChatsPageState extends State<ChatsPage> {
                                       .isNotEmpty)
                               ? pet["images"][0]
                               : "";
+
+                      final DateTime? matchDate =
+                          pet["matchDate"]
+                              as DateTime?;
 
                       return GestureDetector(
                         onTap: () async {
@@ -200,8 +242,7 @@ class _ChatsPageState extends State<ChatsPage> {
                                     CircleAvatar(
                                   radius: 35,
                                   backgroundColor:
-                                      Colors
-                                          .black,
+                                      Colors.black,
                                   backgroundImage:
                                       NetworkImage(
                                     image,
@@ -221,13 +262,32 @@ class _ChatsPageState extends State<ChatsPage> {
                                         .ellipsis,
                                 style:
                                     const TextStyle(
-                                  color: Colors
-                                      .white70,
-                                  fontSize:
-                                      12,
+                                  color: Colors.white70,
+                                  fontSize: 12,
                                   fontWeight:
-                                      FontWeight
-                                          .w500,
+                                      FontWeight.w500,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                  height: 3),
+
+                              Text(
+                                matchDate != null
+                                    ? getRelativeMatchTime(
+                                        matchDate,
+                                      )
+                                    : "",
+                                maxLines: 1,
+                                overflow:
+                                    TextOverflow
+                                        .ellipsis,
+                                style:
+                                    const TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 10,
+                                  fontWeight:
+                                      FontWeight.w400,
                                 ),
                               ),
                             ],
@@ -240,7 +300,6 @@ class _ChatsPageState extends State<ChatsPage> {
 
               const SizedBox(height: 30),
 
-              /// MENSAJES
               const Text(
                 "Mensajes",
                 style: TextStyle(
@@ -257,12 +316,10 @@ class _ChatsPageState extends State<ChatsPage> {
                   child: Center(
                     child: Column(
                       mainAxisAlignment:
-                          MainAxisAlignment
-                              .center,
+                          MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons
-                              .chat_bubble_outline,
+                          Icons.chat_bubble_outline,
                           size: 70,
                           color: Colors.white
                               .withValues(
@@ -274,8 +331,7 @@ class _ChatsPageState extends State<ChatsPage> {
                         const Text(
                           "No tienes mensajes aún",
                           style: TextStyle(
-                            color:
-                                Colors.white54,
+                            color: Colors.white54,
                             fontSize: 15,
                           ),
                         ),
@@ -313,13 +369,10 @@ class _ChatsPageState extends State<ChatsPage> {
                               builder: (_) =>
                                   ChatDetailPage(
                                 name:
-                                    chat["name"] ??
-                                        "",
+                                    chat["name"] ?? "",
                                 image:
-                                    chat["image"] ??
-                                        "",
-                                fromMatch:
-                                    false,
+                                    chat["image"] ?? "",
+                                fromMatch: false,
                                 matchPet:
                                     chat["petData"],
                               ),
@@ -334,104 +387,50 @@ class _ChatsPageState extends State<ChatsPage> {
                             bottom: 14,
                           ),
                           padding:
-                              const EdgeInsets.all(
-                            14,
-                          ),
+                              const EdgeInsets.all(14),
                           decoration:
                               BoxDecoration(
-                            color: const Color(
-                              0xFF111111,
-                            ),
+                            color:
+                                const Color(0xFF111111),
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               24,
                             ),
-                            border:
-                                Border.all(
-                              color:
-                                  Colors.white10,
+                            border: Border.all(
+                              color: Colors.white10,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors
-                                    .black
-                                    .withValues(
-                                  alpha:
-                                      0.35,
-                                ),
-                                blurRadius:
-                                    14,
-                                offset:
-                                    const Offset(
-                                  0,
-                                  8,
-                                ),
-                              ),
-                            ],
                           ),
                           child: Row(
                             children: [
-                              Hero(
-                                tag: chat[
-                                    "name"],
-                                child:
-                                    CircleAvatar(
-                                  radius:
-                                      30,
-                                  backgroundImage:
-                                      NetworkImage(
-                                    chat["image"] ??
-                                        "",
-                                  ),
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundImage:
+                                    NetworkImage(
+                                  chat["image"] ?? "",
                                 ),
                               ),
 
-                              const SizedBox(
-                                  width: 14),
+                              const SizedBox(width: 14),
 
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment:
-                                      CrossAxisAlignment
-                                          .start,
+                                      CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child:
-                                              Text(
-                                            chat["name"] ??
-                                                "",
-                                            style:
-                                                const TextStyle(
-                                              color:
-                                                  Colors.white,
-                                              fontWeight:
-                                                  FontWeight.bold,
-                                              fontSize:
-                                                  16,
-                                            ),
-                                          ),
-                                        ),
-
-                                        if (chat[
-                                                "verified"] ==
-                                            true)
-                                          const Icon(
-                                            Icons
-                                                .verified,
-                                            color:
-                                                Colors.blueAccent,
-                                            size:
-                                                17,
-                                          ),
-                                      ],
+                                    Text(
+                                      chat["name"] ?? "",
+                                      style:
+                                          const TextStyle(
+                                        color:
+                                            Colors.white,
+                                        fontWeight:
+                                            FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
                                     ),
 
                                     const SizedBox(
-                                        height:
-                                            6),
+                                        height: 6),
 
                                     Text(
                                       previewText,
@@ -443,69 +442,11 @@ class _ChatsPageState extends State<ChatsPage> {
                                           const TextStyle(
                                         color:
                                             Colors.white54,
-                                        fontSize:
-                                            13,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-
-                              const SizedBox(
-                                  width: 12),
-
-                              Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment
-                                        .end,
-                                children: [
-                                  Text(
-                                    chat["time"] ??
-                                        "",
-                                    style:
-                                        const TextStyle(
-                                      color:
-                                          Colors.white38,
-                                      fontSize:
-                                          11,
-                                    ),
-                                  ),
-
-                                  const SizedBox(
-                                      height:
-                                          8),
-
-                                  if ((chat["unread"] ??
-                                          0) >
-                                      0)
-                                    Container(
-                                      padding:
-                                          const EdgeInsets
-                                              .all(
-                                        7,
-                                      ),
-                                      decoration:
-                                          const BoxDecoration(
-                                        color: Colors
-                                            .redAccent,
-                                        shape: BoxShape
-                                            .circle,
-                                      ),
-                                      child: Text(
-                                        chat["unread"]
-                                            .toString(),
-                                        style:
-                                            const TextStyle(
-                                          color:
-                                              Colors.white,
-                                          fontSize:
-                                              10,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                ],
                               ),
                             ],
                           ),

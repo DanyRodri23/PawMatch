@@ -517,9 +517,11 @@ class _ChatDetailPageState
 
   Widget _buildMessagesList() {
     final chat = currentChat;
-    final matchDate =
-        chat?["matchDate"] as DateTime?;
 
+    final DateTime? matchDate = widget.fromMatch
+        ? (widget.matchPet?["matchDate"] as DateTime?)
+        : (chat?["matchDate"] as DateTime?);
+        
     return ListView.builder(
       controller: scrollController,
       padding:

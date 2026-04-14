@@ -7,9 +7,12 @@ class MatchesData {
     );
 
     if (!exists) {
-      matches.add(
-        Map<String, dynamic>.from(pet),
-      );
+      matches.add({
+        ...Map<String, dynamic>.from(pet),
+
+        /// FECHA DEL MATCH
+        "matchDate": DateTime.now(),
+      });
     }
   }
 

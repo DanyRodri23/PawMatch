@@ -166,7 +166,6 @@ class _ChatsPageState extends State<ChatsPage> {
                           ),
                           child: Column(
                             children: [
-
                               Container(
                                 padding:
                                     const EdgeInsets
@@ -296,9 +295,19 @@ class _ChatsPageState extends State<ChatsPage> {
                       final chat =
                           chats[index];
 
+                      final messages =
+                          List<Map<String, dynamic>>.from(
+                        chat["messages"] ?? [],
+                      );
+
+                      final previewText =
+                          messages.isNotEmpty
+                              ? messages.last["text"] ?? ""
+                              : chat["lastMessage"] ?? "";
+
                       return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
@@ -311,13 +320,13 @@ class _ChatsPageState extends State<ChatsPage> {
                                         "",
                                 fromMatch:
                                     false,
-
-                                /// IMPORTANTE
                                 matchPet:
                                     chat["petData"],
                               ),
                             ),
                           );
+
+                          setState(() {});
                         },
                         child: Container(
                           margin:
@@ -363,7 +372,6 @@ class _ChatsPageState extends State<ChatsPage> {
                           ),
                           child: Row(
                             children: [
-
                               Hero(
                                 tag: chat[
                                     "name"],
@@ -388,7 +396,6 @@ class _ChatsPageState extends State<ChatsPage> {
                                       CrossAxisAlignment
                                           .start,
                                   children: [
-
                                     Row(
                                       children: [
                                         Expanded(
@@ -427,10 +434,8 @@ class _ChatsPageState extends State<ChatsPage> {
                                             6),
 
                                     Text(
-                                      chat["lastMessage"] ??
-                                          "",
-                                      maxLines:
-                                          1,
+                                      previewText,
+                                      maxLines: 1,
                                       overflow:
                                           TextOverflow
                                               .ellipsis,
@@ -454,7 +459,6 @@ class _ChatsPageState extends State<ChatsPage> {
                                     CrossAxisAlignment
                                         .end,
                                 children: [
-
                                   Text(
                                     chat["time"] ??
                                         "",

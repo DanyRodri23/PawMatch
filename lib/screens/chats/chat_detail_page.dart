@@ -69,20 +69,174 @@ class _ChatDetailPageState
   }
 
   void openPetProfile() {
-    final chat = currentChat;
+    Map<String, dynamic>? petData;
 
-    if (chat == null) return;
+    if (widget.fromMatch &&
+        widget.matchPet != null) {
+      petData = widget.matchPet;
+    } else {
+      final chat = currentChat;
 
-    final petData = chat["petData"];
+      if (chat != null) {
+        petData = chat["petData"];
+      }
+    }
 
     if (petData == null) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PetDetailScreen(
-          pet: petData,
+        builder: (_) =>
+            PetDetailScreen(
+          pet: petData!,
         ),
+      ),
+    );
+  }
+
+  void cancelMatch() {
+    final pet = widget.matchPet;
+
+    if (pet != null) {
+      MatchesData.removeMatch(pet);
+      ChatsData.removeChatById(pet["id"]);
+    }
+
+    Navigator.pop(context);
+    Navigator.pop(context);
+  }
+
+  void blockUser() {
+    final pet = widget.matchPet;
+
+    if (pet != null) {
+      MatchesData.removeMatch(pet);
+      ChatsData.blockUser(pet["id"]);
+    }
+
+    Navigator.pop(context);
+    Navigator.pop(context);
+  }
+
+  void reportUser() {
+    final pet = widget.matchPet;
+
+    if (pet != null) {
+      ChatsData.reportUser(pet["id"]);
+    }
+
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          "Reporte enviado correctamente",
+        ),
+      ),
+    );
+  }
+
+  void showSafetyTools() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor:
+          const Color(0xFF111111),
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize:
+                  MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration:
+                      BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius:
+                        BorderRadius
+                            .circular(10),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  "Herramientas de seguridad",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                _sheetOption(
+                  "Cancelar Match",
+                  "Ya no te interesa, elimínalo de tus matches",
+                  cancelMatch,
+                ),
+
+                _sheetOption(
+                  "Bloquear",
+                  "No verás perfiles ni ellos te verán",
+                  blockUser,
+                ),
+
+                _sheetOption(
+                  "Denunciar",
+                  "No te preocupes, lo contaremos",
+                  reportUser,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _sheetOption(
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding:
+          EdgeInsets.zero,
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight:
+              FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          color: Colors.white54,
+        ),
+      ),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        color: Colors.white38,
+        size: 16,
       ),
     );
   }
@@ -92,23 +246,28 @@ class _ChatDetailPageState
 
     if (text.isEmpty) return;
 
-    if (widget.fromMatch && currentChat == null) {
+    if (widget.fromMatch &&
+        currentChat == null) {
       ChatsData.createChat({
-        "id": widget.matchPet?["id"] ?? widget.name,
+        "id": widget.matchPet?["id"] ??
+            widget.name,
         "name": widget.name,
         "image": widget.image,
         "images": [widget.image],
-        "pedigree": widget.matchPet?["pedigree"] ?? true,
+        "pedigree":
+            widget.matchPet?["pedigree"] ??
+                true,
         "messages": [],
         "lastMessage": "",
         "time": "",
         "unread": 0,
-
         "petData": widget.matchPet,
       });
 
       if (widget.matchPet != null) {
-        MatchesData.removeMatch(widget.matchPet!);
+        MatchesData.removeMatch(
+          widget.matchPet!,
+        );
       }
     }
 
@@ -137,7 +296,8 @@ class _ChatDetailPageState
     Future.delayed(
       const Duration(seconds: 1),
       () {
-        newMessage["status"] = "delivered";
+        newMessage["status"] =
+            "delivered";
 
         if (mounted) {
           setState(() {});
@@ -148,7 +308,8 @@ class _ChatDetailPageState
     Future.delayed(
       const Duration(seconds: 2),
       () {
-        newMessage["status"] = "seen";
+        newMessage["status"] =
+            "seen";
 
         if (mounted) {
           setState(() {});
@@ -161,16 +322,20 @@ class _ChatDetailPageState
 
   void scrollToBottom() {
     Future.delayed(
-      const Duration(milliseconds: 250),
+      const Duration(
+          milliseconds: 250),
       () {
         if (!scrollController.hasClients) {
           return;
         }
 
         scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
+          scrollController.position
+              .maxScrollExtent,
           duration:
-              const Duration(milliseconds: 350),
+              const Duration(
+            milliseconds: 350,
+          ),
           curve: Curves.easeOut,
         );
       },
@@ -197,7 +362,8 @@ class _ChatDetailPageState
     return const Icon(
       Icons.done_all,
       size: 14,
-      color: Colors.lightBlueAccent,
+      color:
+          Colors.lightBlueAccent,
     );
   }
 
@@ -206,17 +372,15 @@ class _ChatDetailPageState
     return Scaffold(
       backgroundColor:
           const Color(0xFF05070D),
-
       body: SafeArea(
         child: Column(
           children: [
             _buildHeader(),
             _buildDivider(),
-
             Expanded(
-              child: _buildMessagesList(),
+              child:
+                  _buildMessagesList(),
             ),
-
             _buildInputArea(),
           ],
         ),
@@ -239,31 +403,28 @@ class _ChatDetailPageState
             children: [
               _circleButton(
                 Icons.arrow_back_ios_new,
-                () => Navigator.pop(context),
+                () => Navigator.pop(
+                    context),
               ),
-
               const Spacer(),
-
               _circleButton(
                 Icons.more_horiz,
-                () {},
+                showSafetyTools,
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           GestureDetector(
             onTap: openPetProfile,
             child: CircleAvatar(
               radius: 34,
               backgroundImage:
-                  NetworkImage(widget.image),
+                  NetworkImage(
+                widget.image,
+              ),
             ),
           ),
-
           const SizedBox(height: 12),
-
           GestureDetector(
             onTap: openPetProfile,
             child: Container(
@@ -273,11 +434,14 @@ class _ChatDetailPageState
                 vertical: 8,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(
+                color: Colors.white
+                    .withValues(
                   alpha: 0.05,
                 ),
                 borderRadius:
-                    BorderRadius.circular(30),
+                    BorderRadius.circular(
+                  30,
+                ),
                 border: Border.all(
                   color: Colors.white10,
                 ),
@@ -290,15 +454,12 @@ class _ChatDetailPageState
                     widget.name,
                     style:
                         const TextStyle(
-                      color:
-                          Colors.white,
+                      color: Colors.white,
                       fontWeight:
                           FontWeight.w600,
                     ),
                   ),
-
                   const SizedBox(width: 6),
-
                   const Icon(
                     Icons.verified,
                     size: 16,
@@ -325,7 +486,6 @@ class _ChatDetailPageState
 
   Widget _buildMessagesList() {
     final chat = currentChat;
-
     final matchDate =
         chat?["matchDate"] as DateTime?;
 
@@ -339,7 +499,6 @@ class _ChatDetailPageState
       itemCount: messages.length + 1,
       itemBuilder:
           (context, index) {
-
         if (index == 0) {
           return Padding(
             padding:
@@ -360,14 +519,11 @@ class _ChatDetailPageState
                     letterSpacing: 1.2,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   matchDate != null
                       ? formatMatchDate(
-                          matchDate,
-                        )
+                          matchDate)
                       : "",
                   style:
                       const TextStyle(
@@ -466,9 +622,7 @@ class _ChatDetailPageState
                           fontSize: 11,
                         ),
                       ),
-
                       const SizedBox(width: 4),
-
                       buildCheck(
                         msg["status"] ??
                             "sent",
@@ -540,9 +694,7 @@ class _ChatDetailPageState
                 ),
               ),
             ),
-
             const SizedBox(width: 10),
-
             GestureDetector(
               onTap: sendMessage,
               child: Container(

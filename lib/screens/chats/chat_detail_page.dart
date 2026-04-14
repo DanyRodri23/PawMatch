@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/chats_data.dart';
 import '../../data/matches_data.dart';
+import '../match/pet_detail_screen.dart';
 
 class ChatDetailPage extends StatefulWidget {
   final String name;
@@ -60,26 +61,52 @@ class _ChatDetailPageState
     return "${now.hour}:${now.minute.toString().padLeft(2, '0')}";
   }
 
+  String formatMatchDate(DateTime date) {
+    return
+        "${date.day.toString().padLeft(2, '0')}/"
+        "${date.month.toString().padLeft(2, '0')}/"
+        "${date.year}";
+  }
+
+  void openPetProfile() {
+    final chat = currentChat;
+
+    if (chat == null) return;
+
+    final petData = chat["petData"];
+
+    if (petData == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PetDetailScreen(
+          pet: petData,
+        ),
+      ),
+    );
+  }
+
   void sendMessage() {
     final text = controller.text.trim();
 
     if (text.isEmpty) return;
 
-    /// SI VIENE DESDE MATCH Y NO EXISTE CHAT AÚN
     if (widget.fromMatch && currentChat == null) {
       ChatsData.createChat({
         "id": widget.matchPet?["id"] ?? widget.name,
         "name": widget.name,
         "image": widget.image,
         "images": [widget.image],
-        "verified": widget.matchPet?["pedigree"] ?? true,
+        "pedigree": widget.matchPet?["pedigree"] ?? true,
         "messages": [],
         "lastMessage": "",
         "time": "",
         "unread": 0,
+
+        "petData": widget.matchPet,
       });
 
-      /// REMOVER MATCH REAL
       if (widget.matchPet != null) {
         MatchesData.removeMatch(widget.matchPet!);
       }
@@ -97,7 +124,9 @@ class _ChatDetailPageState
     };
 
     setState(() {
-      (chat["messages"] as List).add(newMessage);
+      (chat["messages"] as List).add(
+        newMessage,
+      );
 
       chat["lastMessage"] = text;
       chat["time"] = getCurrentTime();
@@ -110,7 +139,9 @@ class _ChatDetailPageState
       () {
         newMessage["status"] = "delivered";
 
-        if (mounted) setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       },
     );
 
@@ -119,7 +150,9 @@ class _ChatDetailPageState
       () {
         newMessage["status"] = "seen";
 
-        if (mounted) setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       },
     );
 
@@ -130,7 +163,9 @@ class _ChatDetailPageState
     Future.delayed(
       const Duration(milliseconds: 250),
       () {
-        if (!scrollController.hasClients) return;
+        if (!scrollController.hasClients) {
+          return;
+        }
 
         scrollController.animateTo(
           scrollController.position.maxScrollExtent,
@@ -218,54 +253,60 @@ class _ChatDetailPageState
 
           const SizedBox(height: 18),
 
-          CircleAvatar(
-            radius: 34,
-            backgroundImage:
-                NetworkImage(widget.image),
+          GestureDetector(
+            onTap: openPetProfile,
+            child: CircleAvatar(
+              radius: 34,
+              backgroundImage:
+                  NetworkImage(widget.image),
+            ),
           ),
 
           const SizedBox(height: 12),
 
-          Container(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(
-                alpha: 0.05,
+          GestureDetector(
+            onTap: openPetProfile,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 8,
               ),
-              borderRadius:
-                  BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white10,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(
+                  alpha: 0.05,
+                ),
+                borderRadius:
+                    BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.white10,
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisSize:
-                  MainAxisSize.min,
-              children: [
-                Text(
-                  widget.name,
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
-                    fontWeight:
-                        FontWeight.w600,
+              child: Row(
+                mainAxisSize:
+                    MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.name,
+                    style:
+                        const TextStyle(
+                      color:
+                          Colors.white,
+                      fontWeight:
+                          FontWeight.w600,
+                    ),
                   ),
-                ),
 
-                const SizedBox(width: 6),
+                  const SizedBox(width: 6),
 
-                const Icon(
-                  Icons.verified,
-                  size: 16,
-                  color:
-                      Colors.blueAccent,
-                ),
-              ],
+                  const Icon(
+                    Icons.verified,
+                    size: 16,
+                    color:
+                        Colors.blueAccent,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -283,6 +324,11 @@ class _ChatDetailPageState
   }
 
   Widget _buildMessagesList() {
+    final chat = currentChat;
+
+    final matchDate =
+        chat?["matchDate"] as DateTime?;
+
     return ListView.builder(
       controller: scrollController,
       padding:
@@ -290,10 +336,53 @@ class _ChatDetailPageState
         horizontal: 16,
         vertical: 24,
       ),
-      itemCount: messages.length,
+      itemCount: messages.length + 1,
       itemBuilder:
           (context, index) {
-        final msg = messages[index];
+
+        if (index == 0) {
+          return Padding(
+            padding:
+                const EdgeInsets.only(
+              bottom: 26,
+            ),
+            child: Column(
+              children: [
+                Text(
+                  "HICISTE MATCH CON ${widget.name.toUpperCase()}",
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.white54,
+                    fontSize: 12,
+                    fontWeight:
+                        FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  matchDate != null
+                      ? formatMatchDate(
+                          matchDate,
+                        )
+                      : "",
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.white30,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final msg =
+            messages[index - 1];
 
         final isMe =
             msg["isMe"] == true;

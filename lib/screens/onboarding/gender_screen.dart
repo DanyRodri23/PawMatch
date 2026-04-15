@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'profile_photo_screen.dart';
 import '../../widgets/user_progress_bar.dart';
+import '../../data/user_data.dart';
 
 class GenderScreen extends StatefulWidget {
   const GenderScreen({super.key});
 
   @override
-  State<GenderScreen> createState() => _GenderScreenState();
+  State<GenderScreen> createState() =>
+      _GenderScreenState();
 }
 
-class _GenderScreenState extends State<GenderScreen> {
+class _GenderScreenState
+    extends State<GenderScreen> {
 
   String? selectedGender;
   bool showOnProfile = true;
 
   Widget genderOption(String gender) {
-
-    bool isSelected = selectedGender == gender;
+    bool isSelected =
+        selectedGender == gender;
 
     return GestureDetector(
       onTap: () {
@@ -24,28 +27,40 @@ class _GenderScreenState extends State<GenderScreen> {
           selectedGender = gender;
         });
       },
-
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-
-        padding: const EdgeInsets.symmetric(vertical: 18),
-
+        margin:
+            const EdgeInsets.symmetric(
+          vertical: 8,
+        ),
+        padding:
+            const EdgeInsets.symmetric(
+          vertical: 18,
+        ),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.black : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16),
-
+          color: isSelected
+              ? Colors.black
+              : Colors.grey.shade100,
+          borderRadius:
+              BorderRadius.circular(
+            16,
+          ),
           border: Border.all(
-            color: isSelected ? Colors.black : Colors.grey.shade300,
+            color: isSelected
+                ? Colors.black
+                : Colors.grey
+                    .shade300,
           ),
         ),
-
         child: Center(
           child: Text(
             gender,
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : Colors.black,
+              fontWeight:
+                  FontWeight.w600,
+              color: isSelected
+                  ? Colors.white
+                  : Colors.black,
             ),
           ),
         ),
@@ -54,139 +69,161 @@ class _GenderScreenState extends State<GenderScreen> {
   }
 
   void goNext() {
-
     if (selectedGender == null) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
-          content: Text("Selecciona tu género"),
+          content: Text(
+            "Selecciona tu género",
+          ),
         ),
       );
 
       return;
     }
 
+    UserData.updateProfile(
+      gender: selectedGender,
+      showGender: showOnProfile,
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const ProfilePhotoScreen(),
+        builder: (context) =>
+            const ProfilePhotoScreen(),
       ),
     );
-
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: Colors.white,
-
+      backgroundColor:
+          Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-
-            /// BARRA DE PROGRESO
-            const UserProgressBar(step: 3),
-
+            const UserProgressBar(
+              step: 3,
+            ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(28),
-
+                padding:
+                    const EdgeInsets.all(
+                  28,
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment
+                          .start,
                   children: [
-
-                    const SizedBox(height: 40),
-
+                    const SizedBox(
+                      height: 40,
+                    ),
                     const Text(
                       "¿Cuál es tu género?",
                       style: TextStyle(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-
-                    const SizedBox(height: 10),
-
+                    const SizedBox(
+                      height: 10,
+                    ),
                     const Text(
                       "Selecciona lo que mejor te describa para mostrar tu perfil correctamente.",
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.black54,
+                        color:
+                            Colors.black54,
                       ),
                     ),
-
-                    const SizedBox(height: 40),
-
-                    /// OPCIONES
-                    genderOption("Hombre"),
-                    genderOption("Mujer"),
-                    genderOption("Más allá del binario"),
-
-                    const SizedBox(height: 20),
-
-                    /// SWITCH MOSTRAR PERFIL
+                    const SizedBox(
+                      height: 40,
+                    ),
+                    genderOption(
+                      "Hombre",
+                    ),
+                    genderOption(
+                      "Mujer",
+                    ),
+                    genderOption(
+                      "Más allá del binario",
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment:
+                          MainAxisAlignment
+                              .spaceBetween,
                       children: [
-
                         const Text(
                           "Mostrar en mi perfil",
-                          style: TextStyle(
-                            fontSize: 16,
+                          style:
+                              TextStyle(
+                            fontSize:
+                                16,
                           ),
                         ),
-
                         Switch(
-                          value: showOnProfile,
-                          onChanged: (value) {
+                          value:
+                              showOnProfile,
+                          onChanged:
+                              (value) {
                             setState(() {
-                              showOnProfile = value;
+                              showOnProfile =
+                                  value;
                             });
                           },
                         ),
-
                       ],
                     ),
-
                     const Spacer(),
-
-                    /// BOTON CONTINUAR
                     SizedBox(
-                      width: double.infinity,
+                      width:
+                          double.infinity,
                       height: 55,
-
-                      child: ElevatedButton(
-
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
+                      child:
+                          ElevatedButton(
+                        style:
+                            ElevatedButton
+                                .styleFrom(
+                          backgroundColor:
+                              Colors.black,
+                          foregroundColor:
+                              Colors.white,
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(
+                              18,
+                            ),
                           ),
                         ),
-
-                        onPressed: goNext,
-
-                        child: const Text(
+                        onPressed:
+                            goNext,
+                        child:
+                            const Text(
                           "Continuar",
-                          style: TextStyle(
+                          style:
+                              TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontWeight:
+                                FontWeight.bold,
                           ),
                         ),
-
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
+                    const SizedBox(
+                      height: 20,
+                    ),
                   ],
                 ),
               ),
             ),
-
           ],
         ),
       ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'pet_personality_screen.dart';
+import '../../widgets/pet_progress_bar.dart';
+import '../../data/pet_profile_data.dart';
 
-class PetPhotosScreen extends StatelessWidget {
-
+class PetPhotosScreen extends StatefulWidget {
   final bool isBreedDog;
   final bool fromVaccineCard;
 
@@ -12,92 +13,201 @@ class PetPhotosScreen extends StatelessWidget {
     this.fromVaccineCard = false,
   });
 
-  void goNext(BuildContext context){
+  @override
+  State<PetPhotosScreen> createState() =>
+      _PetPhotosScreenState();
+}
+
+class _PetPhotosScreenState
+    extends State<PetPhotosScreen> {
+  List<String?> photos =
+      List.filled(6, null);
+
+  @override
+  void initState() {
+    super.initState();
+
+    final savedImages =
+        List<String>.from(
+      PetProfileData.pet["images"] ??
+          [],
+    );
+
+    for (int i = 0;
+        i < savedImages.length &&
+            i < 6;
+        i++) {
+      photos[i] = savedImages[i];
+    }
+  }
+
+  void goNext() {
+    final validPhotos = photos
+        .whereType<String>()
+        .toList();
+
+    if (validPhotos.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Agrega al menos una foto",
+          ),
+        ),
+      );
+      return;
+    }
+
+    PetProfileData.updatePet(
+      images: validPhotos,
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PetPersonalityScreen(
-          isBreedDog: isBreedDog,
+        builder: (context) =>
+            PetPersonalityScreen(
+          isBreedDog:
+              widget.isBreedDog,
         ),
       ),
     );
   }
 
-  void goBack(BuildContext context){
+  void goBack() {
     Navigator.pop(context);
   }
 
-  Widget photoBox(int index) {
+  void simulatePhotoPick(
+      int index) {
+    setState(() {
+      photos[index] =
+          "https://placedog.net/500?id=${index + 10}";
+    });
+  }
 
-    final isMain = index == 0;
+  Widget photoBox(int index) {
+    final isMain =
+        index == 0;
 
     return GestureDetector(
-      onTap: () {
-        // 🔥 luego aquí metemos picker
-      },
-
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-
-          gradient: LinearGradient(
+      onTap: () =>
+          simulatePhotoPick(
+              index),
+      child:
+          AnimatedContainer(
+        duration:
+            const Duration(
+          milliseconds: 200,
+        ),
+        decoration:
+            BoxDecoration(
+          borderRadius:
+              BorderRadius.circular(
+            22,
+          ),
+          gradient:
+              LinearGradient(
             colors: [
-              Colors.grey.shade100,
-              Colors.grey.shade200,
+              Colors.grey
+                  .shade100,
+              Colors.grey
+                  .shade200,
             ],
           ),
-
           border: Border.all(
-            color: isMain ? Colors.black : Colors.grey.shade300,
-            width: isMain ? 2 : 1,
+            color: isMain
+                ? Colors.black
+                : Colors.grey
+                    .shade300,
+            width:
+                isMain ? 2 : 1,
           ),
-
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
+              color: Colors
+                  .black
+                  .withValues(
+                alpha: 0.06,
+              ),
+              blurRadius:
+                  15,
+              offset:
+                  const Offset(
+                0,
+                6,
+              ),
             )
           ],
         ),
-
         child: Stack(
           children: [
-
-            /// ICONO
-            const Center(
-              child: Icon(
-                Icons.add_a_photo_rounded,
-                size: 32,
-                color: Colors.black54,
+            if (photos[index] !=
+                null)
+              ClipRRect(
+                borderRadius:
+                    BorderRadius.circular(
+                  22,
+                ),
+                child:
+                    Image.network(
+                  photos[index]!,
+                  fit:
+                      BoxFit.cover,
+                  width: double
+                      .infinity,
+                  height: double
+                      .infinity,
+                ),
+              )
+            else
+              const Center(
+                child: Icon(
+                  Icons
+                      .add_a_photo_rounded,
+                  size: 32,
+                  color: Colors
+                      .black54,
+                ),
               ),
-            ),
 
-            /// BADGE PRINCIPAL
             if (isMain)
               Positioned(
                 top: 8,
                 left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(10),
+                child:
+                    Container(
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal:
+                        8,
+                    vertical: 4,
                   ),
-                  child: const Text(
+                  decoration:
+                      BoxDecoration(
+                    color: Colors
+                        .black,
+                    borderRadius:
+                        BorderRadius.circular(
+                      10,
+                    ),
+                  ),
+                  child:
+                      const Text(
                     "Principal",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                    style:
+                        TextStyle(
+                      color: Colors
+                          .white,
+                      fontSize:
+                          10,
+                      fontWeight:
+                          FontWeight
+                              .w600,
                     ),
                   ),
                 ),
               ),
-
           ],
         ),
       ),
@@ -105,116 +215,163 @@ class PetPhotosScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-
+  Widget build(
+      BuildContext context) {
     return Scaffold(
-
-      backgroundColor: Colors.white,
-
+      backgroundColor:
+          Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor:
+            Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => goBack(context),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.black,
+          ),
+          onPressed: goBack,
         ),
       ),
+      body: Column(
+        children: [
+          const PetProgressBar(
+            step: 9,
+            totalSteps: 9,
+          ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(28),
-
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            const SizedBox(height: 30),
-
-            /// TITULO PRO
-            const Text(
-              "Fotos de tu mascota",
-              style: TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -1,
+          Expanded(
+            child: Padding(
+              padding:
+                  const EdgeInsets.all(
+                28,
               ),
-            ),
-
-            const SizedBox(height: 10),
-
-            const Text(
-              "Agrega fotos increíbles para destacar 🐾",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            /// GRID PREMIUM
-            Expanded(
-              child: GridView.builder(
-                itemCount: 6,
-
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                ),
-
-                itemBuilder: (context, index){
-                  return photoBox(index);
-                },
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            /// BOTÓN UNICORNIO 🦄
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-
-              child: ElevatedButton(
-
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-
-                  elevation: 8,
-                  shadowColor: Colors.black26,
-
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
+                children: [
+                  const SizedBox(
+                    height: 30,
                   ),
-                ),
 
-                onPressed: ()=>goNext(context),
+                  const Text(
+                    "Fotos de tu mascota",
+                    style:
+                        TextStyle(
+                      fontSize:
+                          34,
+                      fontWeight:
+                          FontWeight
+                              .bold,
+                      letterSpacing:
+                          -1,
+                    ),
+                  ),
 
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  const SizedBox(
+                    height: 10,
+                  ),
 
-                    Text(
-                      "Continuar",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                  const Text(
+                    "Agrega fotos increíbles para destacar 🐾",
+                    style:
+                        TextStyle(
+                      fontSize:
+                          16,
+                      color: Colors
+                          .black54,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 25,
+                  ),
+
+                  Expanded(
+                    child:
+                        GridView.builder(
+                      itemCount: 6,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            3,
+                        crossAxisSpacing:
+                            14,
+                        mainAxisSpacing:
+                            14,
+                      ),
+                      itemBuilder:
+                          (
+                        context,
+                        index,
+                      ) {
+                        return photoBox(
+                            index);
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 15,
+                  ),
+
+                  SizedBox(
+                    width: double
+                        .infinity,
+                    height: 60,
+                    child:
+                        ElevatedButton(
+                      style:
+                          ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors
+                                .black,
+                        foregroundColor:
+                            Colors
+                                .white,
+                        elevation:
+                            8,
+                        shadowColor:
+                            Colors
+                                .black26,
+                        shape:
+                            RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(
+                            25,
+                          ),
+                        ),
+                      ),
+                      onPressed:
+                          goNext,
+                      child: Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
+                        children: const [
+                          Text(
+                            "Continuar",
+                            style:
+                                TextStyle(
+                              fontSize:
+                                  18,
+                              fontWeight:
+                                  FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(
+                              width:
+                                  8),
+                          Icon(Icons
+                              .arrow_forward_rounded)
+                        ],
                       ),
                     ),
-
-                    SizedBox(width: 8),
-
-                    Icon(Icons.arrow_forward_rounded)
-
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

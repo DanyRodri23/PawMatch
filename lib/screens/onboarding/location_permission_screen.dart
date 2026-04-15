@@ -2,28 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'success_profile_screen.dart';
 import '../../widgets/user_progress_bar.dart';
+import '../../data/user_data.dart';
 
 class LocationPermissionScreen extends StatefulWidget {
-  const LocationPermissionScreen({super.key});
+  const LocationPermissionScreen({
+    super.key,
+  });
 
   @override
-  State<LocationPermissionScreen> createState() => _LocationPermissionScreenState();
+  State<LocationPermissionScreen>
+      createState() =>
+          _LocationPermissionScreenState();
 }
 
-class _LocationPermissionScreenState extends State<LocationPermissionScreen>
+class _LocationPermissionScreenState
+    extends State<
+        LocationPermissionScreen>
     with SingleTickerProviderStateMixin {
-
   bool isLoading = false;
 
-  late AnimationController _controller;
+  late AnimationController
+      _controller;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
+    _controller =
+        AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration:
+          const Duration(
+        seconds: 2,
+      ),
       lowerBound: 0.9,
       upperBound: 1.1,
     )..repeat(reverse: true);
@@ -36,23 +47,28 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
   }
 
   Future<void> requestLocation() async {
-
     setState(() {
       isLoading = true;
     });
 
     bool serviceEnabled;
-    LocationPermission permission;
+    LocationPermission
+        permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    serviceEnabled =
+        await Geolocator
+            .isLocationServiceEnabled();
 
     if (!mounted) return;
 
     if (!serviceEnabled) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(
+              context)
+          .showSnackBar(
         const SnackBar(
-          content: Text("Activa la ubicación en tu dispositivo"),
+          content: Text(
+            "Activa la ubicación en tu dispositivo",
+          ),
         ),
       );
 
@@ -63,21 +79,32 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
       return;
     }
 
-    permission = await Geolocator.checkPermission();
+    permission =
+        await Geolocator
+            .checkPermission();
 
     if (!mounted) return;
 
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    if (permission ==
+        LocationPermission
+            .denied) {
+      permission =
+          await Geolocator
+              .requestPermission();
     }
 
     if (!mounted) return;
 
-    if (permission == LocationPermission.deniedForever) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (permission ==
+        LocationPermission
+            .deniedForever) {
+      ScaffoldMessenger.of(
+              context)
+          .showSnackBar(
         const SnackBar(
-          content: Text("Los permisos de ubicación están bloqueados"),
+          content: Text(
+            "Los permisos de ubicación están bloqueados",
+          ),
         ),
       );
 
@@ -88,14 +115,28 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
       return;
     }
 
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+    Position position =
+        await Geolocator
+            .getCurrentPosition(
+      desiredAccuracy:
+          LocationAccuracy.high,
+    );
+
+    UserData.updateProfile(
+      latitude:
+          position.latitude,
+      longitude:
+          position.longitude,
     );
 
     if (!mounted) return;
 
-    debugPrint("Latitud: ${position.latitude}");
-    debugPrint("Longitud: ${position.longitude}");
+    debugPrint(
+      "Latitud: ${position.latitude}",
+    );
+    debugPrint(
+      "Longitud: ${position.longitude}",
+    );
 
     setState(() {
       isLoading = false;
@@ -104,152 +145,214 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const SuccessProfileScreen(),
+        builder: (context) =>
+            const SuccessProfileScreen(),
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-
+  Widget build(
+      BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
+      backgroundColor:
+          Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-
-            /// BARRA PROGRESO
-            const UserProgressBar(step: 5),
-
+            const UserProgressBar(
+              step: 5,
+            ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-
+                padding:
+                    const EdgeInsets
+                        .symmetric(
+                  horizontal: 30,
+                ),
                 child: Column(
                   children: [
-
-                    const SizedBox(height: 60),
-
+                    const SizedBox(
+                      height: 60,
+                    ),
                     const Text(
                       "Activa tu ubicación",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                      textAlign:
+                          TextAlign
+                              .center,
+                      style:
+                          TextStyle(
+                        fontSize:
+                            32,
+                        fontWeight:
+                            FontWeight
+                                .bold,
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
+                    const SizedBox(
+                      height: 12,
+                    ),
                     const Text(
                       "Necesitamos tu ubicación para mostrar mascotas cerca de ti y ayudarte a encontrar el match perfecto.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
+                      textAlign:
+                          TextAlign
+                              .center,
+                      style:
+                          TextStyle(
+                        fontSize:
+                            16,
+                        color: Colors
+                            .black54,
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    /// PLANETA + RADAR
+                    const SizedBox(
+                      height: 20,
+                    ),
                     Expanded(
                       child: Center(
-                        child: Transform.translate(
-                          offset: const Offset(0, -20),
-                          child: Stack(
-                            alignment: Alignment.center,
+                        child:
+                            Transform
+                                .translate(
+                          offset:
+                              const Offset(
+                            0,
+                            -20,
+                          ),
+                          child:
+                              Stack(
+                            alignment:
+                                Alignment
+                                    .center,
                             children: [
-
                               Container(
-                                width: 420,
-                                height: 420,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.blue.withValues(alpha: 0.05),
+                                width:
+                                    420,
+                                height:
+                                    420,
+                                decoration:
+                                    BoxDecoration(
+                                  shape:
+                                      BoxShape.circle,
+                                  color: Colors.blue.withValues(
+                                      alpha:
+                                          0.05),
                                 ),
                               ),
-
                               Container(
-                                width: 360,
-                                height: 360,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.blue.withValues(alpha: 0.08),
+                                width:
+                                    360,
+                                height:
+                                    360,
+                                decoration:
+                                    BoxDecoration(
+                                  shape:
+                                      BoxShape.circle,
+                                  color: Colors.blue.withValues(
+                                      alpha:
+                                          0.08),
                                 ),
                               ),
-
                               Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
+                                decoration:
+                                    BoxDecoration(
+                                  shape:
+                                      BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.25),
-                                      blurRadius: 40,
-                                      spreadRadius: 5,
+                                      color: Colors.black.withValues(
+                                          alpha:
+                                              0.25),
+                                      blurRadius:
+                                          40,
+                                      spreadRadius:
+                                          5,
                                     )
                                   ],
                                 ),
-                                child: Image.asset(
+                                child:
+                                    Image.asset(
                                   "assets/earth.png",
-                                  width: 350,
+                                  width:
+                                      350,
                                 ),
                               ),
-
                               Transform.translate(
-                                offset: const Offset(0, -30),
-                                child: ScaleTransition(
-                                  scale: _controller,
-                                  child: Image.asset(
+                                offset:
+                                    const Offset(
+                                  0,
+                                  -30,
+                                ),
+                                child:
+                                    ScaleTransition(
+                                  scale:
+                                      _controller,
+                                  child:
+                                      Image.asset(
                                     "assets/location_icon.png",
-                                    width: 200,
+                                    width:
+                                        200,
                                   ),
                                 ),
                               ),
-
                             ],
                           ),
                         ),
                       ),
                     ),
-
                     SizedBox(
-                      width: double.infinity,
+                      width:
+                          double
+                              .infinity,
                       height: 60,
-
-                      child: ElevatedButton(
-
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                      child:
+                          ElevatedButton(
+                        style:
+                            ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors
+                                  .black,
+                          foregroundColor:
+                              Colors
+                                  .white,
+                          elevation:
+                              10,
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(
+                              30,
+                            ),
                           ),
                         ),
-
-                        onPressed: isLoading ? null : requestLocation,
-
-                        child: isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text(
-                                "Permitir ubicación",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                        onPressed:
+                            isLoading
+                                ? null
+                                : requestLocation,
+                        child:
+                            isLoading
+                                ? const CircularProgressIndicator(
+                                    color:
+                                        Colors.white,
+                                  )
+                                : const Text(
+                                    "Permitir ubicación",
+                                    style:
+                                        TextStyle(
+                                      fontSize:
+                                          18,
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
+                                  ),
                       ),
                     ),
-
-                    const SizedBox(height: 30),
-
+                    const SizedBox(
+                      height: 30,
+                    ),
                   ],
                 ),
               ),
             ),
-
           ],
         ),
       ),

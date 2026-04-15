@@ -3,59 +3,80 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'location_permission_screen.dart';
 import '../../widgets/user_progress_bar.dart';
+import '../../data/user_data.dart';
 
 class ProfilePhotoScreen extends StatefulWidget {
   const ProfilePhotoScreen({super.key});
 
   @override
-  State<ProfilePhotoScreen> createState() => _ProfilePhotoScreenState();
+  State<ProfilePhotoScreen> createState() =>
+      _ProfilePhotoScreenState();
 }
 
-class _ProfilePhotoScreenState extends State<ProfilePhotoScreen> {
+class _ProfilePhotoScreenState
+    extends State<ProfilePhotoScreen> {
 
-  Uint8List? imageBytes;
+  List<Uint8List?> images =
+      List.generate(4, (_) => null);
 
-  Future<void> pickImage(ImageSource source) async {
+  int selectedIndex = 0;
 
-    final pickedFile = await ImagePicker().pickImage(source: source);
+  Future<void> pickImage(
+    ImageSource source,
+    int index,
+  ) async {
+    final pickedFile =
+        await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 85,
+    );
 
     if (pickedFile == null) return;
 
-    final bytes = await pickedFile.readAsBytes();
+    final bytes =
+        await pickedFile.readAsBytes();
 
     setState(() {
-      imageBytes = bytes;
+      images[index] = bytes;
     });
   }
 
-  void showPicker() {
-
+  void showPicker(int index) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
-
         return SafeArea(
           child: Wrap(
             children: [
-
               ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text("Tomar foto"),
+                leading: const Icon(
+                  Icons.photo_camera,
+                ),
+                title:
+                    const Text("Tomar foto"),
                 onTap: () {
                   Navigator.pop(context);
-                  pickImage(ImageSource.camera);
+                  pickImage(
+                    ImageSource.camera,
+                    index,
+                  );
                 },
               ),
-
               ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text("Elegir de galería"),
+                leading: const Icon(
+                  Icons.photo_library,
+                ),
+                title: const Text(
+                  "Elegir de galería",
+                ),
                 onTap: () {
                   Navigator.pop(context);
-                  pickImage(ImageSource.gallery);
+                  pickImage(
+                    ImageSource.gallery,
+                    index,
+                  );
                 },
               ),
-
             ],
           ),
         );
@@ -64,125 +85,204 @@ class _ProfilePhotoScreenState extends State<ProfilePhotoScreen> {
   }
 
   void goNext() {
+    final validImages =
+        images
+            .where(
+              (img) => img != null,
+            )
+            .cast<Uint8List>()
+            .toList();
 
-    if (imageBytes == null) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (validImages.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
-          content: Text("Debes agregar una foto"),
+          content: Text(
+            "Debes agregar al menos una foto",
+          ),
         ),
       );
 
       return;
     }
 
+    UserData.updateProfile(
+      images: <dynamic>[
+        ...validImages,
+      ],
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const LocationPermissionScreen(),
+        builder: (context) =>
+            const LocationPermissionScreen(),
+      ),
+    );
+  }
+
+  Widget buildPhotoSlot(int index) {
+    return GestureDetector(
+      onTap: () => showPicker(index),
+      child: Container(
+        width: 150,
+        height: 170,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius:
+              BorderRadius.circular(
+            20,
+          ),
+          border: Border.all(
+            color: Colors.grey.shade300,
+          ),
+        ),
+        child: images[index] != null
+            ? ClipRRect(
+                borderRadius:
+                    BorderRadius.circular(
+                  20,
+                ),
+                child: Image.memory(
+                  images[index]!,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : Column(
+                mainAxisAlignment:
+                    MainAxisAlignment
+                        .center,
+                children: [
+                  const Icon(
+                    Icons.add_a_photo,
+                    size: 34,
+                    color:
+                        Colors.black54,
+                  ),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  Text(
+                    "Foto ${index + 1}",
+                    style: const TextStyle(
+                      color:
+                          Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
+      backgroundColor:
+          Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-
-            const UserProgressBar(step: 4),
-
+            const UserProgressBar(
+              step: 4,
+            ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(28),
-
+                padding:
+                    const EdgeInsets.all(
+                  28,
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment
+                          .start,
                   children: [
-
-                    const SizedBox(height: 40),
-
+                    const SizedBox(
+                      height: 40,
+                    ),
                     const Text(
-                      "Agrega tu foto",
+                      "Agrega tus fotos",
                       style: TextStyle(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-
-                    const SizedBox(height: 10),
-
+                    const SizedBox(
+                      height: 10,
+                    ),
                     const Text(
-                      "Esta foto será visible para otros usuarios.",
+                      "Puedes agregar hasta 4 fotos para mostrar mejor tu perfil.",
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.black54,
+                        color:
+                            Colors.black54,
                       ),
                     ),
-
-                    const SizedBox(height: 40),
-
-                    /// FOTO
-                    Center(
-                      child: GestureDetector(
-                        onTap: showPicker,
-
-                        child: Container(
-                          width: 160,
-                          height: 160,
-
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-
-                          child: imageBytes != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Image.memory(
-                                    imageBytes!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.add_a_photo,
-                                  size: 50,
-                                  color: Colors.black54,
-                                ),
+                    const SizedBox(
+                      height: 30,
+                    ),
+                    Expanded(
+                      child: GridView.builder(
+                        physics:
+                            const NeverScrollableScrollPhysics(),
+                        itemCount: 4,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              2,
+                          mainAxisSpacing:
+                              14,
+                          crossAxisSpacing:
+                              14,
+                          childAspectRatio:
+                              0.88,
                         ),
+                        itemBuilder:
+                            (
+                              context,
+                              index,
+                            ) {
+                          return buildPhotoSlot(
+                            index,
+                          );
+                        },
                       ),
                     ),
-
-                    const Spacer(),
-
-                    /// BOTÓN
+                    const SizedBox(
+                      height: 10,
+                    ),
                     SizedBox(
-                      width: double.infinity,
+                      width:
+                          double.infinity,
                       height: 55,
-
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
+                      child:
+                          ElevatedButton(
+                        style:
+                            ElevatedButton
+                                .styleFrom(
+                          backgroundColor:
+                              Colors.black,
+                          foregroundColor:
+                              Colors.white,
                         ),
-
-                        onPressed: goNext,
-
-                        child: const Text("Continuar"),
+                        onPressed:
+                            goNext,
+                        child:
+                            const Text(
+                          "Continuar",
+                        ),
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
+                    const SizedBox(
+                      height: 20,
+                    ),
                   ],
                 ),
               ),
             ),
-
           ],
         ),
       ),

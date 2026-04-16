@@ -566,6 +566,12 @@ class _PetBreedSelectScreenState
                         child:
                             const Text(
                           "Continuar",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight:FontWeight.w600,
+                            letterSpacing: 0.3,
+                             
+                          ),
                         ),
                       ),
                     ),

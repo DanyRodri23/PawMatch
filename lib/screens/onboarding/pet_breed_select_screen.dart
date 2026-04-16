@@ -377,10 +377,46 @@ class _PetBreedSelectScreenState
       body: SafeArea(
         child: Column(
           children: [
-            const PetProgressBar(
-              step: 5,
-              totalSteps: 9,
-            ),
+              Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      const Expanded(
+                        child: PetProgressBar(
+                          step: 5,
+                          totalSteps: 9,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
             Expanded(
               child: Padding(

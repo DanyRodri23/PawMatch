@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pet_photos_screen.dart';
 import '../../widgets/pet_progress_bar.dart';
 import '../../data/pet_profile_data.dart';
+import 'package:pawmatch/helpers/pet_flow_helper.dart';
 
 class PetVaccineCardScreen extends StatefulWidget {
   final bool isBreedDog;
@@ -64,33 +65,53 @@ class _PetVaccineCardScreenState
       backgroundColor:
           Colors.white,
 
-      appBar: AppBar(
-        backgroundColor:
-            Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.black,
-          ),
-          onPressed: () =>
-              Navigator.pop(
-                  context),
-        ),
-      ),
-
       body: Column(
         children: [
-          const PetProgressBar(
-            step: 8,
-            totalSteps: 9,
+
+          /// 🔥 HEADER PRO
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () =>
+                      Navigator.pop(context),
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors
+                          .grey.shade100,
+                      shape:
+                          BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: PetProgressBar(
+                    step: PetFlowHelper.getStep("vaccineCard"),
+                    totalSteps: PetFlowHelper.totalSteps,
+                  ),
+                ),
+              ],
+            ),
           ),
 
           Expanded(
             child: Padding(
               padding:
-                  const EdgeInsets.all(
-                      28),
+                  const EdgeInsets.all(28),
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment

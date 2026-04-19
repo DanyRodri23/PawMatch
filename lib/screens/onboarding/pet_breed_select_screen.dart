@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pet_pedigree_screen.dart';
 import '../../widgets/pet_progress_bar.dart';
 import '../../data/pet_profile_data.dart';
+import 'package:pawmatch/helpers/pet_flow_helper.dart';
 
 class PetBreedSelectScreen extends StatefulWidget {
   const PetBreedSelectScreen({super.key});
@@ -408,10 +409,10 @@ class _PetBreedSelectScreenState
 
                       const SizedBox(width: 14),
 
-                      const Expanded(
+                      Expanded(
                         child: PetProgressBar(
-                          step: 5,
-                          totalSteps: 9,
+                          step: PetFlowHelper.getStep("breed"),
+                          totalSteps: PetFlowHelper.totalSteps,
                         ),
                       ),
                     ],

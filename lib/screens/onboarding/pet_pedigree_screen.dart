@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pet_vaccines_screen.dart';
 import '../../widgets/pet_progress_bar.dart';
 import '../../data/pet_profile_data.dart';
+import 'package:pawmatch/helpers/pet_flow_helper.dart';
 
 class PetPedigreeScreen extends StatefulWidget {
   const PetPedigreeScreen({super.key});
@@ -171,9 +172,9 @@ class _PetPedigreeScreenState
 
       body: Column(
         children: [
-          const PetProgressBar(
-            step: 6,
-            totalSteps: 9,
+          PetProgressBar(
+            step: PetFlowHelper.getStep("pedigree"),
+            totalSteps: PetFlowHelper.totalSteps,
           ),
 
           Expanded(

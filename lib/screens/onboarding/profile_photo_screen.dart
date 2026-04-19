@@ -1,6 +1,8 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../services/cloudinary_service.dart';
 import 'location_permission_screen.dart';
 import '../../widgets/user_progress_bar.dart';
 import '../../data/user_data.dart';
@@ -16,10 +18,14 @@ class ProfilePhotoScreen extends StatefulWidget {
 class _ProfilePhotoScreenState
     extends State<ProfilePhotoScreen> {
 
-  List<Uint8List?> images =
+  final List<Uint8List?> previews =
       List.generate(4, (_) => null);
 
-  int selectedIndex = 0;
+  final List<String?> imageUrls =
+      List.generate(4, (_) => null);
+
+  final List<bool> loading =
+      List.generate(4, (_) => false);
 
   Future<void> pickImage(
     ImageSource source,
@@ -37,8 +43,32 @@ class _ProfilePhotoScreenState
         await pickedFile.readAsBytes();
 
     setState(() {
-      images[index] = bytes;
+      previews[index] = bytes;
+      loading[index] = true;
     });
+
+    final url =
+        await CloudinaryService.uploadImage(
+      File(pickedFile.path),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      imageUrls[index] = url;
+      loading[index] = false;
+    });
+
+    if (url == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            "No se pudo subir la imagen",
+          ),
+        ),
+      );
+    }
   }
 
   void showPicker(int index) {
@@ -52,8 +82,9 @@ class _ProfilePhotoScreenState
                 leading: const Icon(
                   Icons.photo_camera,
                 ),
-                title:
-                    const Text("Tomar foto"),
+                title: const Text(
+                  "Tomar foto",
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   pickImage(
@@ -86,11 +117,11 @@ class _ProfilePhotoScreenState
 
   void goNext() {
     final validImages =
-        images
+        imageUrls
             .where(
               (img) => img != null,
             )
-            .cast<Uint8List>()
+            .cast<String>()
             .toList();
 
     if (validImages.isEmpty) {
@@ -102,14 +133,11 @@ class _ProfilePhotoScreenState
           ),
         ),
       );
-
       return;
     }
 
     UserData.updateProfile(
-      images: <dynamic>[
-        ...validImages,
-      ],
+      images: validImages,
     );
 
     Navigator.push(
@@ -125,8 +153,6 @@ class _ProfilePhotoScreenState
     return GestureDetector(
       onTap: () => showPicker(index),
       child: Container(
-        width: 150,
-        height: 170,
         decoration: BoxDecoration(
           color: Colors.grey.shade200,
           borderRadius:
@@ -134,43 +160,101 @@ class _ProfilePhotoScreenState
             20,
           ),
           border: Border.all(
-            color: Colors.grey.shade300,
+            color:
+                Colors.grey.shade300,
           ),
         ),
-        child: images[index] != null
-            ? ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(
-                  20,
-                ),
-                child: Image.memory(
-                  images[index]!,
-                  fit: BoxFit.cover,
-                ),
-              )
-            : Column(
-                mainAxisAlignment:
-                    MainAxisAlignment
-                        .center,
-                children: [
-                  const Icon(
-                    Icons.add_a_photo,
-                    size: 34,
-                    color:
-                        Colors.black54,
-                  ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  Text(
-                    "Foto ${index + 1}",
-                    style: const TextStyle(
-                      color:
-                          Colors.black54,
+        child: Stack(
+          children: [
+
+            Positioned.fill(
+              child: previews[index] != null
+                  ? ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(
+                        20,
+                      ),
+                      child: Image.memory(
+                        previews[index]!,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.add_a_photo,
+                          size: 34,
+                          color:
+                              Colors.black54,
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Text(
+                          "Foto ${index + 1}",
+                          style:
+                              const TextStyle(
+                            color:
+                                Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+
+            if (loading[index])
+              Positioned.fill(
+                child: Container(
+                  decoration:
+                      BoxDecoration(
+                    color: Colors.black
+                        .withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      20,
                     ),
                   ),
-                ],
+                  child: const Center(
+                    child:
+                        CircularProgressIndicator(
+                      color:
+                          Colors.white,
+                    ),
+                  ),
+                ),
               ),
+
+            if (imageUrls[index] != null &&
+                !loading[index])
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding:
+                      const EdgeInsets.all(
+                    4,
+                  ),
+                  decoration:
+                      const BoxDecoration(
+                    color:
+                        Colors.green,
+                    shape:
+                        BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    size: 14,
+                    color:
+                        Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -185,9 +269,11 @@ class _ProfilePhotoScreenState
       body: SafeArea(
         child: Column(
           children: [
+
             const UserProgressBar(
               step: 4,
             ),
+
             Expanded(
               child: Padding(
                 padding:
@@ -196,12 +282,13 @@ class _ProfilePhotoScreenState
                 ),
                 child: Column(
                   crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
+                      CrossAxisAlignment.start,
                   children: [
+
                     const SizedBox(
                       height: 40,
                     ),
+
                     const Text(
                       "Agrega tus fotos",
                       style: TextStyle(
@@ -210,9 +297,11 @@ class _ProfilePhotoScreenState
                             FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(
                       height: 10,
                     ),
+
                     const Text(
                       "Puedes agregar hasta 4 fotos para mostrar mejor tu perfil.",
                       style: TextStyle(
@@ -221,9 +310,11 @@ class _ProfilePhotoScreenState
                             Colors.black54,
                       ),
                     ),
+
                     const SizedBox(
                       height: 30,
                     ),
+
                     Expanded(
                       child: GridView.builder(
                         physics:
@@ -231,14 +322,10 @@ class _ProfilePhotoScreenState
                         itemCount: 4,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount:
-                              2,
-                          mainAxisSpacing:
-                              14,
-                          crossAxisSpacing:
-                              14,
-                          childAspectRatio:
-                              0.88,
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                          childAspectRatio: 0.88,
                         ),
                         itemBuilder:
                             (
@@ -251,9 +338,11 @@ class _ProfilePhotoScreenState
                         },
                       ),
                     ),
+
                     const SizedBox(
                       height: 10,
                     ),
+
                     SizedBox(
                       width:
                           double.infinity,
@@ -261,8 +350,7 @@ class _ProfilePhotoScreenState
                       child:
                           ElevatedButton(
                         style:
-                            ElevatedButton
-                                .styleFrom(
+                            ElevatedButton.styleFrom(
                           backgroundColor:
                               Colors.black,
                           foregroundColor:
@@ -276,6 +364,7 @@ class _ProfilePhotoScreenState
                         ),
                       ),
                     ),
+
                     const SizedBox(
                       height: 20,
                     ),

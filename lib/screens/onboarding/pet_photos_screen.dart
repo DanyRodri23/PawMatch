@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'pet_personality_screen.dart';
 import '../../widgets/pet_progress_bar.dart';
 import '../../data/pet_profile_data.dart';
@@ -21,8 +23,15 @@ class PetPhotosScreen extends StatefulWidget {
 
 class _PetPhotosScreenState
     extends State<PetPhotosScreen> {
+
   List<String?> photos =
       List.filled(6, null);
+
+  List<Uint8List?> previews =
+      List.filled(6, null);
+
+  List<bool> loading =
+      List.filled(6, false);
 
   @override
   void initState() {
@@ -42,17 +51,50 @@ class _PetPhotosScreenState
     }
   }
 
+  Future<void> pickPhoto(
+      int index) async {
+    final picked =
+        await ImagePicker()
+            .pickImage(
+      source:
+          ImageSource.gallery,
+      imageQuality: 85,
+    );
+
+    if (picked == null) return;
+
+    final bytes =
+        await picked.readAsBytes();
+
+    setState(() {
+      previews[index] = bytes;
+      loading[index] = true;
+    });
+
+    await Future.delayed(
+      const Duration(
+        milliseconds: 500,
+      ),
+    );
+
+    setState(() {
+      photos[index] =
+          picked.path;
+      loading[index] = false;
+    });
+  }
+
   void goNext() {
     final validPhotos = photos
         .whereType<String>()
         .toList();
 
-    if (validPhotos.isEmpty) {
+    if (validPhotos.length < 4) {
       ScaffoldMessenger.of(context)
           .showSnackBar(
         const SnackBar(
           content: Text(
-            "Agrega al menos una foto",
+            "Debes agregar al menos 4 fotos",
           ),
         ),
       );
@@ -79,22 +121,13 @@ class _PetPhotosScreenState
     Navigator.pop(context);
   }
 
-  void simulatePhotoPick(
-      int index) {
-    setState(() {
-      photos[index] =
-          "https://placedog.net/500?id=${index + 10}";
-    });
-  }
-
   Widget photoBox(int index) {
     final isMain =
         index == 0;
 
     return GestureDetector(
       onTap: () =>
-          simulatePhotoPick(
-              index),
+          pickPhoto(index),
       child:
           AnimatedContainer(
         duration:
@@ -143,32 +176,85 @@ class _PetPhotosScreenState
         ),
         child: Stack(
           children: [
+
+            Positioned.fill(
+              child: previews[index] !=
+                      null
+                  ? ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(
+                        22,
+                      ),
+                      child:
+                          Image.memory(
+                        previews[index]!,
+                        fit: BoxFit
+                            .cover,
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(
+                        Icons
+                            .add_a_photo_rounded,
+                        size: 32,
+                        color: Colors
+                            .black54,
+                      ),
+                    ),
+            ),
+
+            if (loading[index])
+              Positioned.fill(
+                child: Container(
+                  decoration:
+                      BoxDecoration(
+                    color: Colors
+                        .black
+                        .withValues(
+                      alpha: 0.40,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      22,
+                    ),
+                  ),
+                  child:
+                      const Center(
+                    child:
+                        CircularProgressIndicator(
+                      color: Colors
+                          .white,
+                    ),
+                  ),
+                ),
+              ),
+
             if (photos[index] !=
-                null)
-              ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(
-                  22,
-                ),
+                    null &&
+                !loading[index])
+              Positioned(
+                top: 8,
+                right: 8,
                 child:
-                    Image.network(
-                  photos[index]!,
-                  fit:
-                      BoxFit.cover,
-                  width: double
-                      .infinity,
-                  height: double
-                      .infinity,
-                ),
-              )
-            else
-              const Center(
-                child: Icon(
-                  Icons
-                      .add_a_photo_rounded,
-                  size: 32,
-                  color: Colors
-                      .black54,
+                    Container(
+                  padding:
+                      const EdgeInsets.all(
+                    4,
+                  ),
+                  decoration:
+                      const BoxDecoration(
+                    color: Colors
+                        .green,
+                    shape:
+                        BoxShape.circle,
+                  ),
+                  child:
+                      const Icon(
+                    Icons.check,
+                    size: 14,
+                    color: Colors
+                        .white,
+                  ),
                 ),
               ),
 
@@ -221,47 +307,53 @@ class _PetPhotosScreenState
     return Scaffold(
       backgroundColor:
           Colors.white,
-
       body: Column(
         children: [
 
-          /// 🔥 HEADER PRO
           Padding(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 20,
               vertical: 10,
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 GestureDetector(
                   onTap: goBack,
                   child: Container(
                     width: 42,
                     height: 42,
-                    decoration: BoxDecoration(
+                    decoration:
+                        BoxDecoration(
                       color: Colors
-                          .grey.shade100,
+                          .grey
+                          .shade100,
                       shape:
                           BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child:
+                        const Icon(
                       Icons.arrow_back,
                       color: Colors.black,
                     ),
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(
+                    width: 12),
 
                 Expanded(
-                  child: PetProgressBar(
-                    step: PetFlowHelper.getStep("photos"),
-                    totalSteps: PetFlowHelper.totalSteps,
-                  
+                  child:
+                      PetProgressBar(
+                    step:
+                        PetFlowHelper.getStep(
+                            "photos"),
+                    totalSteps:
+                        PetFlowHelper
+                            .totalSteps,
                   ),
                 ),
-              ],  
+              ],
             ),
           ),
 
@@ -276,6 +368,7 @@ class _PetPhotosScreenState
                     CrossAxisAlignment
                         .start,
                 children: [
+
                   const SizedBox(
                     height: 30,
                   ),
@@ -299,7 +392,7 @@ class _PetPhotosScreenState
                   ),
 
                   const Text(
-                    "Agrega fotos increíbles para destacar 🐾",
+                    "Agrega al menos 4 fotos increíbles 🐾",
                     style:
                         TextStyle(
                       fontSize:
@@ -342,24 +435,16 @@ class _PetPhotosScreenState
                   ),
 
                   SizedBox(
-                    width: double
-                        .infinity,
+                    width: double.infinity,
                     height: 60,
                     child:
                         ElevatedButton(
                       style:
                           ElevatedButton.styleFrom(
                         backgroundColor:
-                            Colors
-                                .black,
+                            Colors.black,
                         foregroundColor:
-                            Colors
-                                .white,
-                        elevation:
-                            8,
-                        shadowColor:
-                            Colors
-                                .black26,
+                            Colors.white,
                         shape:
                             RoundedRectangleBorder(
                           borderRadius:
@@ -385,8 +470,7 @@ class _PetPhotosScreenState
                             ),
                           ),
                           SizedBox(
-                              width:
-                                  8),
+                              width: 8),
                           Icon(Icons
                               .arrow_forward_rounded)
                         ],

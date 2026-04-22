@@ -506,24 +506,20 @@ class OwnerProfileSheet extends StatelessWidget {
       );
     }
 
-    return Image.file(
-      File(path),
-      fit:
-          BoxFit.cover,
-      errorBuilder:
-          (_, __, ___) {
-        return Container(
-          color:
-              Colors.white10,
-          child:
-              const Icon(
-            Icons.person,
-            color:
-                Colors.white30,
-            size: 50,
-          ),
-        );
-      },
+    if (path.startsWith("http")) {
+  return Image.network(
+    path,
+    fit: BoxFit.cover,
+  );
+}
+
+    return Container(
+      color: Colors.white10,
+      child: const Icon(
+        Icons.person,
+        color: Colors.white30,
+        size: 50,
+      ),
     );
   }
 }

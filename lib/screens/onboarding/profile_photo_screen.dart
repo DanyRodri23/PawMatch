@@ -1,8 +1,6 @@
 import 'dart:typed_data';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../services/cloudinary_service.dart';
 import 'location_permission_screen.dart';
 import '../../widgets/user_progress_bar.dart';
 import '../../data/user_data.dart';
@@ -47,28 +45,17 @@ class _ProfilePhotoScreenState
       loading[index] = true;
     });
 
-    final url =
-        await CloudinaryService.uploadImage(
-      File(pickedFile.path),
+    await Future.delayed(
+      const Duration(milliseconds: 500),
     );
 
     if (!mounted) return;
 
     setState(() {
-      imageUrls[index] = url;
+      imageUrls[index] =
+          pickedFile.path;
       loading[index] = false;
     });
-
-    if (url == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "No se pudo subir la imagen",
-          ),
-        ),
-      );
-    }
   }
 
   void showPicker(int index) {

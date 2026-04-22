@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../data/user_profile_data.dart';
 import '../../data/pet_profile_data.dart';
@@ -502,10 +501,15 @@ class PreviewOwnerSheet extends StatelessWidget {
       );
     }
 
-    return Image.file(
-      File(path),
-      fit:
-          BoxFit.cover,
+      return Container(
+      color: Colors.grey.shade800,
+      child: const Center(
+        child: Icon(
+          Icons.person,
+          color: Colors.white,
+          size: 40,
+        ),
+      ),
     );
   }
 }

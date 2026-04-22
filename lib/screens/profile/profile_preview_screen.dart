@@ -545,14 +545,19 @@ class ProfilePreviewScreen extends StatelessWidget {
                             child: Row(
                               children: [
 
-                                CircleAvatar(
-                                  radius: 28,
-                                  backgroundImage:
-                                      NetworkImage(
-                                    userImage,
-                                  ),
-                                ),
-
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundColor: Colors.grey.shade800,
+                                backgroundImage: userImage.startsWith("http")
+                                    ? NetworkImage(userImage)
+                                    : null,
+                                child: userImage.startsWith("http")
+                                    ? null
+                                    : const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                      ),
+                              ),
                                 const SizedBox(width: 14),
 
                                 Expanded(

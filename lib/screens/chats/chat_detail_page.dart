@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../data/chats_data.dart';
 import '../../data/matches_data.dart';
 import '../match/pet_detail_screen.dart';
+import '../../services/chat_service.dart';
 
 class ChatDetailPage extends StatefulWidget {
   final String name;
@@ -32,6 +33,12 @@ class _ChatDetailPageState
 
   final ScrollController scrollController =
       ScrollController();
+
+      StreamSubscription? chatSubscription;
+      List<Map<String, dynamic>> liveMessages = [];
+
+      String get chatId =>
+        widget.matchPet?["id"] ?? widget.name;    
 
   Map<String, dynamic>? get currentChat {
     final exists = ChatsData.chats.any(
@@ -271,83 +278,70 @@ class _ChatDetailPageState
     );
   }
 
-  void sendMessage() {
-    final text = controller.text.trim();
+  Future<void> sendMessage() async {
+  final text = controller.text.trim();
 
-    if (text.isEmpty) return;
+  if (text.isEmpty) return;
 
-    if (widget.fromMatch &&
-        currentChat == null) {
-      ChatsData.createChat({
-        "id": widget.matchPet?["id"] ??
-            widget.name,
-        "name": widget.name,
-        "image": widget.image,
-        "images": [widget.image],
-        "pedigree":
-            widget.matchPet?["pedigree"] ??
-                true,
-        "messages": [],
-        "lastMessage": "",
-        "time": "",
-        "unread": 0,
-        "petData": widget.matchPet,
-      });
-
-      if (widget.matchPet != null) {
-        MatchesData.removeMatch(
-          widget.matchPet!,
-        );
-      }
-    }
-
-    final chat = currentChat;
-
-    if (chat == null) return;
-
-    final newMessage = {
-      "text": text,
-      "isMe": true,
-      "time": getCurrentTime(),
-      "status": "sent",
-    };
-
-    setState(() {
-      (chat["messages"] as List).add(
-        newMessage,
-      );
-
-      chat["lastMessage"] = text;
-      chat["time"] = getCurrentTime();
+  // Mantiene tu lógica de crear chat desde match
+  if (widget.fromMatch && currentChat == null) {
+    ChatsData.createChat({
+      "id": widget.matchPet?["id"] ?? widget.name,
+      "name": widget.name,
+      "image": widget.image,
+      "images": [widget.image],
+      "pedigree": widget.matchPet?["pedigree"] ?? true,
+      "messages": [],
+      "lastMessage": "",
+      "time": "",
+      "unread": 0,
+      "petData": widget.matchPet,
     });
 
-    controller.clear();
-
-    Future.delayed(
-      const Duration(seconds: 1),
-      () {
-        newMessage["status"] =
-            "delivered";
-
-        if (mounted) {
-          setState(() {});
-        }
-      },
-    );
-
-    Future.delayed(
-      const Duration(seconds: 2),
-      () {
-        newMessage["status"] = "seen";
-
-        if (mounted) {
-          setState(() {});
-        }
-      },
-    );
-
-    scrollToBottom();
+    if (widget.matchPet != null) {
+      MatchesData.removeMatch(widget.matchPet!);
+    }
   }
+
+  final chat = currentChat;
+  if (chat == null) return;
+
+  final newMessage = {
+    "text": text,
+    "isMe": true,
+    "time": getCurrentTime(),
+    "status": "sent",
+  };
+
+  // Mantiene UI local (checks y hora)
+  setState(() {
+    (chat["messages"] as List).add(newMessage);
+    chat["lastMessage"] = text;
+    chat["time"] = getCurrentTime();
+  });
+
+  controller.clear();
+
+  //Firebase (nuevo)
+  await ChatService.sendMessage(
+    chatId: chatId,
+    senderId: "me",
+    text: text,
+  );
+
+  // Estados visuales
+  Future.delayed(const Duration(seconds: 1), () {
+    newMessage["status"] = "delivered";
+    if (mounted) setState(() {});
+  });
+
+  Future.delayed(const Duration(seconds: 2), () {
+    newMessage["status"] = "seen";
+    if (mounted) setState(() {});
+  });
+
+  scrollToBottom();
+}
 
   void scrollToBottom() {
     Future.delayed(

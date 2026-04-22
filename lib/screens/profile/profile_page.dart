@@ -1,13 +1,32 @@
 import 'package:flutter/material.dart';
-import 'edit_profile_page.dart';
 import '../../data/pet_profile_data.dart';
+import 'edit_profile_pro_page.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() =>
+      _ProfilePageState();
+}
+
+class _ProfilePageState
+    extends State<ProfilePage> {
+
+  final PageController planController =
+      PageController(viewportFraction: 0.92);
 
   @override
   Widget build(BuildContext context) {
     final pet = PetProfileData.pet;
+
+    final List images =
+        pet["images"] ?? [];
+
+    final String photo =
+        images.isNotEmpty
+            ? images[0]
+            : "https://placedog.net/500";
 
     final String name =
         pet["name"] ?? "Mascota";
@@ -15,367 +34,288 @@ class ProfilePage extends StatelessWidget {
     final int age =
         pet["age"] ?? 0;
 
-    final String ageType =
-        pet["ageType"] ?? "";
-
-    final String breed =
-        pet["breed"] ?? "Sin raza";
-
-    final String gender =
-        pet["gender"] ?? "No definido";
-
-    final bool verified =
-        pet["verified"] ?? false;
-
-    final List<dynamic> images =
-        pet["images"] ?? [];
-
-    final List<dynamic> traits =
-        pet["traits"] ?? [];
-
-    final String lookingFor =
-        pet["lookingFor"] ??
-            "Compañía";
-
-    final String mainPhoto =
-        images.isNotEmpty
-            ? images[0].toString()
-            : "https://placedog.net/500";
-
-    final String secondPhoto =
-        images.length > 1
-            ? images[1].toString()
-            : mainPhoto;
-
-    final String personality =
-        traits.isNotEmpty
-            ? traits[0].toString()
-            : "Amigable";
-
     return Scaffold(
       backgroundColor:
-          Colors.black,
+          const Color(0xFF0B0B0F),
+
       body: SafeArea(
         child:
             SingleChildScrollView(
           padding:
               const EdgeInsets.all(
-            20,
+            18,
           ),
           child: Column(
             crossAxisAlignment:
-                CrossAxisAlignment
-                    .center,
+                CrossAxisAlignment.start,
             children: [
 
               /// HEADER
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment
-                        .spaceBetween,
-                children: const [
-                  Text(
-                    "Perfil de tu mascota",
+                children: [
+
+                  CircleAvatar(
+                    radius: 34,
+                    backgroundImage:
+                        NetworkImage(
+                      photo,
+                    ),
+                  ),
+
+                  const SizedBox(
+                      width: 14),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
+                      children: [
+
+                        Text(
+                          "$name, $age",
+                          style:
+                              const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(
+                            height:
+                                4),
+
+                        const Text(
+                          "Perfil PawMatch",
+                          style:
+                              TextStyle(
+                            color:
+                                Colors.white54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _circleButton(
+                    Icons.settings,
+                  ),
+                ],
+              ),
+
+              const SizedBox(
+                  height: 18),
+
+              /// EDITAR
+              SizedBox(
+                width:
+                    double.infinity,
+                child:
+                    ElevatedButton.icon(
+                  style:
+                      ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Colors.white,
+                    foregroundColor:
+                        Colors.black,
+                    padding:
+                        const EdgeInsets.symmetric(
+                      vertical:
+                          16,
+                    ),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                        40,
+                      ),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) =>
+                                const EditProfileProPage(),
+                      ),
+                    ).then(
+                      (_) {
+                        setState(
+                            () {});
+                      },
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.edit,
+                  ),
+                  label: const Text(
+                    "Editar perfil",
                     style:
                         TextStyle(
-                      color:
-                          Colors.white,
                       fontSize:
-                          22,
+                          18,
                       fontWeight:
                           FontWeight.bold,
                     ),
                   ),
-                  Icon(
-                    Icons.settings,
-                    color:
-                        Colors.white54,
-                  ),
-                ],
+                ),
               ),
 
               const SizedBox(
-                height: 30,
-              ),
+                  height: 22),
 
-              /// FOTO + VERIFICADO
-              Stack(
-                alignment:
-                    Alignment.center,
-                children: [
-                  Container(
-                    decoration:
-                        BoxDecoration(
-                      shape:
-                          BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue
-                              .withValues(
-                            alpha: 0.4,
+              /// PROGRESO
+              _glassCard(
+                child: Column(
+                  children: [
+
+                    Row(
+                      children: const [
+
+                        Expanded(
+                          child: Text(
+                            "78% completado",
+                            style:
+                                TextStyle(
+                              color:
+                                  Colors.white,
+                              fontSize:
+                                  18,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
                           ),
-                          blurRadius:
-                              30,
+                        ),
+
+                        Text(
+                          "Sube más",
+                          style:
+                              TextStyle(
+                            color:
+                                Colors.pink,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
-                    child:
-                        CircleAvatar(
-                      radius: 55,
-                      backgroundImage:
-                          NetworkImage(
-                        mainPhoto,
-                      ),
-                    ),
-                  ),
 
-                  if (verified)
-                    Positioned(
-                      bottom: 0,
-                      right: 10,
+                    const SizedBox(
+                        height:
+                            12),
+
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(
+                        30,
+                      ),
                       child:
-                          Container(
-                        decoration:
-                            const BoxDecoration(
-                          color:
-                              Colors.blue,
-                          shape:
-                              BoxShape.circle,
-                        ),
-                        padding:
-                            const EdgeInsets.all(
-                          6,
-                        ),
-                        child:
-                            const Icon(
-                          Icons
-                              .verified,
-                          color:
-                              Colors.white,
-                          size:
-                              18,
+                          const LinearProgressIndicator(
+                        value:
+                            0.78,
+                        minHeight:
+                            10,
+                        backgroundColor:
+                            Colors.white12,
+                        valueColor:
+                            AlwaysStoppedAnimation(
+                          Colors.pink,
                         ),
                       ),
                     ),
-                ],
+
+                    const SizedBox(
+                        height:
+                            10),
+
+                    const Text(
+                      "Completa tu perfil para más matches.",
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white54,
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(
-                height: 15,
-              ),
+                  height: 22),
 
-              Text(
-                "$name, $age",
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white,
-                  fontSize:
-                      22,
+              const Text(
+                "Planes Premium",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
                   fontWeight:
                       FontWeight.bold,
                 ),
               ),
 
-              Text(
-                breed,
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white54,
+              const SizedBox(
+                  height: 14),
+
+              /// PLANES DESLIZABLES
+              SizedBox(
+                height: 330,
+                child: PageView(
+                  controller:
+                      planController,
+                  children: [
+
+                    _planBasic(),
+
+                    _planGold(),
+
+                    _planPlatinum(),
+                  ],
                 ),
               ),
 
               const SizedBox(
-                height: 25,
-              ),
-
-              /// PROGRESO
-              Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-                children: [
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceBetween,
-                    children:
-                        const [
-                      Text(
-                        "Perfil completado",
-                        style:
-                            TextStyle(
-                          color:
-                              Colors.white70,
-                        ),
-                      ),
-                      Text(
-                        "100%",
-                        style:
-                            TextStyle(
-                          color:
-                              Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(
-                      10,
-                    ),
-                    child:
-                        LinearProgressIndicator(
-                      value:
-                          1,
-                      minHeight:
-                          8,
-                      backgroundColor:
-                          Colors.grey[
-                              800],
-                      valueColor:
-                          const AlwaysStoppedAnimation<
-                              Color>(
-                        Colors.orange,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(
-                height: 30,
-              ),
-
-              /// FOTOS
-              _sectionTitle(
-                "Fotos",
-              ),
-
-              const SizedBox(
-                height: 10,
-              ),
+                  height: 22),
 
               Row(
                 children: [
-                  _photo(
-                    mainPhoto,
+
+                  Expanded(
+                    child: _statBox(
+                      "Likes",
+                      "12",
+                      Colors.pink,
+                    ),
                   ),
-                  _photo(
-                    secondPhoto,
+
+                  const SizedBox(
+                      width: 10),
+
+                  Expanded(
+                    child: _statBox(
+                      "Matches",
+                      "6",
+                      Colors.amber,
+                    ),
                   ),
-                  _addPhoto(),
+
+                  const SizedBox(
+                      width: 10),
+
+                  Expanded(
+                    child: _statBox(
+                      "Boost",
+                      "2",
+                      Colors.blue,
+                    ),
+                  ),
                 ],
               ),
 
               const SizedBox(
-                height: 30,
-              ),
-
-              /// INFO
-              _sectionTitle(
-                "Información",
-              ),
-
-              const SizedBox(
-                height: 10,
-              ),
-
-              _infoItem(
-                "Sexo",
-                gender,
-              ),
-
-              _infoItem(
-                "Edad",
-                "$age $ageType",
-              ),
-
-              _infoItem(
-                "Personalidad",
-                personality,
-              ),
-
-              _infoItem(
-                "Busca",
-                lookingFor,
-              ),
-
-              const SizedBox(
-                height: 40,
-              ),
-
-              /// BOTÓN EDITAR
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) =>
-                              EditProfileSelectorPage(),
-                    ),
-                  );
-                },
-                child:
-                    Container(
-                  width:
-                      double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(
-                    vertical: 16,
-                  ),
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        const LinearGradient(
-                      colors: [
-                        Colors.blue,
-                        Colors.purple,
-                      ],
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      14,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue
-                            .withValues(
-                          alpha: 0.5,
-                        ),
-                        blurRadius:
-                            20,
-                      ),
-                    ],
-                  ),
-                  child:
-                      const Center(
-                    child: Text(
-                      "Editar perfil",
-                      style:
-                          TextStyle(
-                        color:
-                            Colors.white,
-                        fontSize:
-                            16,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(
-                height: 20,
-              ),
+                  height: 30),
             ],
           ),
         ),
@@ -383,102 +323,267 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _sectionTitle(
-    String text,
-  ) {
-    return Text(
-      text,
-      style:
-          const TextStyle(
-        color:
-            Colors.white,
-        fontSize:
-            18,
-        fontWeight:
-            FontWeight.bold,
-      ),
+  Widget _planBasic() {
+    return _premiumCard(
+      colors: const [
+        Color(0xFF1565C0),
+        Color(0xFF42A5F5),
+      ],
+      title: "🐾 PawMatch Basic",
+      price: "Gratis",
+      items: [
+        "Likes limitados",
+        "Matches normales",
+        "Perfil visible",
+        "Chat básico",
+      ],
     );
   }
 
-  Widget _photo(
-    String url,
-  ) {
+  Widget _planGold() {
+    return _premiumCard(
+      colors: const [
+        Color(0xFFFFC107),
+        Color(0xFFFFE082),
+      ],
+      title: "👑 PawMatch Gold",
+      price: "₡4,990",
+      items: [
+        "Descubre quién te dio like",
+        "Top Picks diarios",
+        "Super Like gratis",
+        "1 Boost mensual",
+      ],
+    );
+  }
+
+  Widget _planPlatinum() {
+    return _premiumCard(
+      colors: const [
+        Color(0xFF9E9E9E),
+        Color(0xFFE0E0E0),
+      ],
+      title: "💎 PawMatch Platinum",
+      price: "₡8,990",
+      items: [
+        "Like prioritario",
+        "Mensaje antes del match",
+        "Ver quién te dio like",
+        "Descuento veterinarias",
+        "Descuento hospitales pets",
+      ],
+    );
+  }
+
+  Widget _premiumCard({
+    required List<Color> colors,
+    required String title,
+    required String price,
+    required List<String> items,
+  }) {
     return Container(
       margin:
           const EdgeInsets.only(
         right: 10,
       ),
-      width: 80,
-      height: 80,
+      padding:
+          const EdgeInsets.all(
+        22,
+      ),
       decoration:
           BoxDecoration(
+        gradient:
+            LinearGradient(
+          colors: colors,
+          begin:
+              Alignment.topLeft,
+          end: Alignment
+              .bottomRight,
+        ),
         borderRadius:
             BorderRadius.circular(
-          14,
+          28,
         ),
-        image:
-            DecorationImage(
-          image:
-              NetworkImage(
-            url,
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+
+          Text(
+            title,
+            style:
+                const TextStyle(
+              fontSize: 24,
+              fontWeight:
+                  FontWeight.bold,
+              color: Colors.black,
+            ),
           ),
-          fit:
-              BoxFit.cover,
-        ),
+
+          const SizedBox(
+              height: 6),
+
+          Text(
+            price,
+            style:
+                const TextStyle(
+              fontSize: 18,
+              fontWeight:
+                  FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+
+          const SizedBox(
+              height: 18),
+
+          ...items.map(
+            (e) => Padding(
+              padding:
+                  const EdgeInsets.only(
+                bottom: 10,
+              ),
+              child: Text(
+                "✔ $e",
+                style:
+                    const TextStyle(
+                  fontSize: 16,
+                  color:
+                      Colors.black87,
+                  fontWeight:
+                      FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          Container(
+            width:
+                double.infinity,
+            padding:
+                const EdgeInsets.symmetric(
+              vertical: 14,
+            ),
+            decoration:
+                BoxDecoration(
+              color:
+                  Colors.black,
+              borderRadius:
+                  BorderRadius.circular(
+                18,
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                "Elegir plan",
+                style:
+                    TextStyle(
+                  color:
+                      Colors.white,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _addPhoto() {
+  Widget _glassCard({
+    required Widget child,
+  }) {
     return Container(
-      width: 80,
-      height: 80,
+      width: double.infinity,
+      padding:
+          const EdgeInsets.all(
+        18,
+      ),
       decoration:
           BoxDecoration(
-        color:
-            Colors.grey[900],
+        color: const Color(
+          0xFF16161C,
+        ),
         borderRadius:
             BorderRadius.circular(
-          14,
+          26,
+        ),
+        border: Border.all(
+          color:
+              Colors.white10,
         ),
       ),
-      child:
-          const Icon(
-        Icons.add,
-        color:
-            Colors.white54,
+      child: child,
+    );
+  }
+
+  Widget _circleButton(
+    IconData icon,
+  ) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration:
+          const BoxDecoration(
+        color: Color(
+          0xFF16161C,
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        color: Colors.white,
       ),
     );
   }
 
-  Widget _infoItem(
+  Widget _statBox(
     String title,
     String value,
+    Color color,
   ) {
-    return Padding(
+    return Container(
       padding:
-          const EdgeInsets.symmetric(
-        vertical: 6,
+          const EdgeInsets.all(
+        16,
       ),
-      child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment
-                .spaceBetween,
+      decoration:
+          BoxDecoration(
+        color: const Color(
+          0xFF16161C,
+        ),
+        borderRadius:
+            BorderRadius.circular(
+          22,
+        ),
+      ),
+      child: Column(
         children: [
+
+          Text(
+            value,
+            style:
+                TextStyle(
+              color: color,
+              fontSize: 24,
+              fontWeight:
+                  FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(
+              height: 6),
+
           Text(
             title,
             style:
                 const TextStyle(
               color:
                   Colors.white54,
-            ),
-          ),
-          Text(
-            value,
-            style:
-                const TextStyle(
-              color:
-                  Colors.white,
             ),
           ),
         ],

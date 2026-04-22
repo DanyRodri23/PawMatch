@@ -28,7 +28,7 @@ class _GalleryViewerScreenState
     currentIndex = widget.initialIndex;
 
     _pageController = PageController(
-      initialPage: widget.initialIndex,
+      initialPage: currentIndex,
     );
   }
 
@@ -40,31 +40,101 @@ class _GalleryViewerScreenState
 
   @override
   Widget build(BuildContext context) {
+
+    /// SI NO HAY FOTOS
+    if (widget.images.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme:
+              const IconThemeData(
+            color: Colors.white,
+          ),
+        ),
+        body: const Center(
+          child: Text(
+            "Sin imágenes",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
 
       body: Stack(
         children: [
 
-          /// IMÁGENES DESLIZABLES
+          /// IMÁGENES
           PageView.builder(
-            controller: _pageController,
-            itemCount: widget.images.length,
-            onPageChanged: (index) {
+            controller:
+                _pageController,
+            itemCount:
+                widget.images.length,
+            onPageChanged:
+                (index) {
               setState(() {
-                currentIndex = index;
+                currentIndex =
+                    index;
               });
             },
-            itemBuilder: (_, index) {
+            itemBuilder:
+                (_, index) {
               return InteractiveViewer(
                 minScale: 1,
                 maxScale: 4,
                 child: Center(
                   child: Hero(
-                    tag: "gallery_$index",
-                    child: Image.network(
+                    tag:
+                        "gallery_${widget.images[index]}_$index",
+                    child:
+                        Image.network(
                       widget.images[index],
-                      fit: BoxFit.contain,
+                      fit:
+                          BoxFit.contain,
+
+                      loadingBuilder:
+                          (
+                        context,
+                        child,
+                        progress,
+                      ) {
+                        if (progress ==
+                            null) {
+                          return child;
+                        }
+
+                        return const Center(
+                          child:
+                              CircularProgressIndicator(
+                            color:
+                                Colors.white,
+                          ),
+                        );
+                      },
+
+                      errorBuilder:
+                          (
+                        context,
+                        error,
+                        stackTrace,
+                      ) {
+                        return const Center(
+                          child: Icon(
+                            Icons
+                                .broken_image,
+                            color:
+                                Colors.white54,
+                            size:
+                                55,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -73,106 +143,190 @@ class _GalleryViewerScreenState
           ),
 
           /// BOTÓN CERRAR
-          Positioned(
-            top: 55,
-            left: 18,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color.fromRGBO(
-                    0,
-                    0,
-                    0,
-                    0.35,
+          SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.all(
+                16,
+              ),
+              child: Row(
+                children: [
+
+                  _circleButton(
+                    Icons.close,
+                    () {
+                      Navigator.pop(
+                          context);
+                    },
                   ),
-                  border: Border.all(
-                    color: const Color.fromRGBO(
-                      255,
-                      255,
-                      255,
-                      0.15,
+
+                  const Spacer(),
+
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal:
+                          16,
+                      vertical: 9,
+                    ),
+                    decoration:
+                        BoxDecoration(
+                      color:
+                          Colors.black54,
+                      borderRadius:
+                          BorderRadius.circular(
+                        30,
+                      ),
+                      border: Border.all(
+                        color:
+                            Colors.white12,
+                      ),
+                    ),
+                    child: Text(
+                      "${currentIndex + 1} / ${widget.images.length}",
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.white,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                ),
+                ],
               ),
             ),
           ),
 
-          /// CONTADOR
+          /// DOTS
           Positioned(
-            bottom: 45,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(
-                    0,
-                    0,
-                    0,
-                    0.45,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(30),
-                ),
-                child: Text(
-                  "${currentIndex + 1} / ${widget.images.length}",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight:
-                        FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          /// INDICADORES
-          Positioned(
-            bottom: 95,
+            bottom: 110,
             left: 0,
             right: 0,
             child: Row(
               mainAxisAlignment:
-                  MainAxisAlignment.center,
-              children: List.generate(
+                  MainAxisAlignment
+                      .center,
+              children:
+                  List.generate(
                 widget.images.length,
                 (index) {
                   final active =
-                      index == currentIndex;
+                      index ==
+                          currentIndex;
 
                   return AnimatedContainer(
                     duration:
                         const Duration(
-                      milliseconds: 250,
+                      milliseconds:
+                          250,
                     ),
                     margin:
                         const EdgeInsets.symmetric(
-                      horizontal: 4,
+                      horizontal:
+                          4,
                     ),
-                    width: active ? 20 : 8,
+                    width:
+                        active
+                            ? 22
+                            : 8,
                     height: 8,
-                    decoration: BoxDecoration(
-                      color: active
-                          ? Colors.white
-                          : Colors.white24,
+                    decoration:
+                        BoxDecoration(
+                      color:
+                          active
+                              ? Colors
+                                  .white
+                              : Colors
+                                  .white24,
                       borderRadius:
                           BorderRadius.circular(
-                        20,
+                        30,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          /// MINIATURAS
+          Positioned(
+            bottom: 26,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: 72,
+              child: ListView.builder(
+                scrollDirection:
+                    Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 14,
+                ),
+                itemCount:
+                    widget.images.length,
+                itemBuilder:
+                    (_, index) {
+                  final active =
+                      index ==
+                          currentIndex;
+
+                  return GestureDetector(
+                    onTap: () {
+                      _pageController
+                          .animateToPage(
+                        index,
+                        duration:
+                            const Duration(
+                          milliseconds:
+                              300,
+                        ),
+                        curve:
+                            Curves.ease,
+                      );
+                    },
+                    child:
+                        AnimatedContainer(
+                      duration:
+                          const Duration(
+                        milliseconds:
+                            220,
+                      ),
+                      width: 62,
+                      margin:
+                          const EdgeInsets.only(
+                        right: 10,
+                      ),
+                      decoration:
+                          BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(
+                          14,
+                        ),
+                        border:
+                            Border.all(
+                          color:
+                              active
+                                  ? Colors
+                                      .blue
+                                  : Colors
+                                      .white24,
+                          width: 2,
+                        ),
+                      ),
+                      child:
+                          ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(
+                          12,
+                        ),
+                        child:
+                            Image.network(
+                          widget.images[index],
+                          fit:
+                              BoxFit.cover,
+                        ),
                       ),
                     ),
                   );
@@ -181,6 +335,35 @@ class _GalleryViewerScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _circleButton(
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration:
+            BoxDecoration(
+          color:
+              Colors.black54,
+          shape:
+              BoxShape.circle,
+          border: Border.all(
+            color:
+                Colors.white12,
+          ),
+        ),
+        child: Icon(
+          icon,
+          color:
+              Colors.white,
+        ),
       ),
     );
   }

@@ -1,0 +1,205 @@
+class UserProfileData {
+  /// DATOS GLOBALES DEL USUARIO
+  static Map<String, dynamic> user = {
+    "id": "user_001",
+
+    /// BÁSICOS
+    "name": "Daniel",
+    "age": 21,
+    "gender": "Masculino",
+    "showGender": true,
+
+    /// PERFIL
+    "bio":
+        "Amante de los animales y listo para encontrar la mejor conexión para mi mascota.",
+    "instagram": "@daniel",
+    "verified": false,
+    "joinedDate": "2026",
+
+    /// UBICACIÓN
+    "country": "Costa Rica",
+    "province": "Heredia",
+    "city": "San Isidro",
+
+    /// FOTOS
+    "images": <String>[],
+
+    /// CONFIGURACIÓN
+    "notifications": true,
+    "darkMode": true,
+    "showOnline": true,
+
+    /// ESTADÍSTICAS
+    "likes": 0,
+    "matches": 0,
+    "superLikes": 0,
+
+    /// PLAN
+    "plan": "Free",
+  };
+
+  // ==================================================
+  // UPDATE GENERAL (COMPATIBLE CON TODOS TUS ARCHIVOS)
+  // ==================================================
+  static void updateUser({
+    String? name,
+    int? age,
+    String? gender,
+    String? location,
+    String? bio,
+    String? instagram,
+    bool? verified,
+    bool? showGender,
+    List<String>? images,
+  }) {
+    if (name != null) user["name"] = name;
+    if (age != null) user["age"] = age;
+    if (gender != null) user["gender"] = gender;
+
+    if (location != null) {
+      user["city"] = location;
+    }
+
+    if (bio != null) user["bio"] = bio;
+    if (instagram != null) user["instagram"] = instagram;
+    if (verified != null) user["verified"] = verified;
+    if (showGender != null) user["showGender"] = showGender;
+    if (images != null) user["images"] = images;
+  }
+
+  // ==================================================
+  // PERFIL
+  // ==================================================
+  static void updateProfile({
+    String? name,
+    String? bio,
+    String? instagram,
+    bool? verified,
+    bool? showGender,
+  }) {
+    if (name != null) user["name"] = name;
+    if (bio != null) user["bio"] = bio;
+    if (instagram != null) user["instagram"] = instagram;
+    if (verified != null) user["verified"] = verified;
+    if (showGender != null) user["showGender"] = showGender;
+  }
+
+  // ==================================================
+  // PERSONALES
+  // ==================================================
+  static void updatePersonal({
+    int? age,
+    String? gender,
+  }) {
+    if (age != null) user["age"] = age;
+    if (gender != null) user["gender"] = gender;
+  }
+
+  // ==================================================
+  // UBICACIÓN
+  // ==================================================
+  static void updateLocation({
+    String? country,
+    String? province,
+    String? city,
+  }) {
+    if (country != null) user["country"] = country;
+    if (province != null) user["province"] = province;
+    if (city != null) user["city"] = city;
+  }
+
+  // ==================================================
+  // FOTOS
+  // ==================================================
+  static void updateImages(
+    List<String> images,
+  ) {
+    user["images"] = images;
+  }
+
+  static void addImage(
+    String path,
+  ) {
+    final List<String> images =
+        List<String>.from(
+      user["images"],
+    );
+
+    images.add(path);
+
+    user["images"] = images;
+  }
+
+  static void removeImage(
+    int index,
+  ) {
+    final List<String> images =
+        List<String>.from(
+      user["images"],
+    );
+
+    if (index >= 0 &&
+        index < images.length) {
+      images.removeAt(index);
+    }
+
+    user["images"] = images;
+  }
+
+  static void setMainImage(
+    int index,
+  ) {
+    final List<String> images =
+        List<String>.from(
+      user["images"],
+    );
+
+    if (index >= 0 &&
+        index < images.length) {
+      final selected =
+          images[index];
+
+      images.removeAt(index);
+      images.insert(0, selected);
+    }
+
+    user["images"] = images;
+  }
+
+  // ==================================================
+  // PREMIUM
+  // ==================================================
+  static void changePlan(
+    String plan,
+  ) {
+    user["plan"] = plan;
+  }
+
+  // ==================================================
+  // RESET PERFIL
+  // ==================================================
+  static void clearProfile() {
+    user = {
+      "id": "user_001",
+      "name": "",
+      "age": 18,
+      "gender": "",
+      "showGender": true,
+      "bio": "",
+      "instagram": "",
+      "verified": false,
+      "joinedDate": "2026",
+      "country": "",
+      "province": "",
+      "city": "",
+      "images": <String>[],
+      "notifications": true,
+      "darkMode": true,
+      "showOnline": true,
+      "likes": 0,
+      "matches": 0,
+      "superLikes": 0,
+      "plan": "Free",
+    };
+  }
+}

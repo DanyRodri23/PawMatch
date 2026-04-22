@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'gallery_viewer_screen.dart';
+import '../profile/owner_profile_sheet.dart';
 
 class PetDetailScreen extends StatelessWidget {
   final Map<String, dynamic> pet;
@@ -20,12 +21,10 @@ class PetDetailScreen extends StatelessWidget {
           SingleChildScrollView(
             child: Column(
               children: [
-
                 /// HERO IMAGE
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-
                     SizedBox(
                       height: 420,
                       width: double.infinity,
@@ -72,35 +71,13 @@ class PetDetailScreen extends StatelessWidget {
                             0.72,
                           ),
                           borderRadius: BorderRadius.circular(28),
-                          border: Border.all(
-                            color: const Color.fromRGBO(
-                              255,
-                              255,
-                              255,
-                              0.05,
-                            ),
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color.fromRGBO(
-                                0,
-                                0,
-                                0,
-                                0.55,
-                              ),
-                              blurRadius: 35,
-                              offset: Offset(0, 15),
-                            ),
-                          ],
                         ),
                         child: Column(
                           crossAxisAlignment:
                               CrossAxisAlignment.start,
                           children: [
-
                             Row(
                               children: [
-
                                 Expanded(
                                   child: Text(
                                     "${pet["name"]}, ${pet["age"]}",
@@ -136,23 +113,19 @@ class PetDetailScreen extends StatelessWidget {
                                   "Raza no especificada",
                               style: const TextStyle(
                                 color: Colors.white70,
-                                fontSize: 15,
                               ),
                             ),
 
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
 
                             Row(
                               children: [
-
                                 const Icon(
                                   Icons.location_on,
                                   color: Colors.white54,
-                                  size: 17,
+                                  size: 16,
                                 ),
-
                                 const SizedBox(width: 6),
-
                                 Text(
                                   pet["distance"] ?? "",
                                   style: const TextStyle(
@@ -171,14 +144,14 @@ class PetDetailScreen extends StatelessWidget {
                 const SizedBox(height: 80),
 
                 Padding(
-                  padding: const EdgeInsets.symmetric(
+                  padding:
+                      const EdgeInsets.symmetric(
                     horizontal: 20,
                   ),
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
-
                       Row(
                         children: [
                           Expanded(
@@ -308,63 +281,98 @@ class PetDetailScreen extends StatelessWidget {
 
                       const SizedBox(height: 14),
 
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(
-                            38,
-                            38,
-                            38,
-                            0.72,
+                      GestureDetector(
+                        onTap: () {
+                          showOwnerProfileSheet(
+                              context);
+                        },
+                        child: Container(
+                          padding:
+                              const EdgeInsets.all(
+                            16,
                           ),
-                          borderRadius:
-                              BorderRadius.circular(22),
-                        ),
-                        child: Row(
-                          children: [
-
-                            const CircleAvatar(
-                              radius: 28,
-                              backgroundImage:
-                                  NetworkImage(
-                                "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
-                              ),
+                          decoration:
+                              BoxDecoration(
+                            color:
+                                const Color.fromRGBO(
+                              38,
+                              38,
+                              38,
+                              0.72,
                             ),
-
-                            const SizedBox(width: 14),
-
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    "Daniel Rodríguez",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight:
-                                          FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    "21 años • Masculino",
-                                    style: TextStyle(
-                                      color: Colors.white60,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    "Heredia, Costa Rica",
-                                    style: TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            borderRadius:
+                                BorderRadius.circular(
+                              22,
                             ),
-                          ],
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 28,
+                                backgroundImage:
+                                    NetworkImage(
+                                  "https://i.pravatar.cc/300",
+                                ),
+                              ),
+
+                              const SizedBox(
+                                  width: 14),
+
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment
+                                          .start,
+                                  children: const [
+                                    Text(
+                                      "Daniel Rodríguez",
+                                      style:
+                                          TextStyle(
+                                        color: Colors
+                                            .white,
+                                        fontWeight:
+                                            FontWeight
+                                                .bold,
+                                      ),
+                                    ),
+
+                                    SizedBox(
+                                        height: 4),
+
+                                    Text(
+                                      "21 años • Masculino",
+                                      style:
+                                          TextStyle(
+                                        color: Colors
+                                            .white60,
+                                      ),
+                                    ),
+
+                                    SizedBox(
+                                        height: 4),
+
+                                    Text(
+                                      "Toca para ver perfil",
+                                      style:
+                                          TextStyle(
+                                        color: Colors
+                                            .blue,
+                                        fontSize:
+                                            12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const Icon(
+                                Icons
+                                    .keyboard_arrow_up,
+                                color:
+                                    Colors.white54,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
 
@@ -397,14 +405,6 @@ class PetDetailScreen extends StatelessWidget {
             25,
             0.78,
           ),
-          border: Border.all(
-            color: const Color.fromRGBO(
-              255,
-              255,
-              255,
-              0.08,
-            ),
-          ),
         ),
         child: Icon(
           icon,
@@ -422,7 +422,8 @@ class PetDetailScreen extends StatelessWidget {
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color:
+            color.withValues(alpha: 0.15),
         shape: BoxShape.circle,
       ),
       child: Icon(
@@ -447,7 +448,8 @@ class PetDetailScreen extends StatelessWidget {
           38,
           0.72,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
       ),
       child: Column(
         children: [
@@ -466,7 +468,8 @@ class PetDetailScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
         ],
@@ -487,7 +490,8 @@ class PetDetailScreen extends StatelessWidget {
 
   static Widget _tag(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 10,
       ),
@@ -498,7 +502,8 @@ class PetDetailScreen extends StatelessWidget {
           38,
           0.72,
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius:
+            BorderRadius.circular(30),
       ),
       child: Text(
         text,
@@ -509,7 +514,9 @@ class PetDetailScreen extends StatelessWidget {
     );
   }
 
-  static Widget _sectionCard(String text) {
+  static Widget _sectionCard(
+    String text,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -520,7 +527,8 @@ class PetDetailScreen extends StatelessWidget {
           38,
           0.72,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
       ),
       child: Text(
         text,

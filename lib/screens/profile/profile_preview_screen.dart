@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/user_profile_data.dart';
 import '../match/gallery_viewer_screen.dart';
+import '../profile/preview_owner_sheet.dart';
 
 class ProfilePreviewScreen extends StatelessWidget {
   final Map<String, dynamic> pet;
@@ -59,38 +60,39 @@ class ProfilePreviewScreen extends StatelessWidget {
     /// ===============================
     /// USER DATA (EN VIVO)
     /// ===============================
-    final user =
-        UserProfileData.user;
+        final user =
+            UserProfileData.user;
 
-    final List userImages =
-        user["images"] ?? [];
+        final List userImages =
+            user["images"] ?? [];
 
-    final String userImage =
-        userImages.isNotEmpty
-            ? userImages[0]
-            : "https://i.pravatar.cc/300";
+        final String userImage =
+            userImages.isNotEmpty
+                ? userImages[0]
+                : "";
 
-    final String userName =
-        user["name"] ??
-            "Usuario";
+        final String userName =
+            user["name"] ??
+                "Usuario";
 
-    final int userAge =
-        user["age"] ?? 18;
+        final String userAge =
+            user["age"]
+                .toString();
 
-    final String city =
-        user["city"] ??
-            "Costa Rica";
+        final String city =
+            user["location"] ??
+                "Costa Rica";
 
-    final String bio =
-        user["bio"] ?? "";
+        final String bio =
+            user["bio"] ?? "";
 
-    final String instagram =
-        user["instagram"] ??
-            "";
+        final String instagram =
+            user["instagram"] ??
+                "";
 
-    final bool verified =
-        user["verified"] ??
-            false;
+        final bool verified =
+            user["verified"] ??
+                false;
 
     return Scaffold(
       backgroundColor:
@@ -517,58 +519,46 @@ class ProfilePreviewScreen extends StatelessWidget {
                       ],
 
                       /// OWNER
-                      _title(
-                        "Propietario",
-                      ),
-
-                      const SizedBox(
-                          height:
-                              14),
-
-                      Container(
-                        padding:
-                            const EdgeInsets.all(
-                          16,
+                      /// /// OWNER (PREVIEW REAL - SIN ERRORES)
+                        _title(
+                          "Propietario",
                         ),
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              const Color.fromRGBO(
-                            38,
-                            38,
-                            38,
-                            0.72,
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(
-                            22,
-                          ),
-                        ),
-                        child:
-                            Row(
-                          children: [
 
-                            CircleAvatar(
-                              radius:
-                                  28,
-                              backgroundImage:
-                                  NetworkImage(
-                                userImage,
+                        const SizedBox(height: 14),
+
+                        GestureDetector(
+                          onTap: () {
+                            showPreviewOwnerSheet(context);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(
+                                38,
+                                38,
+                                38,
+                                0.72,
                               ),
+                              borderRadius:
+                                  BorderRadius.circular(22),
                             ),
+                            child: Row(
+                              children: [
 
-                            const SizedBox(
-                              width: 14,
-                            ),
+                                CircleAvatar(
+                                  radius: 28,
+                                  backgroundImage:
+                                      NetworkImage(
+                                    userImage,
+                                  ),
+                                ),
 
-                            Expanded(
-                              child:
-                                  Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
+                                const SizedBox(width: 14),
 
-                                  Row(
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
 
                                       Text(
@@ -582,106 +572,31 @@ class ProfilePreviewScreen extends StatelessWidget {
                                         ),
                                       ),
 
-                                      if (verified)
-                                        const Padding(
-                                          padding:
-                                              EdgeInsets.only(
-                                            left:
-                                                6,
-                                          ),
-                                          child:
-                                              Icon(
-                                            Icons.verified,
-                                            color:
-                                                Colors.blue,
-                                            size:
-                                                16,
-                                          ),
+                                      const SizedBox(height: 4),
+
+                                      Text(
+                                        "Toca para ver perfil",
+                                        style:
+                                            const TextStyle(
+                                          color:
+                                              Colors.blue,
+                                          fontSize: 12,
                                         ),
+                                      ),
                                     ],
                                   ),
+                                ),
 
-                                  const SizedBox(
-                                    height:
-                                        4,
-                                  ),
-
-                                  Text(
-                                    "$userAge años",
-                                    style:
-                                        const TextStyle(
-                                      color:
-                                          Colors.white60,
-                                    ),
-                                  ),
-
-                                  const SizedBox(
-                                    height:
-                                        4,
-                                  ),
-
-                                  Text(
-                                    city,
-                                    style:
-                                        const TextStyle(
-                                      color:
-                                          Colors.white38,
-                                      fontSize:
-                                          12,
-                                    ),
-                                  ),
-
-                                  if (bio
-                                      .isNotEmpty)
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(
-                                        top:
-                                            8,
-                                      ),
-                                      child:
-                                          Text(
-                                        bio,
-                                        style:
-                                            const TextStyle(
-                                          color:
-                                              Colors.white70,
-                                          fontSize:
-                                              12,
-                                        ),
-                                      ),
-                                    ),
-
-                                  if (instagram
-                                      .isNotEmpty)
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(
-                                        top:
-                                            6,
-                                      ),
-                                      child:
-                                          Text(
-                                        instagram,
-                                        style:
-                                            const TextStyle(
-                                          color:
-                                              Colors.pink,
-                                          fontSize:
-                                              12,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                                const Icon(
+                                  Icons.keyboard_arrow_up,
+                                  color: Colors.white54,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(
-                          height:
-                              50),
+                        const SizedBox(height: 50),
                     ],
                   ),
                 ),

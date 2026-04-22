@@ -38,7 +38,45 @@ class _ChatDetailPageState
       List<Map<String, dynamic>> liveMessages = [];
 
       String get chatId =>
-        widget.matchPet?["id"] ?? widget.name;    
+        widget.matchPet?["id"] ?? widget.name;  
+
+       @override
+          void initState() {
+            super.initState();
+
+            chatSubscription =
+                ChatService.getMessages(chatId)
+                    .listen((snapshot) {
+
+              liveMessages =
+                  snapshot.docs.map((doc) {
+                final data =
+                    doc.data()
+                        as Map<String, dynamic>;
+
+                return {
+                  "text": data["text"] ?? "",
+                  "isMe":
+                      data["senderId"] == "me",
+                  "time": "",
+                  "status": "seen",
+                };
+              }).toList();
+
+              if (mounted) {
+                setState(() {});
+                scrollToBottom();
+              }
+            });
+          }
+
+          @override
+          void dispose() {
+            chatSubscription?.cancel();
+            controller.dispose();
+            scrollController.dispose();
+            super.dispose();
+          }   
 
   Map<String, dynamic>? get currentChat {
     final exists = ChatsData.chats.any(
@@ -523,7 +561,7 @@ class _ChatDetailPageState
         horizontal: 16,
         vertical: 24,
       ),
-      itemCount: messages.length + 1,
+      itemCount: liveMessages.length + 1,
       itemBuilder:
           (context, index) {
         if (index == 0) {
@@ -566,7 +604,7 @@ class _ChatDetailPageState
         }
 
         final msg =
-            messages[index - 1];
+            liveMessages[index - 1];
 
         final isMe =
             msg["isMe"] == true;

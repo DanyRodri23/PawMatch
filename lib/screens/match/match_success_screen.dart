@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 
-import '../../data/chats_data.dart';
 import '../chats/chat_detail_page.dart';
 
 class MatchSuccessScreen extends StatefulWidget {
@@ -9,9 +8,11 @@ class MatchSuccessScreen extends StatefulWidget {
   final String otherPet;
   final String image1;
   final String image2;
+  final Map<String, dynamic>? matchPet;
 
   const MatchSuccessScreen({
     super.key,
+    this.matchPet,
     required this.myPet,
     required this.otherPet,
     required this.image1,
@@ -203,13 +204,6 @@ class _MatchSuccessScreenState
                         ),
                       ),
                       onPressed: () {
-                        ChatsData.createChat({
-                          "id": widget.otherPet,
-                          "name": widget.otherPet,
-                          "images": [widget.image2],
-                          "pedigree": true,
-                        });
-
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -219,6 +213,9 @@ class _MatchSuccessScreenState
                                   widget.otherPet,
                               image:
                                   widget.image2,
+                              fromMatch: true,
+                              matchPet:
+                                  widget.matchPet,
                             ),
                           ),
                         );

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../data/user_profile_data.dart';
+import '../services/user_services.dart';
 import 'terms_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -10,11 +14,132 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
 
-  bool aceptarTerminos = false;
+  final TextEditingController nombreController = TextEditingController();
+  final TextEditingController apellidosController = TextEditingController();
+  final TextEditingController correoController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmController = TextEditingController();
 
-  Widget inputField(String label, IconData icon, {bool password = false}) {
+  bool aceptarTerminos = false;
+  bool isLoading = false;
+
+  @override
+  void dispose() {
+    nombreController.dispose();
+    apellidosController.dispose();
+    correoController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
+
+  void _mostrarMensaje(String texto) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(texto)),
+    );
+  }
+
+  String _mensajeError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'Ese correo ya tiene una cuenta.';
+      case 'invalid-email':
+        return 'El correo no es válido.';
+      case 'weak-password':
+        return 'La contraseña es muy débil (mínimo 6 caracteres).';
+      case 'network-request-failed':
+        return 'Sin conexión a internet.';
+      default:
+        return 'No se pudo crear la cuenta. Intenta de nuevo.';
+    }
+  }
+
+  Future<void> crearCuenta() async {
+    final nombre = nombreController.text.trim();
+    final apellidos = apellidosController.text.trim();
+    final correo = correoController.text.trim();
+    final password = passwordController.text;
+    final confirmar = confirmController.text;
+
+    if (nombre.isEmpty ||
+        apellidos.isEmpty ||
+        correo.isEmpty ||
+        password.isEmpty ||
+        confirmar.isEmpty) {
+      _mostrarMensaje("Completa todos los campos.");
+      return;
+    }
+
+    if (password.length < 6) {
+      _mostrarMensaje("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    if (password != confirmar) {
+      _mostrarMensaje("Las contraseñas no coinciden.");
+      return;
+    }
+
+    if (!aceptarTerminos) {
+      _mostrarMensaje("Debes aceptar los términos y condiciones");
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final credencial =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: correo,
+        password: password,
+      );
+
+      await credencial.user?.updateDisplayName("$nombre $apellidos");
+
+      // Si falla el guardado del perfil (por ejemplo, por reglas de
+      // Firestore), la cuenta igual queda creada.
+      try {
+        await UserService.saveUserProfile(
+          data: {
+            "nombre": nombre,
+            "apellidos": apellidos,
+          },
+        );
+      } catch (e) {
+        debugPrint("No se pudo guardar el perfil: $e");
+      }
+
+      // Para que el perfil tenga el nombre desde la primera sesión.
+      UserProfileData.updateProfile(name: nombre);
+
+      if (!mounted) return;
+
+      // Vuelve a la pantalla raíz; AuthGate muestra el dashboard.
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+
+      _mostrarMensaje(_mensajeError(e));
+    }
+  }
+
+  Widget inputField(
+    String label,
+    IconData icon,
+    TextEditingController controller, {
+    bool password = false,
+    TextInputType? keyboardType,
+  }) {
     return TextField(
+      controller: controller,
       obscureText: password,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
@@ -86,23 +211,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     children: [
 
-                      inputField("Nombre", Icons.person),
+                      inputField("Nombre", Icons.person, nombreController),
 
                       const SizedBox(height: 15),
 
-                      inputField("Apellidos", Icons.person_outline),
+                      inputField(
+                        "Apellidos",
+                        Icons.person_outline,
+                        apellidosController,
+                      ),
 
                       const SizedBox(height: 15),
 
-                      inputField("Correo electrónico", Icons.email),
+                      inputField(
+                        "Correo electrónico",
+                        Icons.email,
+                        correoController,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
 
                       const SizedBox(height: 15),
 
-                      inputField("Contraseña", Icons.lock, password: true),
+                      inputField(
+                        "Contraseña",
+                        Icons.lock,
+                        passwordController,
+                        password: true,
+                      ),
 
                       const SizedBox(height: 15),
 
-                      inputField("Confirmar contraseña", Icons.lock_outline, password: true),
+                      inputField(
+                        "Confirmar contraseña",
+                        Icons.lock_outline,
+                        confirmController,
+                        password: true,
+                      ),
 
                       const SizedBox(height: 15),
 
@@ -157,28 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         child: ElevatedButton(
 
-                          onPressed: () {
-
-                            if (!aceptarTerminos) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Debes aceptar los términos y condiciones",
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Cuenta creada correctamente",
-                                ),
-                              ),
-                            );
-
-                          },
+                          onPressed: isLoading ? null : crearCuenta,
 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
@@ -189,13 +312,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
 
-                          child: const Text(
-                            "Crear cuenta",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Crear cuenta",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
 
                         ),
                       ),

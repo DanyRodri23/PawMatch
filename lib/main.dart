@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
-// TU LOGIN
 import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'data/pet_profile_data.dart';
+import 'screens/onboarding/onboarding_intro.dart';
+import 'services/location_service.dart';
+import 'services/profile_store.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +33,116 @@ class PawMatchApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
       ),
 
-      home: const LoginScreen(),
+      home: const AuthGate(),
     );
+  }
+}
+
+/// Decide qué pantalla mostrar según si hay una sesión iniciada.
+/// - Con sesión: va al dashboard (la sesión se recuerda al cerrar la app).
+/// - Sin sesión: va al login.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        }
+
+        if (snapshot.hasData) {
+          return ProfileGate(
+            key: ValueKey(snapshot.data!.uid),
+          );
+        }
+
+        return const LoginScreen();
+      },
+    );
+  }
+}
+
+
+/// Carga el perfil guardado del usuario y, si es nuevo, abre el registro.
+class ProfileGate extends StatefulWidget {
+  const ProfileGate({super.key});
+
+  @override
+  State<ProfileGate> createState() => _ProfileGateState();
+}
+
+class _ProfileGateState extends State<ProfileGate>
+    with WidgetsBindingObserver {
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _start();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Al volver a abrir la app, se revisa si cambió de provincia.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        PetProfileData.pet["profileCompleted"] == true) {
+      LocationService.refreshIfNeeded();
+    }
+  }
+
+  Future<void> _start() async {
+    await ProfileStore.load();
+
+    if (!mounted) return;
+
+    setState(() {
+      _loaded = true;
+    });
+
+    // Usuario con perfil: se actualiza su provincia si se movió.
+    if (PetProfileData.pet["profileCompleted"] == true) {
+      LocationService.refreshIfNeeded(force: true);
+    }
+
+    // Usuario nuevo: se abre el registro una sola vez.
+    if (PetProfileData.pet["profileCompleted"] != true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const OnboardingIntro()),
+        );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    // Siempre se muestra el dashboard; el registro se abre encima.
+    return const DashboardScreen();
   }
 }

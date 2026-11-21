@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pet_breed_type_screen.dart';
+import '../../helpers/pet_flow_helper.dart';
 import '../../widgets/pet_progress_bar.dart';
 import '../../data/pet_profile_data.dart';
 
@@ -228,9 +229,9 @@ class _PetGenderScreenState
       body: SafeArea(
         child: Column(
           children: [
-            const PetProgressBar(
+            PetProgressBar(
               step: 3,
-              totalSteps: 9,
+              totalSteps: PetFlowHelper.totalSteps,
             ),
 
             Expanded(

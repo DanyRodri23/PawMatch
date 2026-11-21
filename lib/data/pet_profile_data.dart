@@ -1,3 +1,5 @@
+import '../services/profile_store.dart';
+
 class PetProfileData {
   static Map<String, dynamic> pet = {
     /// IDENTIDAD
@@ -192,6 +194,8 @@ class PetProfileData {
 
     pet["updatedAt"] =
         DateTime.now();
+  
+    ProfileStore.save();
   }
 
   static void resetPet() {

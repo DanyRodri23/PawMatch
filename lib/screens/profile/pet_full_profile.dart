@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../data/app_data.dart';
 import '../../data/likes_data.dart';
 import '../../data/matches_data.dart';
-import '../../data/chats_data.dart';
 
 enum ProfileMode {
   discover,
@@ -242,7 +241,7 @@ class PetFullProfile extends StatelessWidget {
 
             MatchesData.createMatch(pet);
 
-            ChatsData.createChat(pet);
+            LikesData.removeReceivedLike(pet);
 
             AppData.likedPets.remove(pet);
 

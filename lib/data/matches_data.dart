@@ -1,3 +1,5 @@
+import 'chats_data.dart';
+
 class MatchesData {
   static List<Map<String, dynamic>> matches = [];
 
@@ -6,7 +8,12 @@ class MatchesData {
       (m) => m["id"] == pet["id"],
     );
 
-    if (!exists) {
+    // Si ya existe una conversación con mensajes, no vuelve a "Nuevos Matches".
+    final chat = ChatsData.getChatById(pet["id"]);
+    final alreadyChatting = chat != null &&
+        (chat["messages"] as List? ?? []).isNotEmpty;
+
+    if (!exists && !alreadyChatting) {
       matches.add({
         ...Map<String, dynamic>.from(pet),
 

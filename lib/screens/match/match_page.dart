@@ -22,7 +22,7 @@ class MatchPageState extends State<MatchPage>
   double position = 0;
   double rotation = 0;
 
-  final List<Map<String, dynamic>> pets = [
+  final List<Map<String, dynamic>> allPets = [
     {
       "id": "pet1",
       "name": "Luna",
@@ -70,6 +70,65 @@ class MatchPageState extends State<MatchPage>
     },
   ];
 
+  // ---------------- FILTROS ----------------
+  String filterGender = "Todos";
+  RangeValues filterAge = const RangeValues(0, 15);
+  double filterKm = 100;
+  String filterBreed = "Todas";
+  String filterGoal = "Todos";
+  bool onlyPedigree = false;
+  bool onlyVaccinated = false;
+  bool onlyVerified = false;
+
+  /// Datos extra de las mascotas de ejemplo (luego vendrán de Firebase).
+  static const Map<String, Map<String, dynamic>> _extra = {
+    "pet1": {"gender": "Hembra", "breed": "Golden Retriever", "km": 2, "vaccinated": true, "verified": true, "goal": "Reproducción"},
+    "pet2": {"gender": "Macho", "breed": "Husky", "km": 5, "vaccinated": true, "verified": true, "goal": "Amistad"},
+    "pet3": {"gender": "Macho", "breed": "Labrador", "km": 4, "vaccinated": false, "verified": false, "goal": "Compañero de juego"},
+    "pet4": {"gender": "Hembra", "breed": "Poodle", "km": 7, "vaccinated": true, "verified": true, "goal": "Reproducción"},
+  };
+
+  static const List<String> _breedOptions = [
+    "Todas", "Golden Retriever", "Labrador", "Pastor Alemán", "Poodle",
+    "Bulldog", "Chihuahua", "Beagle", "Husky", "Shih Tzu", "Mestizo",
+  ];
+
+  static const List<String> _goalOptions = [
+    "Todos", "Reproducción", "Amistad", "Compañero de juego", "Paseos",
+  ];
+
+  int get activeFilters {
+    int n = 0;
+    if (filterGender != "Todos") n++;
+    if (filterAge.start > 0 || filterAge.end < 15) n++;
+    if (filterKm < 100) n++;
+    if (filterBreed != "Todas") n++;
+    if (filterGoal != "Todos") n++;
+    if (onlyPedigree) n++;
+    if (onlyVaccinated) n++;
+    if (onlyVerified) n++;
+    return n;
+  }
+
+  bool _passesFilters(Map<String, dynamic> p) {
+    final e = _extra[p["id"]] ?? const {};
+    final age = (p["age"] as num?)?.toDouble() ?? 0;
+
+    if (filterGender != "Todos" && e["gender"] != filterGender) return false;
+    if (age < filterAge.start || age > filterAge.end) return false;
+    if (((e["km"] as num?) ?? 0) > filterKm) return false;
+    if (filterBreed != "Todas" && e["breed"] != filterBreed) return false;
+    if (filterGoal != "Todos" && e["goal"] != filterGoal) return false;
+    if (onlyPedigree && p["pedigree"] != true) return false;
+    if (onlyVaccinated && e["vaccinated"] != true) return false;
+    if (onlyVerified && e["verified"] != true) return false;
+
+    return true;
+  }
+
+  List<Map<String, dynamic>> get pets =>
+      allPets.where(_passesFilters).toList();
+
   Map<String, dynamic> get pet =>
       pets[currentIndex];
 
@@ -96,6 +155,8 @@ class MatchPageState extends State<MatchPage>
   }
 
   void nextPet() {
+    if (pets.isEmpty) return;
+
     setState(() {
       currentPhoto = 0;
       position = 0;
@@ -120,6 +181,7 @@ class MatchPageState extends State<MatchPage>
         MaterialPageRoute(
           builder: (_) =>
               MatchSuccessScreen(
+            matchPet: pet,
             myPet: "Max",
             otherPet:
                 pet["name"],
@@ -143,7 +205,52 @@ class MatchPageState extends State<MatchPage>
     nextPet();
   }
 
-  void openFilters() {}
+  void resetFilters() {
+    filterGender = "Todos";
+    filterAge = const RangeValues(0, 15);
+    filterKm = 100;
+    filterBreed = "Todas";
+    filterGoal = "Todos";
+    onlyPedigree = false;
+    onlyVaccinated = false;
+    onlyVerified = false;
+  }
+
+  void openFilters() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FilterSheet(
+        gender: filterGender,
+        age: filterAge,
+        km: filterKm,
+        breed: filterBreed,
+        goal: filterGoal,
+        pedigree: onlyPedigree,
+        vaccinated: onlyVaccinated,
+        verified: onlyVerified,
+        breedOptions: _breedOptions,
+        goalOptions: _goalOptions,
+        onApply: (r) {
+          setState(() {
+            filterGender = r.gender;
+            filterAge = r.age;
+            filterKm = r.km;
+            filterBreed = r.breed;
+            filterGoal = r.goal;
+            onlyPedigree = r.pedigree;
+            onlyVaccinated = r.vaccinated;
+            onlyVerified = r.verified;
+            currentIndex = 0;
+            currentPhoto = 0;
+            position = 0;
+            rotation = 0;
+          });
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(
@@ -158,6 +265,71 @@ class MatchPageState extends State<MatchPage>
 
     final bool isLike =
         position > 0;
+
+    if (pets.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.pets,
+                  size: 64,
+                  color: Colors.white24,
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  "No hay mascotas con esos filtros",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Prueba ampliando la distancia o la edad.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white54),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pinkAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: () {
+                    setState(resetFilters);
+                  },
+                  child: const Text("Quitar filtros"),
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: openFilters,
+                  child: const Text(
+                    "Cambiar filtros",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (currentIndex >= pets.length) currentIndex = 0;
 
     final double dragOpacity =
         (position.abs() / 140)
@@ -320,10 +492,7 @@ class MatchPageState extends State<MatchPage>
             ),
 
           Positioned(
-            bottom:
-                padding.bottom +
-                    size.height *
-                        0.01,
+            bottom: padding.bottom + 8,
             left: 0,
             right: 0,
             child: Row(
@@ -356,9 +525,24 @@ class MatchPageState extends State<MatchPage>
 
   Widget _buildCard(
       int index) {
-    final size =
+    final padding =
         MediaQuery.of(context)
-            .size;
+            .padding;
+
+    // Medidas según el teléfono (en vez de porcentajes fijos):
+    // - headerHeight: barra de arriba (filtro + pestañas)
+    // - padding.bottom: incluye la barra de navegación de abajo
+    final double headerHeight = padding.top + 82;
+    const double actionButtonSize = 62;
+    const double cardBottomMargin = 0;
+    const double cardTopMargin = 0;
+    final double actionsBottom = padding.bottom + 8;
+    final double infoBottom =
+        actionsBottom + actionButtonSize + 16 - cardBottomMargin;
+
+    // La foto termina un poco debajo del nombre; abajo queda un panel oscuro
+    // con nombre, distancia y botones (como Tinder).
+    final double photoBottom = infoBottom + 70;
 
     final data =
         pets[index];
@@ -369,19 +553,15 @@ class MatchPageState extends State<MatchPage>
     );
 
     return Container(
-      margin:
-          EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical:
-            size.height *
-                0.04,
+      margin: const EdgeInsets.fromLTRB(
+        0,
+        cardTopMargin,
+        0,
+        cardBottomMargin,
       ),
       decoration:
           BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-          30,
-        ),
+        color: Colors.black,
         boxShadow: [
           BoxShadow(
             color: Colors.black
@@ -398,14 +578,15 @@ class MatchPageState extends State<MatchPage>
         ],
       ),
       child: ClipRRect(
-        borderRadius:
-            BorderRadius.circular(
-          30,
-        ),
+        borderRadius: BorderRadius.zero,
         child: Stack(
           children: [
 
-            Positioned.fill(
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: photoBottom,
               child:
                   Image.network(
                 imgs[currentPhoto],
@@ -414,7 +595,11 @@ class MatchPageState extends State<MatchPage>
               ),
             ),
 
-            Positioned.fill(
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: photoBottom,
               child: Container(
                 decoration:
                     const BoxDecoration(
@@ -423,10 +608,10 @@ class MatchPageState extends State<MatchPage>
                     begin:
                         Alignment
                             .bottomCenter,
-                    end: Alignment
-                        .center,
+                    end: Alignment(
+                        0, 0.45),
                     colors: [
-                      Colors.black87,
+                      Colors.black,
                       Colors.transparent,
                     ],
                   ),
@@ -435,9 +620,7 @@ class MatchPageState extends State<MatchPage>
             ),
 
             Positioned(
-              top:
-                  size.height *
-                      0.09,
+              top: headerHeight,
               left: 16,
               right: 16,
               child: Row(
@@ -487,9 +670,7 @@ class MatchPageState extends State<MatchPage>
             ),
 
             Positioned(
-              bottom:
-                  size.height *
-                      0.22,
+              bottom: infoBottom,
               left: 20,
               right: 20,
               child: Column(
@@ -584,9 +765,7 @@ class MatchPageState extends State<MatchPage>
 
             Positioned(
               right: 20,
-              bottom:
-                  size.height *
-                      0.22,
+              bottom: infoBottom,
               child:
                   GestureDetector(
                 onTap: () {
@@ -694,6 +873,294 @@ class MatchPageState extends State<MatchPage>
           color:
               Colors.white,
           fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterResult {
+  final String gender;
+  final RangeValues age;
+  final double km;
+  final String breed;
+  final String goal;
+  final bool pedigree;
+  final bool vaccinated;
+  final bool verified;
+
+  const _FilterResult({
+    required this.gender,
+    required this.age,
+    required this.km,
+    required this.breed,
+    required this.goal,
+    required this.pedigree,
+    required this.vaccinated,
+    required this.verified,
+  });
+}
+
+/// Hoja "Mis preferencias" para filtrar las mascotas.
+class _FilterSheet extends StatefulWidget {
+  final String gender;
+  final RangeValues age;
+  final double km;
+  final String breed;
+  final String goal;
+  final bool pedigree;
+  final bool vaccinated;
+  final bool verified;
+  final List<String> breedOptions;
+  final List<String> goalOptions;
+  final void Function(_FilterResult) onApply;
+
+  const _FilterSheet({
+    required this.gender,
+    required this.age,
+    required this.km,
+    required this.breed,
+    required this.goal,
+    required this.pedigree,
+    required this.vaccinated,
+    required this.verified,
+    required this.breedOptions,
+    required this.goalOptions,
+    required this.onApply,
+  });
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  late String gender = widget.gender;
+  late RangeValues age = widget.age;
+  late double km = widget.km;
+  late String breed = widget.breed;
+  late String goal = widget.goal;
+  late bool pedigree = widget.pedigree;
+  late bool vaccinated = widget.vaccinated;
+  late bool verified = widget.verified;
+
+  void _apply() {
+    widget.onApply(
+      _FilterResult(
+        gender: gender,
+        age: age,
+        km: km,
+        breed: breed,
+        goal: goal,
+        pedigree: pedigree,
+        vaccinated: vaccinated,
+        verified: verified,
+      ),
+    );
+    Navigator.pop(context);
+  }
+
+  void _clear() {
+    setState(() {
+      gender = "Todos";
+      age = const RangeValues(0, 15);
+      km = 100;
+      breed = "Todas";
+      goal = "Todos";
+      pedigree = false;
+      vaccinated = false;
+      verified = false;
+    });
+  }
+
+  Widget _title(String t) => Padding(
+        padding: const EdgeInsets.only(top: 26, bottom: 12),
+        child: Text(
+          t,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+
+  Widget _chip(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.pinkAccent.withValues(alpha: 0.18)
+              : Colors.white.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: selected ? Colors.pinkAccent : Colors.transparent,
+            width: 1.4,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.pinkAccent : Colors.white70,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _switch(String label, IconData icon, bool value,
+      ValueChanged<bool> onChanged) {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      activeColor: Colors.pinkAccent,
+      secondary: Icon(icon, color: Colors.white54),
+      title: Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+      ),
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.92;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: const BoxDecoration(
+        color: Color(0xFF121212),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 16, 16, 0),
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: _clear,
+                    child: const Text(
+                      "Borrar",
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      "Mis preferencias",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _apply,
+                    child: Container(
+                      width: 46,
+                      height: 46,
+                      decoration: const BoxDecoration(
+                        color: Colors.pinkAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _title("Busco"),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: ["Todos", "Macho", "Hembra"]
+                          .map((g) => _chip(g, gender == g,
+                              () => setState(() => gender = g)))
+                          .toList(),
+                    ),
+
+                    _title(
+                      "Edad: ${age.start.round()} - ${age.end.round() >= 15 ? "15+" : age.end.round()} años",
+                    ),
+                    RangeSlider(
+                      values: age,
+                      min: 0,
+                      max: 15,
+                      divisions: 15,
+                      activeColor: Colors.pinkAccent,
+                      inactiveColor: Colors.white12,
+                      onChanged: (v) => setState(() => age = v),
+                    ),
+
+                    _title(
+                      "Distancia máxima: ${km.round() >= 100 ? "Sin límite" : "${km.round()} km"}",
+                    ),
+                    Slider(
+                      value: km,
+                      min: 1,
+                      max: 100,
+                      activeColor: Colors.pinkAccent,
+                      inactiveColor: Colors.white12,
+                      onChanged: (v) => setState(() => km = v),
+                    ),
+
+                    _title("Raza"),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: widget.breedOptions
+                          .map((b) => _chip(b, breed == b,
+                              () => setState(() => breed = b)))
+                          .toList(),
+                    ),
+
+                    _title("Qué buscan"),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: widget.goalOptions
+                          .map((g) => _chip(g, goal == g,
+                              () => setState(() => goal = g)))
+                          .toList(),
+                    ),
+
+                    _title("Confianza"),
+                    _switch("Solo con pedigrí", Icons.workspace_premium,
+                        pedigree, (v) => setState(() => pedigree = v)),
+                    _switch("Solo vacunados", Icons.vaccines, vaccinated,
+                        (v) => setState(() => vaccinated = v)),
+                    _switch("Solo verificados", Icons.verified, verified,
+                        (v) => setState(() => verified = v)),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

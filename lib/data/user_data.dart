@@ -1,3 +1,5 @@
+import 'user_profile_data.dart';
+
 class UserData {
   static Map<String, dynamic> profile = {
     "uid": "demo_user_001",
@@ -88,5 +90,67 @@ class UserData {
     if (images != null) {
       profile["images"] = images;
     }
+
+    _mirrorToProfile(
+      name: name,
+      gender: gender,
+      showGender: showGender,
+      age: age,
+      birthDate: birthDate,
+      images: images,
+    );
+  }
+
+  /// El onboarding guarda aquí, pero las pantallas de perfil leen
+  /// UserProfileData. Se copian los datos para que siempre coincidan.
+  static void _mirrorToProfile({
+    String? name,
+    String? gender,
+    bool? showGender,
+    int? age,
+    DateTime? birthDate,
+    List<dynamic>? images,
+  }) {
+    String? mappedGender;
+    if (gender != null) {
+      if (gender == "Hombre") {
+        mappedGender = "Masculino";
+      } else if (gender == "Mujer") {
+        mappedGender = "Femenino";
+      } else {
+        mappedGender = "Prefiero no decir";
+      }
+    }
+
+    UserProfileData.updateUser(
+      name: name,
+      age: age,
+      gender: mappedGender,
+      showGender: showGender,
+      images: images?.map((e) => e.toString()).toList(),
+    );
+
+    if (birthDate != null) {
+      UserProfileData.user["birthDate"] = birthDate;
+    }
+  }
+
+  /// Deja los datos del onboarding limpios para el usuario que inició sesión
+  /// (sin los datos de ejemplo).
+  static void resetFor({required String uid, String? phone}) {
+    profile = {
+      "uid": uid,
+      "phone": phone ?? "",
+      "birthDate": null,
+      "age": 0,
+      "name": "",
+      "gender": "",
+      "showGender": true,
+      "location": "",
+      "latitude": null,
+      "longitude": null,
+      "verified": false,
+      "images": <dynamic>[],
+    };
   }
 }

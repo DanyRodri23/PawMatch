@@ -638,8 +638,17 @@ class _EditPetProfilePageState
             DropdownButton<String>(
           dropdownColor:
               Colors.black,
-          value:
-              value,
+          // Si el valor guardado está vacío o no está en la lista,
+          // no se selecciona nada (evita el error del menú).
+          value: items.contains(value)
+              ? value
+              : null,
+          hint: const Text(
+            "Selecciona",
+            style: TextStyle(
+              color: Colors.white54,
+            ),
+          ),
           isExpanded:
               true,
           style:

@@ -100,7 +100,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 child: Center(
                                   child: SizedBox(
                                     height: 40,
-                                    child: ListView(
+                                    child: ShaderMask(
+                                      shaderCallback: (rect) =>
+                                          const LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        colors: [
+                                          Colors.white,
+                                          Colors.white,
+                                          Colors.transparent,
+                                        ],
+                                        stops: [0.0, 0.85, 1.0],
+                                      ).createShader(rect),
+                                      blendMode: BlendMode.dstIn,
+                                      child: ListView(
                                       scrollDirection: Axis.horizontal,
                                       physics: const BouncingScrollPhysics(),
                                       children: [
@@ -110,6 +123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         _tab("Parques", 7),
                                         _tab("Hoteles", 8),
                                       ],
+                                    ),
                                     ),
                                   ),
                                 ),
@@ -129,8 +143,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
 
       /// 🔥 NAVBAR
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(14),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 6),
+        child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
@@ -158,6 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -180,8 +198,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return GestureDetector(
       onTap: () => setState(() => currentIndex = index),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
               ? Colors.white.withValues(alpha: 0.15)

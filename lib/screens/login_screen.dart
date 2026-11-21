@@ -1,10 +1,13 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:pawmatch/screens/dashboard_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:video_player/video_player.dart';
+
 import 'register_screen.dart';
 import 'auth/phone_number_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:video_player/video_player.dart';
+import 'auth/email_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     _controller.initialize().then((_) {
+      if (!mounted) return;
       setState(() {});
       _controller.setLooping(true);
       _controller.play();
@@ -38,33 +42,40 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // GOOGLE LOGIN
-  Future<void> signInWithGoogle(BuildContext context) async {
+  // GOOGLE LOGIN (web y celular)
+  // Si el inicio de sesión funciona, AuthGate (en main.dart) cambia solo
+  // al dashboard, así que aquí no hace falta navegar.
+  Future<void> signInWithGoogle() async {
     try {
 
-      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      if (kIsWeb) {
+        await FirebaseAuth.instance.signInWithPopup(GoogleAuthProvider());
+      } else {
+        final googleUser = await GoogleSignIn().signIn();
 
-      final userCredential =
-          await FirebaseAuth.instance.signInWithPopup(googleProvider);
+        // El usuario cerró la ventana de Google sin elegir cuenta.
+        if (googleUser == null) return;
 
-      if (!context.mounted) return;
+        final googleAuth = await googleUser.authentication;
 
-      if (userCredential.user != null) {
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-        final user = FirebaseAuth.instance.currentUser;
-
-        if (user?.phoneNumber == null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PhoneNumberScreen(),
-            ),
-          );
-        }
+        await FirebaseAuth.instance.signInWithCredential(credential);
       }
 
     } catch (e) {
       debugPrint("Error Google Sign In: $e");
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No se pudo iniciar sesión con Google"),
+        ),
+      );
     }
   }
 
@@ -172,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               onPressed: () async {
-                                await signInWithGoogle(context);
+                                await signInWithGoogle();
                               },
                             ),
 
@@ -252,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        const DashboardScreen(),
+                                        const EmailLoginScreen(),
                                   ),
                                 );
 
@@ -268,8 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        const RegisterScreen(),
+                                    builder: (context) => const RegisterScreen(),
                                   ),
                                 );
 

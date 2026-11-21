@@ -54,7 +54,11 @@ class _ChatsPageState extends State<ChatsPage> {
   @override
   Widget build(BuildContext context) {
     final matches = [...MatchesData.matches];
-    final chats = [...ChatsData.chats];
+    // Un chat solo aparece en "Mensajes" cuando ya tiene al menos un mensaje.
+    // Los matches sin mensajes se quedan en "Nuevos Matches".
+    final chats = ChatsData.chats
+        .where((c) => ((c["messages"] ?? []) as List).isNotEmpty)
+        .toList();
 
     chats.sort(
       (a, b) => (b["time"] ?? "").compareTo(a["time"] ?? ""),

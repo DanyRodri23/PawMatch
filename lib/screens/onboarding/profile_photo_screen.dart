@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'location_permission_screen.dart';
+import '../../services/cloudinary_service.dart';
 import '../../widgets/user_progress_bar.dart';
 import '../../data/user_data.dart';
 
@@ -9,93 +12,183 @@ class ProfilePhotoScreen extends StatefulWidget {
   const ProfilePhotoScreen({super.key});
 
   @override
-  State<ProfilePhotoScreen> createState() =>
-      _ProfilePhotoScreenState();
+  State<ProfilePhotoScreen> createState() => _ProfilePhotoScreenState();
 }
 
-class _ProfilePhotoScreenState
-    extends State<ProfilePhotoScreen> {
+class _ProfilePhotoScreenState extends State<ProfilePhotoScreen> {
+  static const int maxPhotos = 4;
 
-  final List<Uint8List?> previews =
-      List.generate(4, (_) => null);
+  final List<Uint8List?> previews = List.generate(maxPhotos, (_) => null);
 
-  final List<String?> imageUrls =
-      List.generate(4, (_) => null);
+  /// Dirección de la foto ya subida a internet (Cloudinary).
+  final List<String?> imageUrls = List.generate(maxPhotos, (_) => null);
 
-  final List<bool> loading =
-      List.generate(4, (_) => false);
+  final List<bool> loading = List.generate(maxPhotos, (_) => false);
+  final List<bool> failed = List.generate(maxPhotos, (_) => false);
 
-  Future<void> pickImage(
-    ImageSource source,
-    int index,
-  ) async {
-    final pickedFile =
-        await ImagePicker().pickImage(
-      source: source,
-      imageQuality: 85,
-    );
+  /// Ruta local de la foto elegida (para poder reintentar la subida).
+  final List<String?> localPaths = List.generate(maxPhotos, (_) => null);
 
-    if (pickedFile == null) return;
+  int get photoCount => imageUrls.where((u) => u != null).length;
 
-    final bytes =
-        await pickedFile.readAsBytes();
+  bool get anyLoading => loading.any((l) => l);
+
+  bool get canContinue => photoCount > 0 && !anyLoading;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Si regresa a esta pantalla, se muestran las fotos ya subidas.
+    final saved = UserData.profile["images"];
+
+    if (saved is List) {
+      for (var i = 0; i < saved.length && i < maxPhotos; i++) {
+        final url = saved[i].toString();
+        if (url.startsWith("http")) imageUrls[i] = url;
+      }
+    }
+  }
+
+  Future<void> upload(int index) async {
+    final path = localPaths[index];
+    if (path == null) return;
 
     setState(() {
-      previews[index] = bytes;
       loading[index] = true;
+      failed[index] = false;
     });
 
-    await Future.delayed(
-      const Duration(milliseconds: 500),
-    );
+    String? url;
+
+    try {
+      url = await CloudinaryService.uploadImage(File(path))
+          .timeout(const Duration(seconds: 40));
+    } catch (e) {
+      debugPrint("Error subiendo foto: $e");
+    }
 
     if (!mounted) return;
 
     setState(() {
-      imageUrls[index] =
-          pickedFile.path;
       loading[index] = false;
+      if (url == null) {
+        failed[index] = true;
+      } else {
+        imageUrls[index] = url;
+      }
     });
   }
 
+  Future<void> pickImage(ImageSource source, int index) async {
+    final XFile? pickedFile;
+
+    try {
+      pickedFile = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1600,
+      );
+    } catch (e) {
+      debugPrint("Error abriendo cámara o galería: $e");
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No se pudo abrir la cámara o la galería."),
+        ),
+      );
+      return;
+    }
+
+    if (pickedFile == null) return;
+
+    final bytes = await pickedFile.readAsBytes();
+    final path = pickedFile.path;
+
+    if (!mounted) return;
+
+    setState(() {
+      previews[index] = bytes;
+      localPaths[index] = path;
+      imageUrls[index] = null;
+    });
+
+    await upload(index);
+  }
+
+  void removePhoto(int index) {
+    setState(() {
+      previews[index] = null;
+      imageUrls[index] = null;
+      localPaths[index] = null;
+      loading[index] = false;
+      failed[index] = false;
+    });
+  }
+
+  bool hasPhoto(int index) =>
+      previews[index] != null || imageUrls[index] != null;
+
   void showPicker(int index) {
+    HapticFeedback.selectionClick();
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) {
         return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_camera,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-                title: const Text(
-                  "Tomar foto",
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_outlined),
+                  title: const Text("Tomar foto"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    pickImage(ImageSource.camera, index);
+                  },
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                  pickImage(
-                    ImageSource.camera,
-                    index,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library,
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: const Text("Elegir de la galería"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    pickImage(ImageSource.gallery, index);
+                  },
                 ),
-                title: const Text(
-                  "Elegir de galería",
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  pickImage(
-                    ImageSource.gallery,
-                    index,
-                  );
-                },
-              ),
-            ],
+                if (hasPhoto(index))
+                  ListTile(
+                    leading: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                    ),
+                    title: const Text(
+                      "Quitar foto",
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      removePhoto(index);
+                    },
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -103,141 +196,167 @@ class _ProfilePhotoScreenState
   }
 
   void goNext() {
-    final validImages =
-        imageUrls
-            .where(
-              (img) => img != null,
-            )
-            .cast<String>()
-            .toList();
-
-    if (validImages.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Debes agregar al menos una foto",
-          ),
-        ),
+    if (anyLoading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Espera a que termine de subir la foto.")),
       );
       return;
     }
 
-    UserData.updateProfile(
-      images: validImages,
-    );
+    final validImages = imageUrls.whereType<String>().toList();
+
+    if (validImages.isEmpty) return;
+
+    UserData.updateProfile(images: validImages);
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            const LocationPermissionScreen(),
+        builder: (context) => const LocationPermissionScreen(),
       ),
     );
   }
 
-  Widget buildPhotoSlot(int index) {
+  /// Un espacio de foto. El primero es la foto principal.
+  Widget buildPhotoSlot(int index, {bool main = false}) {
+    final preview = previews[index];
+    final url = imageUrls[index];
+
     return GestureDetector(
-      onTap: () => showPicker(index),
+      onTap: () {
+        if (failed[index] && localPaths[index] != null) {
+          upload(index);
+        } else if (!loading[index]) {
+          showPicker(index);
+        }
+      },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius:
-              BorderRadius.circular(
-            20,
-          ),
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(main ? 28 : 22),
           border: Border.all(
-            color:
-                Colors.grey.shade300,
+            color: hasPhoto(index) ? Colors.transparent : Colors.grey.shade300,
+            width: 1.5,
           ),
         ),
         child: Stack(
+          fit: StackFit.expand,
           children: [
-
-            Positioned.fill(
-              child: previews[index] != null
-                  ? ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(
-                        20,
-                      ),
-                      child: Image.memory(
-                        previews[index]!,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.add_a_photo,
-                          size: 34,
-                          color:
-                              Colors.black54,
-                        ),
-                        const SizedBox(
-                          height: 8,
-                        ),
-                        Text(
-                          "Foto ${index + 1}",
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.black54,
-                          ),
-                        ),
-                      ],
+            // FOTO
+            if (preview != null || url != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(main ? 28 : 22),
+                child: preview != null
+                    ? Image.memory(preview, fit: BoxFit.cover)
+                    : Image.network(url!, fit: BoxFit.cover),
+              )
+            else
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: main ? 64 : 44,
+                    height: main ? 64 : 44,
+                    decoration: const BoxDecoration(
+                      color: Colors.black,
+                      shape: BoxShape.circle,
                     ),
-            ),
-
-            if (loading[index])
-              Positioned.fill(
-                child: Container(
-                  decoration:
-                      BoxDecoration(
-                    color: Colors.black
-                        .withValues(
-                      alpha: 0.45,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      20,
+                    child: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      size: main ? 34 : 24,
                     ),
                   ),
-                  child: const Center(
-                    child:
-                        CircularProgressIndicator(
-                      color:
-                          Colors.white,
+                  if (main) ...[
+                    const SizedBox(height: 14),
+                    const Text(
+                      "Foto principal",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Una donde se vea bien tu cara",
+                      style: TextStyle(color: Colors.black45, fontSize: 13),
+                    ),
+                  ],
+                ],
+              ),
+
+            // ETIQUETA "PRINCIPAL"
+            if (main && hasPhoto(index))
+              Positioned(
+                left: 14,
+                bottom: 14,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    "Principal",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
 
-            if (imageUrls[index] != null &&
-                !loading[index])
+            // SUBIENDO
+            if (loading[index])
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(main ? 28 : 22),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              ),
+
+            // ERROR: TOCAR PARA REINTENTAR
+            if (failed[index])
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(main ? 28 : 22),
+                ),
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh, color: Colors.white, size: 30),
+                      SizedBox(height: 6),
+                      Text(
+                        "No se subió\nToca para reintentar",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // SUBIDA OK
+            if (url != null && !loading[index])
               Positioned(
                 top: 10,
                 right: 10,
                 child: Container(
-                  padding:
-                      const EdgeInsets.all(
-                    4,
+                  padding: const EdgeInsets.all(5),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
                   ),
-                  decoration:
-                      const BoxDecoration(
-                    color:
-                        Colors.green,
-                    shape:
-                        BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    size: 14,
-                    color:
-                        Colors.white,
-                  ),
+                  child: const Icon(Icons.check, size: 14, color: Colors.white),
                 ),
               ),
           ],
@@ -247,115 +366,100 @@ class _ProfilePhotoScreenState
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          Colors.white,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-
-            const UserProgressBar(
-              step: 4,
-            ),
-
+            const UserProgressBar(step: 4),
             Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.all(
-                  28,
-                ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(28, 40, 28, 16),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    const SizedBox(
-                      height: 40,
-                    ),
-
-                    const Text(
-                      "Agrega tus fotos",
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight:
-                            FontWeight.bold,
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Icon(
+                        Icons.pets,
+                        color: Colors.white,
+                        size: 30,
                       ),
                     ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
+                    const SizedBox(height: 22),
                     const Text(
-                      "Puedes agregar hasta 4 fotos para mostrar mejor tu perfil.",
+                      "Agrega tus\nfotos",
                       style: TextStyle(
+                        fontSize: 34,
+                        height: 1.15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Sube al menos 1 y hasta $maxPhotos fotos. Llevas $photoCount de $maxPhotos.",
+                      style: const TextStyle(
                         fontSize: 16,
-                        color:
-                            Colors.black54,
+                        color: Colors.black54,
                       ),
                     ),
+                    const SizedBox(height: 28),
 
-                    const SizedBox(
-                      height: 30,
+                    // Foto principal grande
+                    AspectRatio(
+                      aspectRatio: 1.25,
+                      child: buildPhotoSlot(0, main: true),
                     ),
+                    const SizedBox(height: 14),
 
-                    Expanded(
-                      child: GridView.builder(
-                        physics:
-                            const NeverScrollableScrollPhysics(),
-                        itemCount: 4,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 14,
-                          mainAxisSpacing: 14,
-                          childAspectRatio: 0.88,
-                        ),
-                        itemBuilder:
-                            (
-                              context,
-                              index,
-                            ) {
-                          return buildPhotoSlot(
-                            index,
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    SizedBox(
-                      width:
-                          double.infinity,
-                      height: 55,
-                      child:
-                          ElevatedButton(
-                        style:
-                            ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.black,
-                          foregroundColor:
-                              Colors.white,
-                        ),
-                        onPressed:
-                            goNext,
-                        child:
-                            const Text(
-                          "Continuar",
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 20,
+                    // 3 fotos más pequeñas
+                    Row(
+                      children: [
+                        for (var i = 1; i < maxPhotos; i++) ...[
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 0.85,
+                              child: buildPhotoSlot(i),
+                            ),
+                          ),
+                          if (i < maxPhotos - 1) const SizedBox(width: 12),
+                        ],
+                      ],
                     ),
                   ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 0, 28, 20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledForegroundColor: Colors.grey.shade500,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  onPressed: canContinue ? goNext : null,
+                  child: Text(
+                    anyLoading ? "Subiendo foto..." : "Continuar",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),

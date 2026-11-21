@@ -75,20 +75,9 @@ class ProfilePreviewScreen extends StatelessWidget {
             user["name"] ??
                 "Usuario";
 
-        final String userAge =
-            user["age"]
-                .toString();
-
         final String city =
             user["location"] ??
                 "Costa Rica";
-
-        final String bio =
-            user["bio"] ?? "";
-
-        final String instagram =
-            user["instagram"] ??
-                "";
 
         final bool verified =
             user["verified"] ??

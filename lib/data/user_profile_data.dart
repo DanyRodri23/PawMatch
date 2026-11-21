@@ -1,3 +1,5 @@
+import '../services/profile_store.dart';
+
 class UserProfileData {
   /// DATOS GLOBALES DEL USUARIO
   static Map<String, dynamic> user = {
@@ -65,6 +67,8 @@ class UserProfileData {
     if (verified != null) user["verified"] = verified;
     if (showGender != null) user["showGender"] = showGender;
     if (images != null) user["images"] = images;
+  
+    ProfileStore.save();
   }
 
   // ==================================================
@@ -82,6 +86,8 @@ class UserProfileData {
     if (instagram != null) user["instagram"] = instagram;
     if (verified != null) user["verified"] = verified;
     if (showGender != null) user["showGender"] = showGender;
+  
+    ProfileStore.save();
   }
 
   // ==================================================
@@ -93,6 +99,8 @@ class UserProfileData {
   }) {
     if (age != null) user["age"] = age;
     if (gender != null) user["gender"] = gender;
+  
+    ProfileStore.save();
   }
 
   // ==================================================
@@ -106,6 +114,8 @@ class UserProfileData {
     if (country != null) user["country"] = country;
     if (province != null) user["province"] = province;
     if (city != null) user["city"] = city;
+  
+    ProfileStore.save();
   }
 
   // ==================================================
@@ -115,6 +125,8 @@ class UserProfileData {
     List<String> images,
   ) {
     user["images"] = images;
+  
+    ProfileStore.save();
   }
 
   static void addImage(
@@ -128,6 +140,8 @@ class UserProfileData {
     images.add(path);
 
     user["images"] = images;
+  
+    ProfileStore.save();
   }
 
   static void removeImage(
@@ -144,6 +158,8 @@ class UserProfileData {
     }
 
     user["images"] = images;
+  
+    ProfileStore.save();
   }
 
   static void setMainImage(
@@ -164,6 +180,8 @@ class UserProfileData {
     }
 
     user["images"] = images;
+  
+    ProfileStore.save();
   }
 
   // ==================================================
@@ -173,6 +191,8 @@ class UserProfileData {
     String plan,
   ) {
     user["plan"] = plan;
+  
+    ProfileStore.save();
   }
 
   // ==================================================

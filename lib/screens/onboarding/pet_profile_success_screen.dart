@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../dashboard_screen.dart';
+import '../../data/pet_profile_data.dart';
 import '../../data/user_data.dart';
 import '../../services/user_services.dart';
 
@@ -12,8 +12,9 @@ class PetProfileSuccessScreen
   Future<void> goToDashboard(
     BuildContext context,
   ) async {
-    UserData.updateProfile(
-      verified: true,
+    // "Verificado" no se activa solo: se otorga cuando se revisen los documentos.
+    PetProfileData.updatePet(
+      profileCompleted: true,
     );
 
     try {
@@ -30,13 +31,8 @@ class PetProfileSuccessScreen
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const DashboardScreen(),
-      ),
-    );
+    // Vuelve a la pantalla raíz; ProfileGate muestra el dashboard.
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Widget buildSuccessIcon() {

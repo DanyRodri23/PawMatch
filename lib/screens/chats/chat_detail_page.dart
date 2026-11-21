@@ -67,6 +67,8 @@ class _ChatDetailPageState
                 setState(() {});
                 scrollToBottom();
               }
+            }, onError: (e) {
+              debugPrint("Error leyendo mensajes: $e");
             });
           }
 
@@ -336,6 +338,12 @@ class _ChatDetailPageState
       "petData": widget.matchPet,
     });
 
+    final created = currentChat;
+    final originalDate = widget.matchPet?["matchDate"];
+    if (created != null && originalDate != null) {
+      created["matchDate"] = originalDate;
+    }
+
     if (widget.matchPet != null) {
       MatchesData.removeMatch(widget.matchPet!);
     }
@@ -361,11 +369,16 @@ class _ChatDetailPageState
   controller.clear();
 
   //Firebase (nuevo)
-  await ChatService.sendMessage(
-    chatId: chatId,
-    senderId: "me",
-    text: text,
-  );
+  try {
+    await ChatService.sendMessage(
+      chatId: chatId,
+      senderId: "me",
+      text: text,
+    );
+  } catch (e) {
+    // El mensaje ya se ve en pantalla; si Firebase falla no debe romper el chat.
+    debugPrint("No se pudo guardar el mensaje en Firebase: $e");
+  }
 
   // Estados visuales
   Future.delayed(const Duration(seconds: 1), () {
@@ -549,6 +562,8 @@ class _ChatDetailPageState
 
   Widget _buildMessagesList() {
     final chat = currentChat;
+    // Se muestran los mensajes locales: siempre aparecen aunque Firebase falle.
+    final shownMessages = messages;
 
     final DateTime? matchDate = widget.fromMatch
         ? (widget.matchPet?["matchDate"] as DateTime?)
@@ -561,7 +576,7 @@ class _ChatDetailPageState
         horizontal: 16,
         vertical: 24,
       ),
-      itemCount: liveMessages.length + 1,
+      itemCount: shownMessages.length + 1,
       itemBuilder:
           (context, index) {
         if (index == 0) {
@@ -604,7 +619,7 @@ class _ChatDetailPageState
         }
 
         final msg =
-            liveMessages[index - 1];
+            shownMessages[index - 1];
 
         final isMe =
             msg["isMe"] == true;

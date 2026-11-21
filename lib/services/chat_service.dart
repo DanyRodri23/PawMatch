@@ -44,11 +44,12 @@ class ChatService {
           FieldValue.serverTimestamp(),
     });
 
-    await ref.update({
+    // set + merge: crea el chat si todavía no existe (update fallaba así).
+    await ref.set({
       "lastMessage": text,
       "updatedAt":
           FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
 
   /// Escuchar mensajes realtime

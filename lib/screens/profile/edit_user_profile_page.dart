@@ -176,8 +176,19 @@ class _EditUserProfilePageState
             DropdownButton<String>(
           dropdownColor:
               Colors.black,
-          value:
-              gender,
+          value: const [
+            "Masculino",
+            "Femenino",
+            "Prefiero no decir",
+          ].contains(gender)
+              ? gender
+              : null,
+          hint: const Text(
+            "Selecciona",
+            style: TextStyle(
+              color: Colors.white54,
+            ),
+          ),
           isExpanded:
               true,
           style:

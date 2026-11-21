@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'success_profile_screen.dart';
 import '../../services/location_service.dart';
+import '../../widgets/paw_map.dart';
 import '../../widgets/user_progress_bar.dart';
 
 enum _Step { idle, detecting, found, problem }
@@ -138,7 +139,9 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
       case LocationStatus.serviceOff:
         return "Enciende la ubicación de tu teléfono y vuelve a intentarlo.";
       case LocationStatus.outsideCountry:
-        return "Por ahora PawMatch está disponible solo en Costa Rica.";
+        return kDebugMode
+            ? "Estás en el simulador, que usa una ubicación falsa (California). En el simulador ve a Features > Location > Custom Location y escribe 9.9984 y -84.1165."
+            : "Por ahora PawMatch está disponible solo en Costa Rica.";
       default:
         return "Revisa tu conexión y la señal GPS, e inténtalo otra vez.";
     }
@@ -168,64 +171,9 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
   // ---------------- DIBUJO ----------------
 
   Widget radar() {
-    final found = step == _Step.found;
-
-    return SizedBox(
-      height: 250,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Ondas que se expanden
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return Stack(
-                alignment: Alignment.center,
-                children: List.generate(3, (i) {
-                  final t = (_controller.value + i / 3) % 1.0;
-
-                  return Container(
-                    width: 90 + 160 * t,
-                    height: 90 + 160 * t,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: (found ? Colors.green : Colors.black)
-                            .withValues(alpha: (1 - t) * 0.35),
-                        width: 2,
-                      ),
-                    ),
-                  );
-                }),
-              );
-            },
-          ),
-
-          // Pin con huellita
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: found ? Colors.green : Colors.black,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (found ? Colors.green : Colors.black)
-                      .withValues(alpha: 0.3),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Icon(
-              found ? Icons.check_rounded : Icons.pets,
-              color: Colors.white,
-              size: 46,
-            ),
-          ),
-        ],
-      ),
+    return PawMap(
+      animation: _controller,
+      found: step == _Step.found,
     );
   }
 
@@ -450,7 +398,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
                     ),
                     const SizedBox(height: 10),
                     radar(),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 20),
                     AnimatedSize(
                       duration: const Duration(milliseconds: 250),
                       alignment: Alignment.topCenter,

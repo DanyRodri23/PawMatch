@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -143,6 +144,64 @@ class _ProfileGateState extends State<ProfileGate>
     }
 
     // Siempre se muestra el dashboard; el registro se abre encima.
-    return const DashboardScreen();
+    if (!kDebugMode) return const DashboardScreen();
+
+    // Botón SOLO de pruebas (no aparece en la app final).
+    return Stack(
+      children: [
+        const DashboardScreen(),
+        Positioned(
+          left: 6,
+          top: MediaQuery.of(context).size.height * 0.45,
+          child: Material(
+            color: Colors.orange,
+            shape: const CircleBorder(),
+            elevation: 4,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _confirmReset,
+              child: const Padding(
+                padding: EdgeInsets.all(10),
+                child: Icon(Icons.restart_alt_rounded,
+                    color: Colors.white, size: 22),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _confirmReset() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Modo pruebas"),
+        content: const Text(
+          "¿Borrar tu perfil y repetir el registro desde cero? "
+          "Solo afecta a esta cuenta.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancelar"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Repetir registro"),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true || !mounted) return;
+
+    setState(() => _loaded = false);
+
+    await ProfileStore.resetForTesting();
+
+    if (!mounted) return;
+
+    await _start();
   }
 }

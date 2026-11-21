@@ -1,3 +1,5 @@
+import '../../widgets/pet_badge_row.dart';
+import '../../helpers/pet_badges.dart';
 import 'package:flutter/material.dart';
 import 'gallery_viewer_screen.dart';
 import '../profile/owner_profile_sheet.dart';
@@ -89,20 +91,7 @@ class PetDetailScreen extends StatelessWidget {
                                   ),
                                 ),
 
-                                if (pet["pedigree"] == true)
-                                  _certBadge(
-                                    Icons.pets,
-                                    Colors.blue,
-                                  ),
-
-                                if (pet["vaccinated"] == true)
-                                  const SizedBox(width: 8),
-
-                                if (pet["vaccinated"] == true)
-                                  _certBadge(
-                                    Icons.vaccines,
-                                    Colors.lightBlueAccent,
-                                  ),
+                                PetBadgeRow(pet: pet),
                               ],
                             ),
 
@@ -187,9 +176,11 @@ class PetDetailScreen extends StatelessWidget {
                           Expanded(
                             child: _infoBox(
                               "Vacunas",
-                              pet["vaccinated"] == true
-                                  ? "Al día"
-                                  : "No",
+                              PetBadges.vaccineApproved(pet)
+                                  ? "Verificadas"
+                                  : (PetBadges.vaccine(pet) == "pending"
+                                      ? "En revisión"
+                                      : "Sin verificar"),
                               Icons.health_and_safety,
                             ),
                           ),
@@ -410,26 +401,6 @@ class PetDetailScreen extends StatelessWidget {
           icon,
           color: Colors.white,
         ),
-      ),
-    );
-  }
-
-  static Widget _certBadge(
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      width: 38,
-      height: 38,
-      decoration: BoxDecoration(
-        color:
-            color.withValues(alpha: 0.15),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        color: color,
-        size: 20,
       ),
     );
   }

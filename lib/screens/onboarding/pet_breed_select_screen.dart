@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pet_pedigree_screen.dart';
-import '../../widgets/pet_progress_bar.dart';
+import '../../widgets/pet_step_scaffold.dart';
 import '../../data/pet_profile_data.dart';
-import 'package:pawmatch/helpers/pet_flow_helper.dart';
 
 class PetBreedSelectScreen extends StatefulWidget {
   const PetBreedSelectScreen({super.key});
@@ -152,10 +151,7 @@ class _PetBreedSelectScreenState
         List.from(allBreeds)
           ..sort();
 
-    if (selectedBreed != null) {
-      searchController.text =
-          selectedBreed!;
-    }
+    
   }
 
   @override
@@ -208,161 +204,46 @@ class _PetBreedSelectScreenState
     );
   }
 
-  Widget breedItem(
-      String breed) {
-    final selected =
-        breed == selectedBreed;
+  Widget breedItem(String breed) {
+    final selected = breed == selectedBreed;
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          selectedBreed = breed;
-          searchController.text =
-              breed;
-        });
+        FocusScope.of(context).unfocus();
+        setState(() => selectedBreed = breed);
       },
       child: AnimatedContainer(
-        duration:
-            const Duration(
-          milliseconds: 200,
-        ),
-        margin:
-            const EdgeInsets.symmetric(
-          vertical: 6,
-        ),
-        padding:
-            const EdgeInsets.all(16),
-        decoration:
-            BoxDecoration(
-          color: selected
-              ? Colors.black
-              : Colors.grey
-                  .shade100,
-          borderRadius:
-              BorderRadius.circular(
-            20,
-          ),
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        decoration: BoxDecoration(
+          color: selected ? Colors.black : Colors.white,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected
-                ? Colors.black
-                : Colors.grey
-                    .shade300,
+            color: selected ? Colors.black : Colors.grey.shade300,
+            width: 1.5,
           ),
-          boxShadow: selected
-              ? [
-                  const BoxShadow(
-                    color:
-                        Colors.black26,
-                    blurRadius:
-                        10,
-                    offset:
-                        Offset(
-                      0,
-                      4,
-                    ),
-                  )
-                ]
-              : [],
         ),
         child: Row(
           children: [
             Icon(
-              selected
-                  ? Icons
-                      .check_circle
-                  : Icons
-                      .radio_button_off,
-              color: selected
-                  ? Colors.white
-                  : Colors.black54,
+              Icons.pets,
+              size: 20,
+              color: selected ? Colors.white : Colors.black45,
             ),
-            const SizedBox(
-              width: 12,
-            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(
                 breed,
-                style:
-                    TextStyle(
-                  fontSize: 17,
-                  fontWeight:
-                      FontWeight
-                          .w500,
-                  color: selected
-                      ? Colors
-                          .white
-                      : Colors
-                          .black,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget customInputOption() {
-    if (searchController
-        .text
-        .isEmpty) {
-      return const SizedBox();
-    }
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedBreed =
-              searchController
-                  .text;
-        });
-      },
-      child: Container(
-        margin:
-            const EdgeInsets.only(
-          bottom: 12,
-        ),
-        padding:
-            const EdgeInsets.all(
-          16,
-        ),
-        decoration:
-            BoxDecoration(
-          color:
-              Colors.blue.shade50,
-          borderRadius:
-              BorderRadius.circular(
-            18,
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.edit,
-              color:
-                  Colors.blue,
-            ),
-            const SizedBox(
-              width: 10,
-            ),
-            Expanded(
-              child: Text(
-                'Usar: "${searchController.text}"',
-                style:
-                    const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : Colors.black,
                 ),
               ),
             ),
-            const Text(
-              "Seleccionar",
-              style: TextStyle(
-                color:
-                    Colors.blue,
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            )
+            if (selected)
+              const Icon(Icons.check_circle, color: Colors.white, size: 22),
           ],
         ),
       ),
@@ -370,218 +251,62 @@ class _PetBreedSelectScreenState
   }
 
   @override
-  Widget build(
-      BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-              Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.black,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      Expanded(
-                        child: PetProgressBar(
-                          step: PetFlowHelper.getStep("breed"),
-                          totalSteps: PetFlowHelper.totalSteps,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets
-                        .all(28),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                  children: [
-                    const Text(
-                      "¿Qué raza es tu mascota?",
-                      style:
-                          TextStyle(
-                        fontSize:
-                            32,
-                        fontWeight:
-                            FontWeight
-                                .bold,
-                      ),
+  Widget build(BuildContext context) {
+    return PetStepScaffold(
+      stepKey: "breed",
+      emoji: "🧬",
+      title: "¿Cuál es su raza?",
+      subtitle: "Búscala o elígela de la lista.",
+      scrollable: false,
+      onNext: selectedBreed == null ? null : goNext,
+      child: Column(
+        children: [
+          TextField(
+            controller: searchController,
+            onChanged: filterBreeds,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: "Buscar raza",
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: searchController.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () {
+                        searchController.clear();
+                        filterBreeds("");
+                      },
                     ),
-
-                    const SizedBox(
-                      height: 8,
-                    ),
-
-                    const Text(
-                      "Esto nos ayuda a encontrar mejores coincidencias.",
-                      style:
-                          TextStyle(
-                        fontSize:
-                            16,
-                        color: Colors
-                            .black54,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 25,
-                    ),
-
-                    Container(
-                      decoration:
-                          BoxDecoration(
-                        color: Colors
-                            .grey
-                            .shade100,
-                        borderRadius:
-                            BorderRadius.circular(
-                          18,
-                        ),
-                      ),
-                      child: TextField(
-                        controller:
-                            searchController,
-                        onChanged:
-                            filterBreeds,
-                        decoration:
-                            const InputDecoration(
-                          hintText:
-                              "Buscar raza...",
-                          prefixIcon:
-                              Icon(
-                            Icons
-                                .search,
-                          ),
-                          border:
-                              InputBorder.none,
-                          contentPadding:
-                              EdgeInsets.symmetric(
-                            vertical:
-                                18,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 20,
-                    ),
-
-                    customInputOption(),
-
-                    const Text(
-                      "🐾 Todas las razas",
-                      style:
-                          TextStyle(
-                        fontSize:
-                            18,
-                        fontWeight:
-                            FontWeight
-                                .w600,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    Expanded(
-                      child:
-                          ListView.builder(
-                        itemCount:
-                            filteredBreeds
-                                .length,
-                        itemBuilder:
-                            (
-                          context,
-                          index,
-                        ) {
-                          return breedItem(
-                            filteredBreeds[
-                                index],
-                          );
-                        },
-                      ),
-                    ),
-
-                    SizedBox(
-                      width: double
-                          .infinity,
-                      height: 65,
-                      child:
-                          ElevatedButton(
-                        style:
-                            ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors
-                                  .black,
-                          foregroundColor:
-                              Colors
-                                  .white,
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              30,
-                            ),
-                          ),
-                        ),
-                        onPressed:
-                            selectedBreed !=
-                                    null
-                                ? goNext
-                                : null,
-                        child:
-                            const Text(
-                          "Continuar",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight:FontWeight.w600,
-                            letterSpacing: 0.3,
-                             
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: Colors.black, width: 2),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: filteredBreeds.isEmpty
+                ? const Center(
+                    child: Text(
+                      "No encontramos esa raza",
+                      style: TextStyle(color: Colors.black54, fontSize: 16),
+                    ),
+                  )
+                : ListView.builder(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    itemCount: filteredBreeds.length,
+                    itemBuilder: (context, i) => breedItem(filteredBreeds[i]),
+                  ),
+          ),
+        ],
       ),
     );
   }

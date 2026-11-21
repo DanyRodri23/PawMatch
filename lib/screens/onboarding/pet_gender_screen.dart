@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'pet_breed_type_screen.dart';
-import '../../helpers/pet_flow_helper.dart';
-import '../../widgets/pet_progress_bar.dart';
+import '../../widgets/pet_step_scaffold.dart';
 import '../../data/pet_profile_data.dart';
 
 class PetGenderScreen extends StatefulWidget {
@@ -13,206 +13,100 @@ class PetGenderScreen extends StatefulWidget {
   });
 
   @override
-  State<PetGenderScreen> createState() =>
-      _PetGenderScreenState();
+  State<PetGenderScreen> createState() => _PetGenderScreenState();
 }
 
-class _PetGenderScreenState
-    extends State<PetGenderScreen>
-    with SingleTickerProviderStateMixin {
-  String? selectedGender;
-
-  late AnimationController
-      _controller;
+class _PetGenderScreenState extends State<PetGenderScreen> {
+  /// Siempre "Macho" o "Hembra" (igual que en el perfil y los filtros).
+  String? selected;
 
   @override
   void initState() {
     super.initState();
 
-    selectedGender =
-        PetProfileData.pet["gender"];
-
-    _controller =
-        AnimationController(
-      vsync: this,
-      duration:
-          const Duration(
-        milliseconds: 200,
-      ),
-      lowerBound: 0.95,
-      upperBound: 1.0,
-    )..forward();
+    final saved = (PetProfileData.pet["gender"] ?? "").toString().toLowerCase();
+    if (saved == "macho") selected = "Macho";
+    if (saved == "hembra") selected = "Hembra";
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void animateTap() {
-    _controller
-        .reverse()
-        .then(
-          (_) =>
-              _controller.forward(),
-        );
-  }
-
-  void selectGender(
-      String gender) {
-    animateTap();
-
-    setState(() {
-      selectedGender = gender;
-    });
+  String get petName {
+    final n = (PetProfileData.pet["name"] ?? "").toString().trim();
+    return n.isEmpty ? "tu mascota" : n;
   }
 
   void goNext() {
-    if (selectedGender == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Selecciona una opción",
-          ),
-        ),
-      );
-      return;
-    }
+    if (selected == null) return;
 
-    PetProfileData.updatePet(
-      gender: selectedGender,
-    );
+    PetProfileData.updatePet(gender: selected);
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            PetBreedTypeScreen(
-          isBreedDog:
-              widget.isBreedDog,
-        ),
+        builder: (context) => PetBreedTypeScreen(isBreedDog: widget.isBreedDog),
       ),
     );
   }
 
-  Widget genderCard({
-    required String gender,
-    required String title,
-    required String emoji,
-    required String subtitle,
-  }) {
-    final isSelected =
-        selectedGender == gender;
+  Widget genderCard(String value, IconData icon, String text, Color tint) {
+    final isSelected = selected == value;
 
-    return GestureDetector(
-      onTap: () =>
-          selectGender(gender),
-      child: ScaleTransition(
-        scale: _controller,
-        child:
-            AnimatedContainer(
-          duration:
-              const Duration(
-            milliseconds: 250,
-          ),
-          margin:
-              const EdgeInsets.symmetric(
-            vertical: 10,
-          ),
-          padding:
-              const EdgeInsets.all(
-            20,
-          ),
-          decoration:
-              BoxDecoration(
-            color: isSelected
-                ? Colors.black
-                : Colors.white,
-            borderRadius:
-                BorderRadius.circular(
-              25,
-            ),
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => selected = value);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.symmetric(vertical: 30),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.black : Colors.white,
+            borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: isSelected
-                  ? Colors.black
-                  : Colors.grey
-                      .shade300,
+              color: isSelected ? Colors.black : Colors.grey.shade300,
+              width: 1.5,
             ),
             boxShadow: [
               if (isSelected)
-                const BoxShadow(
-                  color:
-                      Colors.black26,
-                  blurRadius:
-                      15,
-                  offset:
-                      Offset(
-                    0,
-                    6,
-                  ),
-                )
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
             ],
           ),
-          child: Row(
+          child: Column(
             children: [
+              Container(
+                width: 78,
+                height: 78,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.14)
+                      : tint.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 44,
+                  color: isSelected ? Colors.white : tint,
+                ),
+              ),
+              const SizedBox(height: 16),
               Text(
-                emoji,
-                style:
-                    const TextStyle(
-                  fontSize: 28,
+                text,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: isSelected ? Colors.white : Colors.black,
                 ),
               ),
-              const SizedBox(
-                width: 15,
+              const SizedBox(height: 8),
+              Icon(
+                isSelected ? Icons.check_circle : Icons.circle_outlined,
+                size: 22,
+                color: isSelected ? Colors.white : Colors.grey.shade400,
               ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                  children: [
-                    Text(
-                      title,
-                      style:
-                          TextStyle(
-                        fontSize:
-                            18,
-                        fontWeight:
-                            FontWeight
-                                .bold,
-                        color: isSelected
-                            ? Colors
-                                .white
-                            : Colors
-                                .black,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 4,
-                    ),
-                    Text(
-                      subtitle,
-                      style:
-                          TextStyle(
-                        color: isSelected
-                            ? Colors
-                                .white70
-                            : Colors
-                                .black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                const Icon(
-                  Icons
-                      .check_circle,
-                  color:
-                      Colors.white,
-                ),
             ],
           ),
         ),
@@ -221,136 +115,19 @@ class _PetGenderScreenState
   }
 
   @override
-  Widget build(
-      BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            PetProgressBar(
-              step: 3,
-              totalSteps: PetFlowHelper.totalSteps,
-            ),
-
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 28,
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                  children: [
-                    const SizedBox(
-                      height: 40,
-                    ),
-
-                    const Text(
-                      "¿Cuál es el sexo de tu mascota?",
-                      style:
-                          TextStyle(
-                        fontSize:
-                            32,
-                        fontWeight:
-                            FontWeight
-                                .bold,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    const Text(
-                      "Esto nos ayuda a encontrar mejores coincidencias.",
-                      style:
-                          TextStyle(
-                        color: Colors
-                            .black54,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 40,
-                    ),
-
-                    genderCard(
-                      gender:
-                          "macho",
-                      title:
-                          "Macho",
-                      emoji: "🐶",
-                      subtitle:
-                          "Protector, juguetón y fiel",
-                    ),
-
-                    genderCard(
-                      gender:
-                          "hembra",
-                      title:
-                          "Hembra",
-                      emoji: "🐕",
-                      subtitle:
-                          "Cariñosa, inteligente y elegante",
-                    ),
-
-                    const Spacer(),
-
-                    SizedBox(
-                      width: double
-                          .infinity,
-                      height: 60,
-                      child:
-                          ElevatedButton(
-                        style:
-                            ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors
-                                  .black,
-                          foregroundColor:
-                              Colors
-                                  .white,
-                          elevation:
-                              10,
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              30,
-                            ),
-                          ),
-                        ),
-                        onPressed:
-                            goNext,
-                        child:
-                            const Text(
-                          "Continuar",
-                          style:
-                              TextStyle(
-                            fontSize:
-                                18,
-                            fontWeight:
-                                FontWeight
-                                    .bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 25,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) {
+    return PetStepScaffold(
+      stepKey: "gender",
+      emoji: "🐕",
+      title: "¿$petName es macho o hembra?",
+      subtitle: "Así encontramos compañeros ideales para él o ella.",
+      onNext: selected == null ? null : goNext,
+      child: Row(
+        children: [
+          genderCard("Macho", Icons.male_rounded, "Macho", Colors.blue),
+          const SizedBox(width: 14),
+          genderCard("Hembra", Icons.female_rounded, "Hembra", Colors.pink),
+        ],
       ),
     );
   }

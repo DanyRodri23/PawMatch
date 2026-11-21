@@ -1,3 +1,4 @@
+import '../../helpers/pet_badges.dart';
 import 'package:flutter/material.dart';
 import '../../data/user_profile_data.dart';
 import '../match/gallery_viewer_screen.dart';
@@ -46,13 +47,9 @@ class ProfilePreviewScreen extends StatelessWidget {
         pet["description"] ??
             "Sin descripción.";
 
-    final bool vaccinated =
-        pet["vaccinated"] ??
-            false;
+    final bool vaccinated = PetBadges.vaccineApproved(pet);
 
-    final bool pedigree =
-        pet["pedigree"] ??
-            false;
+    final bool pedigree = PetBadges.pedigreeApproved(pet);
 
     final List traits =
         pet["traits"] ?? [];

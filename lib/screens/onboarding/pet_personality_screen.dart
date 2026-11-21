@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pawmatch/helpers/pet_flow_helper.dart';
+import 'package:flutter/services.dart';
 import 'pet_goal_screen.dart';
-import '../../widgets/pet_progress_bar.dart';
+import '../../widgets/pet_step_scaffold.dart';
 import '../../data/pet_profile_data.dart';
 
 class PetPersonalityScreen extends StatefulWidget {
@@ -13,45 +13,32 @@ class PetPersonalityScreen extends StatefulWidget {
   });
 
   @override
-  State<PetPersonalityScreen> createState() =>
-      _PetPersonalityScreenState();
+  State<PetPersonalityScreen> createState() => _PetPersonalityScreenState();
 }
 
-class _PetPersonalityScreenState
-    extends State<PetPersonalityScreen> {
+class _PetPersonalityScreenState extends State<PetPersonalityScreen> {
   final List<String> selectedTraits = [];
-
-  final TextEditingController
-      descriptionController =
-      TextEditingController();
-
-  bool isPressed = false;
+  final TextEditingController descriptionController = TextEditingController();
 
   final List<String> traits = [
-    "Juguetón","Cariñoso","Activo","Protector","Tranquilo","Sociable",
-    "Curioso","Energético","Amigable","Dormilón","Inteligente","Travieso",
-    "Valiente","Leal","Aventurero","Obediente","Independiente","Territorial",
-    "Paciente","Alerta","Tímido","Divertido","Explorador","Amoroso",
-    "Atlético","Relajado","Extrovertido","Dominante","Sumiso","Cuidadoso",
-    "Fiel","Ruidoso","Silencioso","Cazador","Muy sociable",
-    "Protector con la familia","Curioso con todo","Amante de la comida",
-    "Buen guardián","Amigable con niños","Perezoso","Dependiente",
-    "Sensible","Seguro","Intrépido"
+    "Juguetón", "Cariñoso", "Activo", "Protector", "Tranquilo", "Sociable",
+    "Curioso", "Energético", "Amigable", "Dormilón", "Inteligente", "Travieso",
+    "Valiente", "Leal", "Aventurero", "Obediente", "Independiente",
+    "Territorial", "Paciente", "Alerta", "Tímido", "Divertido", "Explorador",
+    "Amoroso", "Atlético", "Relajado", "Extrovertido", "Dominante", "Sumiso",
+    "Cuidadoso", "Fiel", "Ruidoso", "Silencioso", "Cazador", "Muy sociable",
+    "Protector con la familia", "Curioso con todo", "Amante de la comida",
+    "Buen guardián", "Amigable con niños", "Perezoso", "Dependiente",
+    "Sensible", "Seguro", "Intrépido",
   ];
 
   @override
   void initState() {
     super.initState();
 
-    final savedTraits =
-        List<String>.from(
-      PetProfileData.pet["traits"] ?? [],
-    );
-
-    selectedTraits.addAll(savedTraits);
-
+    selectedTraits.addAll(List<String>.from(PetProfileData.pet["traits"] ?? []));
     descriptionController.text =
-        PetProfileData.pet["description"] ?? "";
+        (PetProfileData.pet["description"] ?? "").toString();
   }
 
   @override
@@ -60,10 +47,14 @@ class _PetPersonalityScreenState
     super.dispose();
   }
 
+  String get petName {
+    final n = (PetProfileData.pet["name"] ?? "").toString().trim();
+    return n.isEmpty ? "tu mascota" : n;
+  }
+
   List<String> detectTraitsFromText(String text) {
     final lower = text.toLowerCase();
-
-    List<String> detected = [];
+    final detected = <String>[];
 
     if (lower.contains("juguet")) detected.add("Juguetón");
     if (lower.contains("tranquilo")) detected.add("Tranquilo");
@@ -75,81 +66,32 @@ class _PetPersonalityScreenState
     return detected;
   }
 
-  void goBack() {
-    Navigator.pop(context);
-  }
+  bool get canContinue =>
+      selectedTraits.isNotEmpty || descriptionController.text.trim().isNotEmpty;
 
   void goNext() {
-    final detected =
-        detectTraitsFromText(
-      descriptionController.text,
-    );
+    final detected = detectTraitsFromText(descriptionController.text);
 
-    final finalTraits = {
-      ...selectedTraits,
-      ...detected,
-    }.toList();
+    final finalTraits = {...selectedTraits, ...detected}.toList();
 
-    if (finalTraits.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Agrega personalidad o escribe una descripción",
-          ),
-        ),
-      );
-      return;
-    }
+    if (finalTraits.isEmpty) return;
 
     PetProfileData.updatePet(
       traits: finalTraits,
-      description:
-          descriptionController.text.trim(),
+      description: descriptionController.text.trim(),
     );
 
     Navigator.push(
       context,
-      PageRouteBuilder(
-        transitionDuration:
-            const Duration(milliseconds: 500),
-        pageBuilder:
-            (_, __, ___) =>
-                PetGoalScreen(
-          isBreedDog:
-              widget.isBreedDog,
-        ),
-        transitionsBuilder:
-            (_, animation, __, child) {
-          final fade = Tween(
-            begin: 0.0,
-            end: 1.0,
-          ).animate(animation);
-
-          final scale =
-              Tween(
-            begin: 0.95,
-            end: 1.0,
-          ).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            ),
-          );
-
-          return FadeTransition(
-            opacity: fade,
-            child: ScaleTransition(
-              scale: scale,
-              child: child,
-            ),
-          );
-        },
+      MaterialPageRoute(
+        builder: (context) => PetGoalScreen(isBreedDog: widget.isBreedDog),
       ),
     );
   }
 
   void toggleTrait(String trait) {
+    HapticFeedback.selectionClick();
+
     setState(() {
       if (selectedTraits.contains(trait)) {
         selectedTraits.remove(trait);
@@ -160,54 +102,34 @@ class _PetPersonalityScreenState
   }
 
   Widget buildChip(String trait) {
-    final selected =
-        selectedTraits.contains(trait);
+    final selected = selectedTraits.contains(trait);
 
     return GestureDetector(
       onTap: () => toggleTrait(trait),
       child: AnimatedContainer(
-        duration:
-            const Duration(milliseconds: 250),
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 12,
-        ),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
         decoration: BoxDecoration(
-          color: selected
-              ? Colors.black
-              : Colors.grey.shade100,
-          borderRadius:
-              BorderRadius.circular(30),
+          color: selected ? Colors.black : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: selected
-                ? Colors.black
-                : Colors.grey.shade300,
+            color: selected ? Colors.black : Colors.grey.shade300,
           ),
         ),
         child: Row(
-          mainAxisSize:
-              MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (selected)
               const Padding(
-                padding:
-                    EdgeInsets.only(right: 6),
-                child: Icon(
-                  Icons.check,
-                  size: 16,
-                  color: Colors.white,
-                ),
+                padding: EdgeInsets.only(right: 6),
+                child: Icon(Icons.check, size: 15, color: Colors.white),
               ),
             Text(
               trait,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight:
-                    FontWeight.w500,
-                color: selected
-                    ? Colors.white
-                    : Colors.black,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : Colors.black,
               ),
             ),
           ],
@@ -218,212 +140,58 @@ class _PetPersonalityScreenState
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder(
-      duration:
-          const Duration(milliseconds: 600),
-      tween: Tween<double>(
-        begin: 0,
-        end: 1,
-      ),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(
-              0,
-              40 * (1 - value),
-            ),
-            child: child,
-          ),
-        );
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-
-        body: Column(
-          children: [
-
-            /// 🔥 HEADER PRO
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ),
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: goBack,
-                    child: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: Colors
-                            .grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  Expanded(
-                    child: PetProgressBar(
-                      step: PetFlowHelper.getStep("personality"),
-                      totalSteps: PetFlowHelper.totalSteps,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: SafeArea(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 24,
-                  ),
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-
-                      const SizedBox(height: 20),
-
-                      const Text(
-                        "Personalidad de tu mascota",
-                        style: TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -1,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      const Text(
-                        "Selecciona o describe a tu mascota 🐾",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black54,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      TextField(
-                        controller:
-                            descriptionController,
-                        decoration:
-                            InputDecoration(
-                          hintText:
-                              "Ej: Es muy juguetón, cariñoso y protector...",
-                          filled: true,
-                          fillColor:
-                              Colors.grey.shade100,
-                          border:
-                              OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              20,
-                            ),
-                            borderSide:
-                                BorderSide.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Expanded(
-                        child:
-                            SingleChildScrollView(
-                          physics:
-                              const BouncingScrollPhysics(),
-                          child: Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: traits
-                                .map(buildChip)
-                                .toList(),
-                          ),
-                        ),
-                      ),
-
-                      GestureDetector(
-                        onTapDown: (_) =>
-                            setState(() =>
-                                isPressed =
-                                    true),
-                        onTapUp: (_) {
-                          setState(() =>
-                              isPressed =
-                                  false);
-                          goNext();
-                        },
-                        child: AnimatedScale(
-                          scale: isPressed
-                              ? 0.96
-                              : 1,
-                          duration:
-                              const Duration(
-                            milliseconds: 120,
-                          ),
-                          child: Hero(
-                            tag: "continueBtn",
-                            child: Container(
-                              height: 60,
-                              decoration:
-                                  BoxDecoration(
-                                gradient:
-                                    const LinearGradient(
-                                  colors: [
-                                    Colors.black,
-                                    Color(
-                                      0xFF1C1C1C,
-                                    ),
-                                  ],
-                                ),
-                                borderRadius:
-                                    BorderRadius.circular(
-                                  30,
-                                ),
-                              ),
-                              child:
-                                  const Center(
-                                child: Text(
-                                  "Continuar",
-                                  style:
-                                      TextStyle(
-                                    color:
-                                        Colors.white,
-                                    fontSize:
-                                        18,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+    return PetStepScaffold(
+      stepKey: "personality",
+      emoji: "✨",
+      title: "¿Cómo es $petName?",
+      subtitle: "Elige las palabras que mejor lo describen.",
+      onNext: canContinue ? goNext : null,
+      footer: Text(
+        selectedTraits.isEmpty
+            ? "Elige varias o escribe una descripción"
+            : "${selectedTraits.length} seleccionadas",
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.black54,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [for (final t in traits) buildChip(t)],
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            "Cuéntanos más (opcional)",
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: descriptionController,
+            maxLines: 4,
+            maxLength: 200,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: "Ej: Le encanta correr en el parque y jugar con la pelota...",
+              hintStyle: TextStyle(color: Colors.grey.shade400),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(color: Colors.black, width: 2),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

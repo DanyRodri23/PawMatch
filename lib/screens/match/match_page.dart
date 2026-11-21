@@ -1,3 +1,4 @@
+import '../../widgets/pet_badge_row.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/likes_data.dart';
@@ -698,15 +699,7 @@ class MatchPageState extends State<MatchPage>
                         width: 6,
                       ),
 
-                      if (data["pedigree"] ==
-                          true)
-                        const Icon(
-                          Icons
-                              .verified,
-                          color:
-                              Colors.blue,
-                          size: 20,
-                        ),
+                      PetBadgeRow(pet: data, size: 24),
                     ],
                   ),
 
@@ -1016,7 +1009,7 @@ class _FilterSheetState extends State<_FilterSheet> {
       ValueChanged<bool> onChanged) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      activeColor: Colors.pinkAccent,
+      activeThumbColor: Colors.pinkAccent,
       secondary: Icon(icon, color: Colors.white54),
       title: Text(
         label,

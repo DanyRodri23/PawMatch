@@ -1,3 +1,4 @@
+import 'certificates_screen.dart';
 import 'package:flutter/material.dart';
 import '../../data/pet_profile_data.dart';
 import '../../photos/pet_photos_page.dart';
@@ -126,11 +127,7 @@ class _EditPetProfilePageState
           descriptionController
               .text
               .trim(),
-      pedigree:
-          pedigree,
-      vaccinated:
-          vaccinated,
-      traits:
+traits:
           selectedTraits,
     );
 
@@ -434,50 +431,49 @@ class _EditPetProfilePageState
               _title(
                   "Verificaciones"),
 
-              SwitchListTile(
-                value:
-                    vaccinated,
-                activeThumbColor:
-                    Colors.blue,
-                title:
-                    const Text(
-                  "Vacunas al día",
-                  style:
-                      TextStyle(
-                    color:
-                        Colors.white,
-                  ),
-                ),
-                onChanged:
-                    (v) {
-                  setState(() {
-                    vaccinated =
-                        v;
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const CertificatesScreen(),
+                    ),
+                  ).then((_) {
+                    if (mounted) setState(() {});
                   });
                 },
-              ),
-
-              SwitchListTile(
-                value:
-                    pedigree,
-                activeThumbColor:
-                    Colors.orange,
-                title:
-                    const Text(
-                  "Tiene pedigree",
-                  style:
-                      TextStyle(
-                    color:
-                        Colors.white,
+                child: Container(
+                  padding:
+                      const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius:
+                        BorderRadius.circular(18),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.verified_user_rounded,
+                        color: Colors.lightBlueAccent,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Las insignias de vacunas y pedigrí se ganan subiendo tus certificados.",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.white38,
+                      ),
+                    ],
                   ),
                 ),
-                onChanged:
-                    (v) {
-                  setState(() {
-                    pedigree =
-                        v;
-                  });
-                },
               ),
 
               const SizedBox(

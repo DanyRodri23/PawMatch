@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'pet_photos_screen.dart';
 import 'pet_vaccine_card_screen.dart';
-import '../../widgets/pet_progress_bar.dart';
+import '../../widgets/pet_step_scaffold.dart';
 import '../../data/pet_profile_data.dart';
-import 'package:pawmatch/helpers/pet_flow_helper.dart';
 
 class PetVaccinesScreen extends StatefulWidget {
   final bool isBreedDog;
@@ -14,361 +13,70 @@ class PetVaccinesScreen extends StatefulWidget {
   });
 
   @override
-  State<PetVaccinesScreen> createState() =>
-      _PetVaccinesScreenState();
+  State<PetVaccinesScreen> createState() => _PetVaccinesScreenState();
 }
 
-class _PetVaccinesScreenState
-    extends State<PetVaccinesScreen> {
+class _PetVaccinesScreenState extends State<PetVaccinesScreen> {
   String? selectedOption;
 
   @override
   void initState() {
     super.initState();
 
-    final vaccinated =
-        PetProfileData.pet["vaccinated"];
-
+    final vaccinated = PetProfileData.pet["vaccinated"];
     if (vaccinated == true) {
       selectedOption = "si";
-    } else if (vaccinated == false) {
-      selectedOption = "no";
     }
+  }
+
+  String get petName {
+    final n = (PetProfileData.pet["name"] ?? "").toString().trim();
+    return n.isEmpty ? "tu mascota" : n;
   }
 
   void goNext() {
-    if (selectedOption == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Selecciona una opción",
-          ),
-        ),
-      );
-      return;
-    }
+    if (selectedOption == null) return;
 
-    PetProfileData.updatePet(
-      vaccinated:
-          selectedOption == "si",
-    );
+    final vaccinated = selectedOption == "si";
 
-    if (selectedOption == "si") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              PetVaccineCardScreen(
-            isBreedDog:
-                widget.isBreedDog,
-          ),
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              PetPhotosScreen(
-            isBreedDog:
-                widget.isBreedDog,
-            fromVaccineCard:
-                false,
-          ),
-        ),
-      );
-    }
-  }
+    PetProfileData.updatePet(vaccinated: vaccinated);
 
-  Widget optionCard({
-    required String value,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-  }) {
-    final isSelected =
-        selectedOption == value;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedOption = value;
-        });
-      },
-      child: AnimatedContainer(
-        duration:
-            const Duration(
-          milliseconds: 200,
-        ),
-        margin:
-            const EdgeInsets.symmetric(
-          vertical: 10,
-        ),
-        padding:
-            const EdgeInsets.all(20),
-        decoration:
-            BoxDecoration(
-          color: isSelected
-              ? Colors.black
-              : Colors.white,
-          borderRadius:
-              BorderRadius.circular(
-            25,
-          ),
-          border: Border.all(
-            color: isSelected
-                ? Colors.black
-                : Colors.grey
-                    .shade300,
-          ),
-          boxShadow: [
-            if (isSelected)
-              const BoxShadow(
-                color:
-                    Colors.black26,
-                blurRadius: 12,
-                offset:
-                    Offset(0, 5),
-              )
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 28,
-              color: isSelected
-                  ? Colors.white
-                  : Colors.black,
-            ),
-            const SizedBox(
-              width: 15,
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-                children: [
-                  Text(
-                    title,
-                    style:
-                        TextStyle(
-                      fontSize:
-                          18,
-                      fontWeight:
-                          FontWeight
-                              .bold,
-                      color: isSelected
-                          ? Colors
-                              .white
-                          : Colors
-                              .black,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 4,
-                  ),
-                  Text(
-                    subtitle,
-                    style:
-                        TextStyle(
-                      color: isSelected
-                          ? Colors
-                              .white70
-                          : Colors
-                              .black54,
-                    ),
-                  ),
-                ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => vaccinated
+            ? PetVaccineCardScreen(isBreedDog: widget.isBreedDog)
+            : PetPhotosScreen(
+                isBreedDog: widget.isBreedDog,
+                fromVaccineCard: false,
               ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons
-                    .check_circle,
-                color:
-                    Colors.white,
-              ),
-          ],
-        ),
       ),
     );
   }
 
   @override
-  Widget build(
-      BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          Colors.white,
-
-      body: Column(
+  Widget build(BuildContext context) {
+    return PetStepScaffold(
+      stepKey: "vaccines",
+      emoji: "💉",
+      title: "¿Tiene vacunas $petName?",
+      subtitle: "Las mascotas con vacunas generan más confianza.",
+      onNext: selectedOption == null ? null : goNext,
+      child: Column(
         children: [
-
-          /// 🔥 HEADER PRO (flecha + barra)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 10,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () =>
-                      Navigator.pop(context),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors
-                          .grey.shade100,
-                      shape:
-                          BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: PetProgressBar(
-                    step: PetFlowHelper.getStep("vaccines"),
-                    totalSteps: PetFlowHelper.totalSteps,
-                  ),
-                ),
-              ],
-            ),
+          PetOptionCard(
+            icon: Icons.verified_rounded,
+            title: "Sí tiene vacunas",
+            subtitle: "Cuenta con control veterinario",
+            selected: selectedOption == "si",
+            onTap: () => setState(() => selectedOption = "si"),
           ),
-
-          Expanded(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 28,
-              ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-                children: [
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  const Text(
-                    "Vacunas de tu mascota",
-                    style:
-                        TextStyle(
-                      fontSize:
-                          32,
-                      fontWeight:
-                          FontWeight
-                              .bold,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  const Text(
-                    "Esto ayuda a garantizar matches más seguros y confiables.",
-                    style:
-                        TextStyle(
-                      fontSize:
-                          16,
-                      color: Colors
-                          .black54,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 40,
-                  ),
-
-                  optionCard(
-                    value: "si",
-                    title:
-                        "Sí tiene vacunas",
-                    subtitle:
-                        "Cuenta con control veterinario",
-                    icon: Icons
-                        .verified,
-                  ),
-
-                  optionCard(
-                    value: "no",
-                    title:
-                        "No tiene vacunas",
-                    subtitle:
-                        "Se puede completar después",
-                    icon: Icons
-                        .warning_amber_rounded,
-                  ),
-
-                  const Spacer(),
-
-                  SizedBox(
-                    width: double
-                        .infinity,
-                    height: 60,
-                    child:
-                        ElevatedButton(
-                      style:
-                          ElevatedButton.styleFrom(
-                        backgroundColor:
-                            selectedOption !=
-                                    null
-                                ? Colors
-                                    .black
-                                : Colors
-                                    .grey
-                                    .shade300,
-                        foregroundColor:
-                            Colors
-                                .white,
-                        elevation:
-                            selectedOption !=
-                                    null
-                                ? 8
-                                : 0,
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(
-                            30,
-                          ),
-                        ),
-                      ),
-                      onPressed:
-                          selectedOption !=
-                                  null
-                              ? goNext
-                              : null,
-                      child:
-                          const Text(
-                        "Continuar",
-                        style:
-                            TextStyle(
-                          fontSize:
-                              18,
-                          fontWeight:
-                              FontWeight
-                                  .bold,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 25,
-                  ),
-                ],
-              ),
-            ),
+          PetOptionCard(
+            icon: Icons.schedule_rounded,
+            title: "Aún no tiene vacunas",
+            subtitle: "Se puede completar después",
+            selected: selectedOption == "no",
+            onTap: () => setState(() => selectedOption = "no"),
           ),
         ],
       ),

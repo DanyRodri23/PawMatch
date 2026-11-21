@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import '../../data/pet_profile_data.dart';
 import '../../data/user_data.dart';
 import '../../services/user_services.dart';
+import '../../widgets/success_scaffold.dart';
 
-class PetProfileSuccessScreen
-    extends StatelessWidget {
+class PetProfileSuccessScreen extends StatelessWidget {
   const PetProfileSuccessScreen({
     super.key,
   });
 
-  Future<void> goToDashboard(
-    BuildContext context,
-  ) async {
+  Future<void> goToDashboard(BuildContext context) async {
     // "Verificado" no se activa solo: se otorga cuando se revisen los documentos.
     PetProfileData.updatePet(
       profileCompleted: true,
@@ -22,9 +20,7 @@ class PetProfileSuccessScreen
         data: UserData.profile,
       );
     } catch (e) {
-      debugPrint(
-        "Error guardando perfil final: $e",
-      );
+      debugPrint("Error guardando perfil final: $e");
     }
 
     if (!context.mounted) {
@@ -35,133 +31,33 @@ class PetProfileSuccessScreen
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  Widget buildSuccessIcon() {
-    return const Icon(
-      Icons.check_circle,
-      color: Colors.green,
-      size: 100,
-    );
-  }
-
-  Widget buildTitle() {
-    return const Text(
-      "¡Perfil creado con éxito!",
-      style: TextStyle(
-        fontSize: 32,
-        fontWeight:
-            FontWeight.bold,
-      ),
-      textAlign:
-          TextAlign.center,
-    );
-  }
-
-  Widget buildDescription() {
-    return const Text(
-      "Tu mascota ya forma parte de PawMatch. Ahora puedes comenzar a explorar y encontrar compañeros ideales.",
-      style: TextStyle(
-        fontSize: 16,
-        color:
-            Colors.black54,
-      ),
-      textAlign:
-          TextAlign.center,
-    );
-  }
-
-  Widget buildButton(
-    BuildContext context,
-  ) {
-    return SizedBox(
-      width:
-          double.infinity,
-      height: 55,
-      child:
-          ElevatedButton(
-        style:
-            ElevatedButton.styleFrom(
-          backgroundColor:
-              Colors.black,
-          foregroundColor:
-              Colors.white,
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(
-              18,
-            ),
-          ),
-        ),
-        onPressed: () =>
-            goToDashboard(
-          context,
-        ),
-        child:
-            const Text(
-          "Ir al inicio",
-          style:
-              TextStyle(
-            fontSize: 18,
-            fontWeight:
-                FontWeight
-                    .bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget buildBody(
-    BuildContext context,
-  ) {
-    return Padding(
-      padding:
-          const EdgeInsets.all(
-        28,
-      ),
-      child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment
-                .center,
-        children: [
-          buildSuccessIcon(),
-
-          const SizedBox(
-            height: 30,
-          ),
-
-          buildTitle(),
-
-          const SizedBox(
-            height: 20,
-          ),
-
-          buildDescription(),
-
-          const SizedBox(
-            height: 40,
-          ),
-
-          buildButton(
-            context,
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    return Scaffold(
-      backgroundColor:
-          Colors.white,
-      body: SafeArea(
-        child: buildBody(
-          context,
+  Widget build(BuildContext context) {
+    final pet = PetProfileData.pet;
+
+    final name = (pet["name"] ?? "").toString().trim();
+    final breed = (pet["breed"] ?? "").toString().trim();
+    final images = pet["images"];
+
+    String? photo;
+    if (images is List && images.isNotEmpty) {
+      photo = images.first.toString();
+    }
+
+    return SuccessScaffold(
+      title: name.isEmpty ? "¡Perfil creado!" : "¡$name ya es parte de PawMatch!",
+      subtitle:
+          "Ya puedes explorar y encontrar compañeros ideales para tu mascota.",
+      imageUrl: photo,
+      chips: [
+        if (breed.isNotEmpty) SuccessChip(Icons.pets, breed),
+        SuccessChip(
+          Icons.verified_outlined,
+          pet["verified"] == true ? "Verificado" : "Verificación pendiente",
         ),
-      ),
+      ],
+      buttonText: "Empezar a explorar",
+      onContinue: () => goToDashboard(context),
     );
   }
 }

@@ -15,10 +15,12 @@ class PetProfileData {
     /// DOCUMENTOS
     "pedigree": true,
     "pedigreeCertificate": "",
+    "pedigreeStatus": "none",
 
     /// SALUD
     "vaccinated": true,
     "vaccineCard": "",
+    "vaccineStatus": "none",
 
     /// ESTADO
     "verified": true,
@@ -72,6 +74,8 @@ class PetProfileData {
     bool? vaccinated,
     String? vaccineCard,
     bool? verified,
+    String? pedigreeStatus,
+    String? vaccineStatus,
     bool? profileCompleted,
     int? likes,
     int? matches,
@@ -135,6 +139,14 @@ class PetProfileData {
     if (verified != null) {
       pet["verified"] =
           verified;
+    }
+
+    if (pedigreeStatus != null) {
+      pet["pedigreeStatus"] = pedigreeStatus;
+    }
+
+    if (vaccineStatus != null) {
+      pet["vaccineStatus"] = vaccineStatus;
     }
 
     if (profileCompleted !=
@@ -208,8 +220,10 @@ class PetProfileData {
       "breed": "",
       "pedigree": false,
       "pedigreeCertificate": "",
+      "pedigreeStatus": "none",
       "vaccinated": false,
       "vaccineCard": "",
+      "vaccineStatus": "none",
       "verified": false,
       "profileCompleted":
           false,

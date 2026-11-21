@@ -1,66 +1,39 @@
 import '../data/pet_profile_data.dart';
 
 class PetFlowHelper {
-  static bool get isBreed =>
-      PetProfileData.pet["isPureBreed"] == true;
+  static bool get isBreed => PetProfileData.pet["isPureBreed"] == true;
 
-  static bool get vaccinated =>
-      PetProfileData.pet["vaccinated"] == true;
+  static bool get vaccinated => PetProfileData.pet["vaccinated"] == true;
 
-  /// TOTAL SEGÚN RUTA
-  static int get totalSteps {
-    if (isBreed && vaccinated) return 11;
-    if (isBreed && !vaccinated) return 10;
-    if (!isBreed && vaccinated) return 9;
-    return 8;
-  }
+  /// La barra siempre se mide sobre la ruta más larga (11 pasos).
+  static const int totalSteps = 11;
 
-  /// PASO ACTUAL
+  /// Posición de cada pantalla en la ruta completa.
+  /// Los pasos que no aplican (raza, pedigrí, carnet) simplemente se saltan.
   static int getStep(String screen) {
-    /// PERRO DE RAZA
-    if (isBreed) {
-      switch (screen) {
-        case "breed":
-          return 5;
-
-        case "pedigree":
-          return 6;
-
-        case "vaccines":
-          return 7;
-
-        case "vaccineCard":
-          return 8;
-
-        case "photos":
-          return vaccinated ? 9 : 8;
-
-        case "personality":
-          return vaccinated ? 10 : 9;
-
-        case "goal":
-          return vaccinated ? 11 : 10;
-      }
-    }
-
-    /// MESTIZO
-    else {
-      switch (screen) {
-        case "vaccines":
-          return 5;
-
-        case "vaccineCard":
-          return 6;
-
-        case "photos":
-          return vaccinated ? 7 : 6;
-
-        case "personality":
-          return vaccinated ? 8 : 7;
-
-        case "goal":
-          return vaccinated ? 9 : 8;
-      }
+    switch (screen) {
+      case "name":
+        return 1;
+      case "age":
+        return 2;
+      case "gender":
+        return 3;
+      case "breedType":
+        return 4;
+      case "breed":
+        return 5;
+      case "pedigree":
+        return 6;
+      case "vaccines":
+        return 7;
+      case "vaccineCard":
+        return 8;
+      case "photos":
+        return 9;
+      case "personality":
+        return 10;
+      case "goal":
+        return 11;
     }
 
     return 1;

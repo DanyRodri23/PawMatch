@@ -1,3 +1,4 @@
+import '../../widgets/pet_badge_row.dart';
 import 'package:flutter/material.dart';
 import '../../data/app_data.dart';
 import '../../data/likes_data.dart';
@@ -100,11 +101,7 @@ class PetFullProfile extends StatelessWidget {
                                       ),
                                     ),
 
-                                    if (pet["pedigree"] == true)
-                                      const Icon(
-                                        Icons.verified,
-                                        color: Colors.blue,
-                                      ),
+                                    PetBadgeRow(pet: pet),
                                   ],
                                 ),
 

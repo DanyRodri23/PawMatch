@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pawmatch/screens/onboarding/pet_gender_screen.dart';
-import '../../helpers/pet_flow_helper.dart';
-import '../../widgets/pet_progress_bar.dart';
+import 'package:flutter/services.dart';
+import 'pet_gender_screen.dart';
+import '../../widgets/pet_step_scaffold.dart';
 import '../../data/pet_profile_data.dart';
 
 class PetAgeScreen extends StatefulWidget {
@@ -13,192 +13,105 @@ class PetAgeScreen extends StatefulWidget {
   });
 
   @override
-  State<PetAgeScreen> createState() =>
-      _PetAgeScreenState();
+  State<PetAgeScreen> createState() => _PetAgeScreenState();
 }
 
-class _PetAgeScreenState
-    extends State<PetAgeScreen>
-    with SingleTickerProviderStateMixin {
+class _PetAgeScreenState extends State<PetAgeScreen> {
   int age = 1;
-  String selectedUnit = "años";
-
-  late AnimationController
-      _controller;
+  String unit = "años";
 
   @override
   void initState() {
     super.initState();
 
-    age =
-        PetProfileData.pet["age"] ??
-            1;
+    final saved = PetProfileData.pet["age"];
+    if (saved is int && saved > 0) age = saved;
 
-    selectedUnit =
-        PetProfileData
-                .pet["ageType"] ??
-            "años";
-
-    _controller =
-        AnimationController(
-      vsync: this,
-      duration:
-          const Duration(
-        milliseconds: 200,
-      ),
-      lowerBound: 0.9,
-      upperBound: 1.0,
-    )..forward();
+    final savedUnit = (PetProfileData.pet["ageType"] ?? "años").toString();
+    unit = savedUnit == "meses" ? "meses" : "años";
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  int get maxAge => unit == "años" ? 30 : 36;
+
+  String get petName {
+    final n = (PetProfileData.pet["name"] ?? "").toString().trim();
+    return n.isEmpty ? "tu mascota" : n;
   }
 
-  void animatePress() {
-    _controller
-        .reverse()
-        .then(
-          (_) =>
-              _controller.forward(),
-        );
-  }
-
-  void increase() {
-    animatePress();
-
-    setState(() {
-      age++;
-    });
-  }
-
-  void decrease() {
-    if (age > 0) {
-      animatePress();
-
-      setState(() {
-        age--;
-      });
-    }
-  }
-
-  String getPetMessage() {
-    if (age <= 1) {
-      return "🐶 Es un bebé aún";
-    }
-
-    if (age <= 5) {
-      return "🐕 En su mejor etapa";
-    }
-
-    if (age <= 10) {
-      return "🐾 Lleno de energía";
-    }
-
+  String get message {
+    if (unit == "meses" || age <= 1) return "🐶 Un cachorrito lleno de energía";
+    if (age <= 5) return "🐕 En su mejor etapa";
+    if (age <= 10) return "🐾 Adulto y con mucha experiencia";
     return "🦴 Un veterano lleno de amor";
   }
 
-  void goNext() {
-    if (age == 0) return;
+  void change(int delta) {
+    final next = age + delta;
+    if (next < 1 || next > maxAge) return;
 
-    PetProfileData.updatePet(
-      age: age,
-      ageType: selectedUnit,
-    );
+    HapticFeedback.selectionClick();
+    setState(() => age = next);
+  }
+
+  void setUnit(String value) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      unit = value;
+      if (age > maxAge) age = maxAge;
+    });
+  }
+
+  void goNext() {
+    PetProfileData.updatePet(age: age, ageType: unit);
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            PetGenderScreen(
-          isBreedDog:
-              widget.isBreedDog,
+        builder: (context) => PetGenderScreen(isBreedDog: widget.isBreedDog),
+      ),
+    );
+  }
+
+  Widget roundButton(IconData icon, VoidCallback onTap, bool enabled) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 62,
+        height: 62,
+        decoration: BoxDecoration(
+          color: enabled ? Colors.black : Colors.grey.shade200,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 30,
+          color: enabled ? Colors.white : Colors.grey.shade400,
         ),
       ),
     );
   }
 
-  Widget unitSelector(
-      String text) {
-    final isSelected =
-        selectedUnit == text;
+  Widget unitOption(String value) {
+    final selected = unit == value;
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedUnit = text;
-        });
-      },
-      child: AnimatedContainer(
-        duration:
-            const Duration(
-          milliseconds: 250,
-        ),
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 14,
-          horizontal: 28,
-        ),
-        decoration:
-            BoxDecoration(
-          color: isSelected
-              ? Colors.black
-              : Colors.white,
-          borderRadius:
-              BorderRadius.circular(
-            30,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setUnit(value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          decoration: BoxDecoration(
+            color: selected ? Colors.black : Colors.transparent,
+            borderRadius: BorderRadius.circular(26),
           ),
-          border: Border.all(
-            color:
-                Colors.grey.shade300,
-          ),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isSelected
-                ? Colors.white
-                : Colors.black,
-            fontWeight:
-                FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget counterButton(
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ScaleTransition(
-        scale: _controller,
-        child: Container(
-          width: 55,
-          height: 55,
-          decoration:
-              BoxDecoration(
-            color:
-                Colors.grey.shade100,
-            shape:
-                BoxShape.circle,
-            boxShadow: const [
-              BoxShadow(
-                color:
-                    Colors.black12,
-                blurRadius: 6,
-                offset:
-                    Offset(0, 3),
-              )
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: 28,
+          child: Text(
+            value == "años" ? "Años" : "Meses",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: selected ? Colors.white : Colors.black54,
+            ),
           ),
         ),
       ),
@@ -206,260 +119,90 @@ class _PetAgeScreenState
   }
 
   @override
-  Widget build(
-      BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            PetProgressBar(
-              step: 2,
-              totalSteps: PetFlowHelper.totalSteps,
+  Widget build(BuildContext context) {
+    final label = unit == "años"
+        ? (age == 1 ? "año" : "años")
+        : (age == 1 ? "mes" : "meses");
+
+    return PetStepScaffold(
+      stepKey: "age",
+      emoji: "🎂",
+      title: "¿Qué edad tiene $petName?",
+      subtitle: "Usa los botones para ajustar su edad.",
+      onNext: goNext,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 28,
-                ),
-                child: Column(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                roundButton(Icons.remove_rounded, () => change(-1), age > 1),
+                Column(
                   children: [
-                    const SizedBox(
-                      height: 40,
-                    ),
-
-                    const Align(
-                      alignment:
-                          Alignment
-                              .centerLeft,
-                      child: Text(
-                        "¿Qué edad tiene tu mascota?",
-                        style:
-                            TextStyle(
-                          fontSize:
-                              32,
-                          fontWeight:
-                              FontWeight
-                                  .bold,
-                        ),
+                    Text(
+                      "$age",
+                      style: const TextStyle(
+                        fontSize: 76,
+                        fontWeight: FontWeight.w800,
+                        height: 1.0,
+                        letterSpacing: -2,
                       ),
                     ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    const Align(
-                      alignment:
-                          Alignment
-                              .centerLeft,
-                      child: Text(
-                        "Esto nos ayuda a encontrar mascotas compatibles.",
-                        style:
-                            TextStyle(
-                          color: Colors
-                              .black54,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-
-                    const SizedBox(
-                      height: 60,
-                    ),
-
-                    Container(
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
-                        vertical: 40,
-                      ),
-                      decoration:
-                          BoxDecoration(
-                        color: Colors
-                            .grey
-                            .shade50,
-                        borderRadius:
-                            BorderRadius.circular(
-                          30,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors
-                                .black12,
-                            blurRadius:
-                                20,
-                            offset:
-                                Offset(
-                              0,
-                              10,
-                            ),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .center,
-                            children: [
-                              counterButton(
-                                Icons.remove,
-                                decrease,
-                              ),
-
-                              const SizedBox(
-                                width: 25,
-                              ),
-
-                              AnimatedSwitcher(
-                                duration:
-                                    const Duration(
-                                  milliseconds:
-                                      300,
-                                ),
-                                transitionBuilder:
-                                    (
-                                  child,
-                                  animation,
-                                ) =>
-                                        ScaleTransition(
-                                  scale:
-                                      animation,
-                                  child:
-                                      child,
-                                ),
-                                child:
-                                    Text(
-                                  "$age",
-                                  key: ValueKey(
-                                    age,
-                                  ),
-                                  style:
-                                      const TextStyle(
-                                    fontSize:
-                                        70,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(
-                                width: 25,
-                              ),
-
-                              counterButton(
-                                Icons.add,
-                                increase,
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(
-                            height: 20,
-                          ),
-
-                          AnimatedSwitcher(
-                            duration:
-                                const Duration(
-                              milliseconds:
-                                  300,
-                            ),
-                            child: Text(
-                              getPetMessage(),
-                              key:
-                                  ValueKey(
-                                age,
-                              ),
-                              style:
-                                  const TextStyle(
-                                fontSize:
-                                    16,
-                                color: Colors
-                                    .black54,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(
-                            height: 25,
-                          ),
-
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .center,
-                            children: [
-                              unitSelector(
-                                  "años"),
-                              const SizedBox(
-                                width: 15,
-                              ),
-                              unitSelector(
-                                  "meses"),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    SizedBox(
-                      width: double
-                          .infinity,
-                      height: 60,
-                      child:
-                          ElevatedButton(
-                        style:
-                            ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors
-                                  .black,
-                          foregroundColor:
-                              Colors
-                                  .white,
-                          elevation:
-                              10,
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              30,
-                            ),
-                          ),
-                        ),
-                        onPressed:
-                            goNext,
-                        child:
-                            const Text(
-                          "Continuar",
-                          style:
-                              TextStyle(
-                            fontSize:
-                                18,
-                            fontWeight:
-                                FontWeight
-                                    .bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 25,
                     ),
                   ],
                 ),
+                roundButton(Icons.add_rounded, () => change(1), age < maxAge),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              children: [
+                unitOption("años"),
+                unitOption("meses"),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.green,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

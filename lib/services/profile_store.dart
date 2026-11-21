@@ -105,4 +105,24 @@ class ProfileStore {
       debugPrint("No se pudo guardar el perfil: $e");
     }
   }
+
+  /// SOLO PARA PRUEBAS: borra el perfil guardado de este usuario
+  /// (dueño + mascota) para poder repetir el registro.
+  static Future<void> resetForTesting() async {
+    final doc = _doc();
+
+    try {
+      if (doc != null) {
+        await doc.update({
+          "ownerProfile": FieldValue.delete(),
+          "petProfile": FieldValue.delete(),
+        });
+      }
+    } catch (e) {
+      debugPrint("No se pudo reiniciar el perfil: $e");
+    }
+
+    PetProfileData.resetPet();
+    UserProfileData.clearProfile();
+  }
 }

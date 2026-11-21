@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'pet_photos_screen.dart';
-import '../../widgets/pet_progress_bar.dart';
+import '../../widgets/pet_step_scaffold.dart';
+import '../../widgets/document_upload_card.dart';
 import '../../data/pet_profile_data.dart';
-import 'package:pawmatch/helpers/pet_flow_helper.dart';
+import '../../helpers/pet_badges.dart';
 
 class PetVaccineCardScreen extends StatefulWidget {
   final bool isBreedDog;
@@ -13,226 +14,90 @@ class PetVaccineCardScreen extends StatefulWidget {
   });
 
   @override
-  State<PetVaccineCardScreen> createState() =>
-      _PetVaccineCardScreenState();
+  State<PetVaccineCardScreen> createState() => _PetVaccineCardScreenState();
 }
 
-class _PetVaccineCardScreenState
-    extends State<PetVaccineCardScreen> {
-  bool hasFile = false;
+class _PetVaccineCardScreenState extends State<PetVaccineCardScreen> {
+  String card = "";
 
   @override
   void initState() {
     super.initState();
-
-    final savedCard =
-        PetProfileData.pet["vaccineCard"];
-
-    if (savedCard != null &&
-        savedCard.toString().isNotEmpty) {
-      hasFile = true;
-    }
-  }
-
-  void simulateUpload() {
-    setState(() {
-      hasFile = true;
-    });
-
-    PetProfileData.updatePet(
-      vaccineCard:
-          "uploaded_vaccine_card_demo",
-    );
+    card = (PetProfileData.pet["vaccineCard"] ?? "").toString();
   }
 
   void goNext() {
+    PetBadges.setVaccineDoc(card);
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            PetPhotosScreen(
-          isBreedDog:
-              widget.isBreedDog,
-        ),
+        builder: (context) => PetPhotosScreen(isBreedDog: widget.isBreedDog),
+      ),
+    );
+  }
+
+  Widget infoRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.black87),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   @override
-  Widget build(
-      BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          Colors.white,
-
-      body: Column(
+  Widget build(BuildContext context) {
+    return PetStepScaffold(
+      stepKey: "vaccineCard",
+      emoji: "📋",
+      title: "Carnet de vacunas",
+      subtitle: "Sube una foto del carnet para verificar su salud.",
+      buttonText: card.isEmpty ? "Subir después" : "Continuar",
+      onNext: goNext,
+      child: Column(
         children: [
-
-          /// 🔥 HEADER PRO
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 10,
+          DocumentUploadCard(
+            icon: Icons.vaccines_rounded,
+            title: "Subir carnet",
+            hint: "Asegúrate de que se lean las fechas",
+            initialValue: card,
+            onUploaded: (url) => setState(() => card = url),
+            onRemoved: () => setState(() => card = ""),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Column(
               children: [
-                GestureDetector(
-                  onTap: () =>
-                      Navigator.pop(context),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors
-                          .grey.shade100,
-                      shape:
-                          BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                    ),
-                  ),
+                infoRow(
+                  Icons.lock_outline,
+                  "Solo PawMatch ve el documento. Nunca se comparte con otros usuarios.",
                 ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: PetProgressBar(
-                    step: PetFlowHelper.getStep("vaccineCard"),
-                    totalSteps: PetFlowHelper.totalSteps,
-                  ),
+                infoRow(
+                  Icons.verified_outlined,
+                  "Al aprobarlo, tu mascota mostrará la insignia de vacunada.",
                 ),
               ],
-            ),
-          ),
-
-          Expanded(
-            child: Padding(
-              padding:
-                  const EdgeInsets.all(28),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-                children: [
-                  const SizedBox(
-                    height: 30,
-                  ),
-
-                  const Text(
-                    "Carnet de vacunas",
-                    style:
-                        TextStyle(
-                      fontSize:
-                          32,
-                      fontWeight:
-                          FontWeight
-                              .bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 10,
-                  ),
-
-                  const Text(
-                    "Sube el carnet para verificar la salud de tu mascota.",
-                    style:
-                        TextStyle(
-                      color: Colors
-                          .black54,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 40,
-                  ),
-
-                  GestureDetector(
-                    onTap:
-                        simulateUpload,
-                    child:
-                        AnimatedContainer(
-                      duration:
-                          const Duration(
-                        milliseconds:
-                            200,
-                      ),
-                      height: 180,
-                      width: double
-                          .infinity,
-                      decoration:
-                          BoxDecoration(
-                        color: Colors
-                            .grey
-                            .shade100,
-                        borderRadius:
-                            BorderRadius.circular(
-                          20,
-                        ),
-                        border:
-                            Border.all(
-                          color: hasFile
-                              ? Colors
-                                  .green
-                              : Colors
-                                  .grey
-                                  .shade300,
-                          width: 2,
-                        ),
-                      ),
-                      child:
-                          Center(
-                        child: hasFile
-                            ? const Icon(
-                                Icons
-                                    .check_circle,
-                                color: Colors
-                                    .green,
-                                size: 40,
-                              )
-                            : const Icon(
-                                Icons
-                                    .upload_file,
-                                size: 40,
-                              ),
-                      ),
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  SizedBox(
-                    width: double
-                        .infinity,
-                    height: 55,
-                    child:
-                        ElevatedButton(
-                      style:
-                          ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors
-                                .black,
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(
-                            18,
-                          ),
-                        ),
-                      ),
-                      onPressed:
-                          goNext,
-                      child:
-                          const Text(
-                        "Continuar",
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],

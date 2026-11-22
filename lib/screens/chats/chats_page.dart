@@ -51,11 +51,16 @@ class _ChatsPageState extends State<ChatsPage> {
         : "Hace $years años";
   }
 
+  String _img(Map<String, dynamic> pet) {
+    final images = pet["images"];
+    if (images is List && images.isNotEmpty) return "${images[0]}";
+    return "${pet["image"] ?? ""}";
+  }
+
   @override
   Widget build(BuildContext context) {
     final matches = [...MatchesData.matches];
     // Un chat solo aparece en "Mensajes" cuando ya tiene al menos un mensaje.
-    // Los matches sin mensajes se quedan en "Nuevos Matches".
     final chats = ChatsData.chats
         .where((c) => ((c["messages"] ?? []) as List).isNotEmpty)
         .toList();
@@ -64,403 +69,248 @@ class _ChatsPageState extends State<ChatsPage> {
       (a, b) => (b["time"] ?? "").compareTo(a["time"] ?? ""),
     );
 
+    final bottom = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF050505),
+      backgroundColor: const Color(0xFF0B0B0F),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            18,
-            10,
-            18,
-            0,
-          ),
-          child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      "Chats",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                  ),
-
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(
-                        alpha: 0.05,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(18),
-                      border: Border.all(
-                        color: Colors.white10,
-                      ),
-                    ),
-                    child: Text(
-                      "${matches.length + chats.length}",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+        bottom: false,
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, bottom + 24),
+          children: [
+            const Text(
+              "Chat",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
               ),
-
-              const SizedBox(height: 28),
-
-              const Text(
-                "Nuevos Matches",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
+            ),
+            const SizedBox(height: 22),
+            const Text(
+              "Nuevos matches",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (matches.isEmpty)
+              Container(
+                height: 96,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16161C),
+                  borderRadius: BorderRadius.circular(22),
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              if (matches.isEmpty)
-                Container(
-                  height: 95,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(
-                      alpha: 0.03,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white10,
-                    ),
+                child: const Center(
+                  child: Text(
+                    "Cuando hagas match, aparecerá aquí",
+                    style: TextStyle(color: Colors.white38, fontSize: 14),
                   ),
-                  child: const Center(
-                    child: Text(
-                      "Sin matches nuevos",
-                      style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                SizedBox(
-                  height: 132,
-                  child: ListView.builder(
-                    scrollDirection:
-                        Axis.horizontal,
-                    itemCount: matches.length,
-                    itemBuilder:
-                        (context, index) {
-                      final pet =
-                          matches[index];
+                ),
+              )
+            else
+              SizedBox(
+                height: 186,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: matches.length,
+                  itemBuilder: (context, index) {
+                    final pet = matches[index];
+                    final image = _img(pet);
+                    final DateTime? matchDate = pet["matchDate"] as DateTime?;
 
-                      final image =
-                          (pet["images"] != null &&
-                                  pet["images"]
-                                      is List &&
-                                  pet["images"]
-                                      .isNotEmpty)
-                              ? pet["images"][0]
-                              : "";
-
-                      final DateTime? matchDate =
-                          pet["matchDate"]
-                              as DateTime?;
-
-                      return GestureDetector(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ChatDetailPage(
-                                name:
-                                    pet["name"] ??
-                                        "",
-                                image: image,
-                                fromMatch:
-                                    true,
-                                matchPet:
-                                    pet,
+                    return GestureDetector(
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatDetailPage(
+                              name: pet["name"] ?? "",
+                              image: image,
+                              fromMatch: true,
+                              matchPet: pet,
+                            ),
+                          ),
+                        );
+                        setState(() {});
+                      },
+                      child: Container(
+                        width: 112,
+                        margin: const EdgeInsets.only(right: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 132,
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(
+                                  color: Colors.pinkAccent,
+                                  width: 2.5,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: SizedBox.expand(
+                                  child: image.isEmpty
+                                      ? Container(
+                                          color: const Color(0xFF16161C))
+                                      : Image.network(
+                                          image,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              Container(
+                                            color: const Color(0xFF16161C),
+                                          ),
+                                        ),
+                                ),
                               ),
                             ),
-                          );
-
-                          setState(() {});
-                        },
-                        child: Container(
-                          width: 86,
-                          margin:
-                              const EdgeInsets.only(
-                            right: 14,
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                padding:
-                                    const EdgeInsets
-                                        .all(3),
-                                decoration:
-                                    BoxDecoration(
-                                  shape: BoxShape
-                                      .circle,
-                                  gradient:
-                                      const LinearGradient(
-                                    colors: [
-                                      Color(
-                                          0xFFFFC107),
-                                      Color(
-                                          0xFFFF9800),
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors
-                                          .orange
-                                          .withValues(
-                                        alpha:
-                                            0.35,
-                                      ),
-                                      blurRadius:
-                                          16,
-                                    ),
-                                  ],
-                                ),
-                                child:
-                                    CircleAvatar(
-                                  radius: 35,
-                                  backgroundColor:
-                                      Colors.black,
-                                  backgroundImage:
-                                      NetworkImage(
-                                    image,
-                                  ),
-                                ),
+                            const SizedBox(height: 7),
+                            Text(
+                              pet["name"] ?? "",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
                               ),
-
-                              const SizedBox(
-                                  height: 10),
-
+                            ),
+                            if (matchDate != null)
                               Text(
-                                pet["name"] ??
-                                    "",
+                                getRelativeMatchTime(matchDate),
                                 maxLines: 1,
-                                overflow:
-                                    TextOverflow
-                                        .ellipsis,
-                                style:
-                                    const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                  fontWeight:
-                                      FontWeight.w500,
-                                ),
-                              ),
-
-                              const SizedBox(
-                                  height: 3),
-
-                              Text(
-                                matchDate != null
-                                    ? getRelativeMatchTime(
-                                        matchDate,
-                                      )
-                                    : "",
-                                maxLines: 1,
-                                overflow:
-                                    TextOverflow
-                                        .ellipsis,
-                                style:
-                                    const TextStyle(
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
                                   color: Colors.white38,
-                                  fontSize: 10,
-                                  fontWeight:
-                                      FontWeight.w400,
+                                  fontSize: 11,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 26),
+            const Text(
+              "Mensajes",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (chats.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 64,
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      "Aún no tienes mensajes",
+                      style: TextStyle(color: Colors.white54, fontSize: 15),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...chats.map((chat) {
+                final messages = List<Map<String, dynamic>>.from(
+                  chat["messages"] ?? [],
+                );
+                final previewText = messages.isNotEmpty
+                    ? messages.last["text"] ?? ""
+                    : chat["lastMessage"] ?? "";
+                final unread = (chat["unread"] ?? 0) is num &&
+                    (chat["unread"] as num) > 0;
+                final image = "${chat["image"] ?? ""}";
+
+                return InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatDetailPage(
+                          name: chat["name"] ?? "",
+                          image: image,
+                          fromMatch: false,
+                          matchPet: chat["petData"],
+                        ),
+                      ),
+                    );
+                    setState(() {});
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 31,
+                          backgroundColor: const Color(0xFF16161C),
+                          backgroundImage:
+                              image.isEmpty ? null : NetworkImage(image),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                chat["name"] ?? "",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 17,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "$previewText",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: unread
+                                      ? Colors.white
+                                      : Colors.white54,
+                                  fontWeight: unread
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                  fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-
-              const SizedBox(height: 30),
-
-              const Text(
-                "Mensajes",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              if (chats.isEmpty)
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 70,
-                          color: Colors.white
-                              .withValues(
-                            alpha: 0.08,
+                        if (unread)
+                          Container(
+                            width: 11,
+                            height: 11,
+                            decoration: const BoxDecoration(
+                              color: Colors.pinkAccent,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        const SizedBox(
-                            height: 14),
-                        const Text(
-                          "No tienes mensajes aún",
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 15,
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                )
-              else
-                Expanded(
-                  child: ListView.builder(
-                    physics:
-                        const BouncingScrollPhysics(),
-                    itemCount:
-                        chats.length,
-                    itemBuilder:
-                        (context, index) {
-                      final chat =
-                          chats[index];
-
-                      final messages =
-                          List<Map<String, dynamic>>.from(
-                        chat["messages"] ?? [],
-                      );
-
-                      final previewText =
-                          messages.isNotEmpty
-                              ? messages.last["text"] ?? ""
-                              : chat["lastMessage"] ?? "";
-
-                      return GestureDetector(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ChatDetailPage(
-                                name:
-                                    chat["name"] ?? "",
-                                image:
-                                    chat["image"] ?? "",
-                                fromMatch: false,
-                                matchPet:
-                                    chat["petData"],
-                              ),
-                            ),
-                          );
-
-                          setState(() {});
-                        },
-                        child: Container(
-                          margin:
-                              const EdgeInsets.only(
-                            bottom: 14,
-                          ),
-                          padding:
-                              const EdgeInsets.all(14),
-                          decoration:
-                              BoxDecoration(
-                            color:
-                                const Color(0xFF111111),
-                            borderRadius:
-                                BorderRadius.circular(
-                              24,
-                            ),
-                            border: Border.all(
-                              color: Colors.white10,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 30,
-                                backgroundImage:
-                                    NetworkImage(
-                                  chat["image"] ?? "",
-                                ),
-                              ),
-
-                              const SizedBox(width: 14),
-
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      chat["name"] ?? "",
-                                      style:
-                                          const TextStyle(
-                                        color:
-                                            Colors.white,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-
-                                    const SizedBox(
-                                        height: 6),
-
-                                    Text(
-                                      previewText,
-                                      maxLines: 1,
-                                      overflow:
-                                          TextOverflow
-                                              .ellipsis,
-                                      style:
-                                          const TextStyle(
-                                        color:
-                                            Colors.white54,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
+                );
+              }),
+          ],
         ),
       ),
     );

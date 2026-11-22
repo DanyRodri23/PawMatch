@@ -8,7 +8,19 @@ import 'match_success_screen.dart';
 import 'pet_detail_screen.dart';
 
 class MatchPage extends StatefulWidget {
-  const MatchPage({super.key});
+  final ValueChanged<int>? onFiltersChanged;
+
+  final String? initialGoal;
+  final bool initialPedigree;
+  final double? initialKm;
+
+  const MatchPage({
+    super.key,
+    this.onFiltersChanged,
+    this.initialGoal,
+    this.initialPedigree = false,
+    this.initialKm,
+  });
 
   @override
   State<MatchPage> createState() => MatchPageState();
@@ -97,6 +109,14 @@ class MatchPageState extends State<MatchPage>
   static const List<String> _goalOptions = [
     "Todos", "Reproducción", "Amistad", "Compañero de juego", "Paseos",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialGoal != null) filterGoal = widget.initialGoal!;
+    if (widget.initialPedigree) onlyPedigree = true;
+    if (widget.initialKm != null) filterKm = widget.initialKm!;
+  }
 
   int get activeFilters {
     int n = 0;
@@ -248,6 +268,7 @@ class MatchPageState extends State<MatchPage>
             position = 0;
             rotation = 0;
           });
+          widget.onFiltersChanged?.call(activeFilters);
         },
       ),
     );
@@ -312,6 +333,7 @@ class MatchPageState extends State<MatchPage>
                   ),
                   onPressed: () {
                     setState(resetFilters);
+                    widget.onFiltersChanged?.call(0);
                   },
                   child: const Text("Quitar filtros"),
                 ),
@@ -353,12 +375,12 @@ class MatchPageState extends State<MatchPage>
                     ? Colors.green
                         .withValues(
                         alpha:
-                            dragOpacity,
+                            dragOpacity * 0.35,
                       )
                     : Colors.red
                         .withValues(
                         alpha:
-                            dragOpacity,
+                            dragOpacity * 0.35,
                       ),
               ),
             ),
@@ -494,27 +516,248 @@ class MatchPageState extends State<MatchPage>
 
           Positioned(
             bottom: padding.bottom + 8,
+            left: 14,
+            right: 14,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _circleBtn(Icons.replay_rounded, Colors.amber, 48, prevPet),
+                _circleBtn(Icons.close_rounded, Colors.white, 64, swipeLeft,
+                    iconSize: 34),
+                _circleBtn(Icons.star_rounded, Colors.lightBlueAccent, 50,
+                    () => _soon("Super Like")),
+                _circleBtn(Icons.favorite_rounded, Colors.pinkAccent, 64,
+                    swipeRight,
+                    iconSize: 32),
+                _circleBtn(Icons.send_rounded, Colors.lightBlueAccent, 48,
+                    () => _soon("Mensaje antes del match")),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleBtn(
+    IconData icon,
+    Color color,
+    double size,
+    VoidCallback onTap, {
+    double? iconSize,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.black.withValues(alpha: 0.38),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 16,
+            ),
+          ],
+        ),
+        child: Icon(icon, color: color, size: iconSize ?? size * 0.5),
+      ),
+    );
+  }
+
+  void prevPet() {
+    if (currentIndex > 0) {
+      setState(() {
+        currentIndex--;
+        currentPhoto = 0;
+        position = 0;
+        rotation = 0;
+      });
+    }
+  }
+
+  void _soon(String what) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("$what: próximamente"),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Widget _buildCard(int index) {
+    final padding = MediaQuery.of(context).padding;
+    const double bigBtn = 64;
+    final double actionsBottom = padding.bottom + 8;
+    final double infoBottom = actionsBottom + bigBtn + 18;
+
+    final data = pets[index];
+    final imgs = List<String>.from(data["images"]);
+    final int photo =
+        index == currentIndex ? currentPhoto.clamp(0, imgs.length - 1).toInt() : 0;
+    final extra = _extra[data["id"]] ?? const {};
+    final breed = extra["breed"] as String?;
+    final goal = extra["goal"] as String?;
+
+    return Container(
+      color: Colors.black,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            imgs[photo],
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                Container(color: const Color(0xFF16161C)),
+          ),
+
+          // Sombra arriba (para leer la barra) y abajo (para leer el texto)
+          Positioned(
+            top: 0,
             left: 0,
             right: 0,
+            height: padding.top + 150,
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x99000000), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment(0, 0.1),
+                  colors: [Color(0xE6000000), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+
+          // Barritas de fotos
+          Positioned(
+            top: padding.top + 6,
+            left: 14,
+            right: 14,
             child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment
-                      .spaceEvenly,
+              children: List.generate(imgs.length, (i) {
+                return Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                    height: 3.5,
+                    decoration: BoxDecoration(
+                      color: i == photo
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.32),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+
+          // Información
+          Positioned(
+            bottom: infoBottom,
+            left: 20,
+            right: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _actionButton(
-                  Icons.close,
-                  Colors.red,
-                  swipeLeft,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "${data["name"]}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "  ${data["age"]}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    PetBadgeRow(pet: data, size: 24),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PetDetailScreen(pet: data),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 46,
+                        height: 46,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_upward_rounded,
+                          color: Colors.black,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                _actionButton(
-                  Icons.star,
-                  Colors.blue,
-                  () {},
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on,
+                        color: Colors.white70, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      data["distance"] ?? "",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                _actionButton(
-                  Icons.favorite,
-                  Colors.green,
-                  swipeRight,
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (breed != null) _tag(breed, hot: true),
+                    if (goal != null) _tag(goal, hot: true),
+                    _tag("Juguetón"),
+                    _tag("Amigable"),
+                    _tag("Energético"),
+                  ],
                 ),
               ],
             ),
@@ -524,348 +767,21 @@ class MatchPageState extends State<MatchPage>
     );
   }
 
-  Widget _buildCard(
-      int index) {
-    final padding =
-        MediaQuery.of(context)
-            .padding;
-
-    // Medidas según el teléfono (en vez de porcentajes fijos):
-    // - headerHeight: barra de arriba (filtro + pestañas)
-    // - padding.bottom: incluye la barra de navegación de abajo
-    final double headerHeight = padding.top + 82;
-    const double actionButtonSize = 62;
-    const double cardBottomMargin = 0;
-    const double cardTopMargin = 0;
-    final double actionsBottom = padding.bottom + 8;
-    final double infoBottom =
-        actionsBottom + actionButtonSize + 16 - cardBottomMargin;
-
-    // La foto termina un poco debajo del nombre; abajo queda un panel oscuro
-    // con nombre, distancia y botones (como Tinder).
-    final double photoBottom = infoBottom + 70;
-
-    final data =
-        pets[index];
-
-    final imgs =
-        List<String>.from(
-      data["images"],
-    );
-
+  Widget _tag(String text, {bool hot = false}) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(
-        0,
-        cardTopMargin,
-        0,
-        cardBottomMargin,
-      ),
-      decoration:
-          BoxDecoration(
-        color: Colors.black,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black
-                .withValues(
-              alpha: 0.6,
-            ),
-            blurRadius: 30,
-            offset:
-                const Offset(
-              0,
-              20,
-            ),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.zero,
-        child: Stack(
-          children: [
-
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: photoBottom,
-              child:
-                  Image.network(
-                imgs[currentPhoto],
-                fit:
-                    BoxFit.cover,
-              ),
-            ),
-
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: photoBottom,
-              child: Container(
-                decoration:
-                    const BoxDecoration(
-                  gradient:
-                      LinearGradient(
-                    begin:
-                        Alignment
-                            .bottomCenter,
-                    end: Alignment(
-                        0, 0.45),
-                    colors: [
-                      Colors.black,
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            Positioned(
-              top: headerHeight,
-              left: 16,
-              right: 16,
-              child: Row(
-                children:
-                    List.generate(
-                  imgs.length,
-                  (i) {
-                    final isActive =
-                        i ==
-                            currentPhoto;
-
-                    return Expanded(
-                      child:
-                          AnimatedContainer(
-                        duration:
-                            const Duration(
-                          milliseconds:
-                              300,
-                        ),
-                        margin:
-                            const EdgeInsets.symmetric(
-                          horizontal:
-                              3,
-                        ),
-                        height:
-                            3,
-                        decoration:
-                            BoxDecoration(
-                          color: isActive
-                              ? Colors
-                                  .white
-                              : Colors.white
-                                  .withValues(
-                                  alpha:
-                                      0.3,
-                                ),
-                          borderRadius:
-                              BorderRadius.circular(
-                            20,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            Positioned(
-              bottom: infoBottom,
-              left: 20,
-              right: 20,
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-                children: [
-
-                  Row(
-                    children: [
-                      Text(
-                        "${data["name"]}, ${data["age"]}",
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.white,
-                          fontSize:
-                              28,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        width: 6,
-                      ),
-
-                      PetBadgeRow(pet: data, size: 24),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 6,
-                  ),
-
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons
-                            .location_on,
-                        color:
-                            Colors.white70,
-                        size: 16,
-                      ),
-
-                      const SizedBox(
-                        width: 4,
-                      ),
-
-                      Text(
-                        data["distance"],
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.white70,
-                          fontSize:
-                              15,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 10,
-                  ),
-
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      _tag(
-                        "Juguetón",
-                      ),
-                      _tag(
-                        "Amigable",
-                      ),
-                      _tag(
-                        "Energético",
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            Positioned(
-              right: 20,
-              bottom: infoBottom,
-              child:
-                  GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PetDetailScreen(
-                        pet: data,
-                      ),
-                    ),
-                  );
-                },
-                child:
-                    Container(
-                  width: 55,
-                  height: 55,
-                  decoration:
-                      BoxDecoration(
-                    color: Colors.black
-                        .withValues(
-                      alpha: 0.6,
-                    ),
-                    shape:
-                        BoxShape.circle,
-                  ),
-                  child:
-                      const Icon(
-                    Icons
-                        .keyboard_arrow_up,
-                    color:
-                        Colors.white,
-                    size: 30,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _actionButton(
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 62,
-        height: 62,
-        decoration:
-            BoxDecoration(
-          shape:
-              BoxShape.circle,
-          color: Colors.black
-              .withValues(
-            alpha: 0.7,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  color.withValues(
-                alpha: 0.4,
-              ),
-              blurRadius: 20,
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 34,
-        ),
-      ),
-    );
-  }
-
-  Widget _tag(
-    String text,
-  ) {
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
-      decoration:
-          BoxDecoration(
-        color: Colors.black
-            .withValues(
-          alpha: 0.6,
-        ),
-        borderRadius:
-            BorderRadius.circular(
-          20,
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: hot
+            ? const Color(0xFFF6B8E6)
+            : Colors.black.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         text,
-        style:
-            const TextStyle(
-          color:
-              Colors.white,
-          fontSize: 12,
+        style: TextStyle(
+          color: hot ? Colors.black : Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -965,16 +881,41 @@ class _FilterSheetState extends State<_FilterSheet> {
     });
   }
 
-  Widget _title(String t) => Padding(
-        padding: const EdgeInsets.only(top: 26, bottom: 12),
-        child: Text(
-          t,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
+  static const Color _card = Color(0xFF1C1C21);
+  static const Color _pill = Color(0xFF2A2A30);
+
+  Widget _title(String t, {String? hint}) => Padding(
+        padding: const EdgeInsets.only(top: 26, bottom: 10, left: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              t,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (hint != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                hint,
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+            ],
+          ],
         ),
+      );
+
+  Widget _box({required Widget child}) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: child,
       );
 
   Widget _chip(String label, bool selected, VoidCallback onTap) {
@@ -984,20 +925,14 @@ class _FilterSheetState extends State<_FilterSheet> {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected
-              ? Colors.pinkAccent.withValues(alpha: 0.18)
-              : Colors.white.withValues(alpha: 0.07),
+          color: selected ? Colors.pinkAccent : _pill,
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: selected ? Colors.pinkAccent : Colors.transparent,
-            width: 1.4,
-          ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.pinkAccent : Colors.white70,
-            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : Colors.white70,
+            fontWeight: FontWeight.w700,
             fontSize: 14,
           ),
         ),
@@ -1005,30 +940,100 @@ class _FilterSheetState extends State<_FilterSheet> {
     );
   }
 
-  Widget _switch(String label, IconData icon, bool value,
+  Widget _switch(String label, String sub, IconData icon, bool value,
       ValueChanged<bool> onChanged) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      activeThumbColor: Colors.pinkAccent,
-      secondary: Icon(icon, color: Colors.white54),
+      activeThumbColor: Colors.white,
+      activeTrackColor: Colors.pinkAccent,
+      secondary: Icon(icon, color: Colors.lightBlueAccent),
       title: Text(
         label,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        sub,
+        style: const TextStyle(color: Colors.white54, fontSize: 12),
       ),
       value: value,
       onChanged: onChanged,
     );
   }
 
+  Widget _pillText(String t) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: _pill,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Text(
+          t,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
+        ),
+      );
+
+  Widget _sentence(String t) => Text(
+        t,
+        style: const TextStyle(color: Colors.white, fontSize: 17),
+      );
+
+  Widget _sliderTheme(Widget slider) => SliderTheme(
+        data: SliderTheme.of(context).copyWith(
+          trackHeight: 3,
+          activeTrackColor: Colors.pinkAccent,
+          inactiveTrackColor: Colors.white24,
+          thumbColor: Colors.white,
+          overlayColor: Colors.pinkAccent.withValues(alpha: 0.15),
+          rangeThumbShape: const RoundRangeSliderThumbShape(
+            enabledThumbRadius: 12,
+          ),
+          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+        ),
+        child: slider,
+      );
+
+  Widget _valueRow(String label, String value) => Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(color: Colors.white60, fontSize: 15),
+          ),
+        ],
+      );
+
   @override
   Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.of(context).size.height * 0.92;
+    final maxHeight = MediaQuery.of(context).size.height * 0.94;
+    final ageEnd = age.end.round() >= 15 ? "15+" : "${age.end.round()}";
+    final ageText = "${age.start.round()}-$ageEnd años";
+    final kmText = km.round() >= 100 ? "sin límite" : "${km.round()} km";
+    final genderText = gender == "Todos"
+        ? "Machos y hembras"
+        : (gender == "Macho" ? "Machos" : "Hembras");
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: const BoxDecoration(
-        color: Color(0xFF121212),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        color: Color(0xFF101013),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: SafeArea(
         top: false,
@@ -1045,14 +1050,14 @@ class _FilterSheetState extends State<_FilterSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(14, 12, 18, 0),
               child: Row(
                 children: [
                   TextButton(
                     onPressed: _clear,
                     child: const Text(
                       "Borrar",
-                      style: TextStyle(color: Colors.white54),
+                      style: TextStyle(color: Colors.white54, fontSize: 15),
                     ),
                   ),
                   const Expanded(
@@ -1061,7 +1066,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 21,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1069,13 +1074,14 @@ class _FilterSheetState extends State<_FilterSheet> {
                   GestureDetector(
                     onTap: _apply,
                     child: Container(
-                      width: 46,
-                      height: 46,
+                      width: 48,
+                      height: 48,
                       decoration: const BoxDecoration(
-                        color: Colors.pinkAccent,
+                        color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.check, color: Colors.white),
+                      child: const Icon(Icons.check_rounded,
+                          color: Colors.black, size: 28),
                     ),
                   ),
                 ],
@@ -1083,72 +1089,132 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _title("Busco"),
+                    const SizedBox(height: 18),
                     Wrap(
-                      spacing: 10,
+                      spacing: 8,
                       runSpacing: 10,
-                      children: ["Todos", "Macho", "Hembra"]
-                          .map((g) => _chip(g, gender == g,
-                              () => setState(() => gender = g)))
-                          .toList(),
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _sentence("Busco"),
+                        _pillText(genderText),
+                        _sentence("de"),
+                        _pillText(ageText),
+                        _sentence("a una distancia máxima de"),
+                        _pillText(kmText),
+                      ],
+                    ),
+
+                    _title("Lo básico"),
+                    _box(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Sexo",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: ["Todos", "Macho", "Hembra"]
+                                .map((g) => _chip(g, gender == g,
+                                    () => setState(() => gender = g)))
+                                .toList(),
+                          ),
+                          const Divider(color: Colors.white12, height: 34),
+                          _valueRow("Rango de edad", ageText),
+                          _sliderTheme(
+                            RangeSlider(
+                              values: age,
+                              min: 0,
+                              max: 15,
+                              divisions: 15,
+                              onChanged: (v) => setState(() => age = v),
+                            ),
+                          ),
+                          const Divider(color: Colors.white12, height: 22),
+                          _valueRow("Distancia máxima", kmText),
+                          _sliderTheme(
+                            Slider(
+                              value: km,
+                              min: 1,
+                              max: 100,
+                              onChanged: (v) => setState(() => km = v),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
 
                     _title(
-                      "Edad: ${age.start.round()} - ${age.end.round() >= 15 ? "15+" : age.end.round()} años",
+                      "Raza",
+                      hint: "Elige una raza o deja Todas.",
                     ),
-                    RangeSlider(
-                      values: age,
-                      min: 0,
-                      max: 15,
-                      divisions: 15,
-                      activeColor: Colors.pinkAccent,
-                      inactiveColor: Colors.white12,
-                      onChanged: (v) => setState(() => age = v),
-                    ),
-
-                    _title(
-                      "Distancia máxima: ${km.round() >= 100 ? "Sin límite" : "${km.round()} km"}",
-                    ),
-                    Slider(
-                      value: km,
-                      min: 1,
-                      max: 100,
-                      activeColor: Colors.pinkAccent,
-                      inactiveColor: Colors.white12,
-                      onChanged: (v) => setState(() => km = v),
-                    ),
-
-                    _title("Raza"),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: widget.breedOptions
-                          .map((b) => _chip(b, breed == b,
-                              () => setState(() => breed = b)))
-                          .toList(),
+                    _box(
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: widget.breedOptions
+                            .map((b) => _chip(b, breed == b,
+                                () => setState(() => breed = b)))
+                            .toList(),
+                      ),
                     ),
 
                     _title("Qué buscan"),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: widget.goalOptions
-                          .map((g) => _chip(g, goal == g,
-                              () => setState(() => goal = g)))
-                          .toList(),
+                    _box(
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: widget.goalOptions
+                            .map((g) => _chip(g, goal == g,
+                                () => setState(() => goal = g)))
+                            .toList(),
+                      ),
                     ),
 
-                    _title("Confianza"),
-                    _switch("Solo con pedigrí", Icons.workspace_premium,
-                        pedigree, (v) => setState(() => pedigree = v)),
-                    _switch("Solo vacunados", Icons.vaccines, vaccinated,
-                        (v) => setState(() => vaccinated = v)),
-                    _switch("Solo verificados", Icons.verified, verified,
-                        (v) => setState(() => verified = v)),
+                    _title(
+                      "Confianza",
+                      hint: "Solo cuenta lo que PawMatch ya revisó.",
+                    ),
+                    _box(
+                      child: Column(
+                        children: [
+                          _switch(
+                            "Solo con pedigrí",
+                            "Pedigrí aprobado por PawMatch",
+                            Icons.pets,
+                            pedigree,
+                            (v) => setState(() => pedigree = v),
+                          ),
+                          const Divider(color: Colors.white12, height: 1),
+                          _switch(
+                            "Solo vacunados",
+                            "Carnet de vacunas aprobado",
+                            Icons.vaccines,
+                            vaccinated,
+                            (v) => setState(() => vaccinated = v),
+                          ),
+                          const Divider(color: Colors.white12, height: 1),
+                          _switch(
+                            "Solo verificados",
+                            "Perfiles con verificación",
+                            Icons.verified,
+                            verified,
+                            (v) => setState(() => verified = v),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

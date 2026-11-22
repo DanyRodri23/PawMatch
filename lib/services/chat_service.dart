@@ -30,6 +30,9 @@ class ChatService {
     required String chatId,
     required String senderId,
     required String text,
+    String type = "text",
+    String? url,
+    int? duration,
   }) async {
     final ref =
         _db.collection('chats')
@@ -40,6 +43,9 @@ class ChatService {
         .add({
       "senderId": senderId,
       "text": text,
+      "type": type,
+      if (url != null) "url": url,
+      if (duration != null) "duration": duration,
       "createdAt":
           FieldValue.serverTimestamp(),
     });

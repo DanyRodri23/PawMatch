@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../data/user_data.dart';
 import '../../data/user_profile_data.dart';
 import '../../photos/user_photos_page.dart';
 
@@ -6,19 +8,24 @@ class EditUserProfilePage extends StatefulWidget {
   const EditUserProfilePage({super.key});
 
   @override
-  State<EditUserProfilePage> createState() =>
-      _EditUserProfilePageState();
+  State<EditUserProfilePage> createState() => _EditUserProfilePageState();
 }
 
-class _EditUserProfilePageState
-    extends State<EditUserProfilePage> {
+class _EditUserProfilePageState extends State<EditUserProfilePage> {
+  static const Color bg = Color(0xFF0B0B0F);
+  static const Color card = Color(0xFF16161C);
 
-  late TextEditingController nameController;
-  late TextEditingController bioController;
-  late TextEditingController instagramController;
+  static const List<String> genders = [
+    "Masculino",
+    "Femenino",
+    "Prefiero no decir",
+  ];
 
-  String gender = "Masculino";
-  bool verified = false;
+  late final TextEditingController nameController;
+  late final TextEditingController bioController;
+  late final TextEditingController instagramController;
+
+  String gender = "";
   bool showGender = true;
 
   @override
@@ -27,525 +34,399 @@ class _EditUserProfilePageState
 
     final user = UserProfileData.user;
 
-    nameController =
-        TextEditingController(
-      text: user["name"] ?? "",
+    nameController = TextEditingController(
+      text: (user["name"] ?? "").toString(),
     );
 
-    bioController =
-        TextEditingController(
-      text: user["bio"] ?? "",
+    bioController = TextEditingController(
+      text: (user["bio"] ?? "").toString(),
     );
 
-    instagramController =
-        TextEditingController(
-      text:
-          user["instagram"] ??
-              "@usuario",
+    final insta = (user["instagram"] ?? "").toString();
+    instagramController = TextEditingController(
+      text: insta == "@usuario" ? "" : insta,
     );
 
-    gender =
-        user["gender"] ??
-            "Masculino";
+    final g = (user["gender"] ?? "").toString();
+    gender = genders.contains(g) ? g : "";
 
-    verified =
-        user["verified"] ??
-            false;
-
-    showGender =
-        user["showGender"] ??
-            true;
+    showGender = user["showGender"] != false;
   }
 
-  void saveProfile() {
+  @override
+  void dispose() {
+    nameController.dispose();
+    bioController.dispose();
+    instagramController.dispose();
+    super.dispose();
+  }
+
+  bool get canSave => nameController.text.trim().length >= 2;
+
+  void save() {
+    if (!canSave) return;
+
+    var insta = instagramController.text.trim();
+    if (insta.isNotEmpty && !insta.startsWith("@")) insta = "@$insta";
+
     UserProfileData.updateUser(
-      name:
-          nameController.text
-              .trim(),
-      bio:
-          bioController.text
-              .trim(),
-      instagram:
-          instagramController
-              .text
-              .trim(),
-      gender: gender,
-      verified:
-          verified,
-      showGender:
-          showGender,
+      name: nameController.text.trim(),
+      bio: bioController.text.trim(),
+      instagram: insta,
+      gender: gender.isEmpty ? null : gender,
+      showGender: showGender,
     );
 
-    ScaffoldMessenger.of(
-            context)
-        .showSnackBar(
-      const SnackBar(
-        content: Text(
-          "Perfil actualizado 🔥",
-        ),
-      ),
+    // Mantiene sincronizado el nombre del registro.
+    UserData.updateProfile(
+      name: nameController.text.trim(),
+      showGender: showGender,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Perfil actualizado")),
     );
 
     Navigator.pop(context);
   }
 
-  Widget titleText(
-    String text,
-  ) {
-    return Padding(
-      padding:
-          const EdgeInsets.only(
-        top: 24,
-        bottom: 12,
-      ),
-      child: Align(
-        alignment:
-            Alignment.centerLeft,
-        child: Text(
-          text,
-          style:
-              const TextStyle(
-            color:
-                Colors.white,
-            fontSize:
-                22,
-            fontWeight:
-                FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget input(
-    String label,
-    TextEditingController c,
-    {int maxLines = 1}
-  ) {
-    return TextField(
-      controller: c,
-      maxLines: maxLines,
-      style:
-          const TextStyle(
-        color:
-            Colors.white,
-      ),
-      decoration:
-          InputDecoration(
-        labelText:
-            label,
-        labelStyle:
-            const TextStyle(
-          color:
-              Colors.white60,
-        ),
-        filled: true,
-        fillColor:
-            Colors.white10,
-        border:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            18,
-          ),
-          borderSide:
-              BorderSide.none,
-        ),
-      ),
-    );
-  }
-
-  Widget dropdown() {
+  Widget section(String title, Widget child) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 16,
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white10),
       ),
-      decoration:
-          BoxDecoration(
-        color:
-            Colors.white10,
-        borderRadius:
-            BorderRadius.circular(
-          18,
-        ),
-      ),
-      child:
-          DropdownButtonHideUnderline(
-        child:
-            DropdownButton<String>(
-          dropdownColor:
-              Colors.black,
-          value: const [
-            "Masculino",
-            "Femenino",
-            "Prefiero no decir",
-          ].contains(gender)
-              ? gender
-              : null,
-          hint: const Text(
-            "Selecciona",
-            style: TextStyle(
-              color: Colors.white54,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          isExpanded:
-              true,
-          style:
-              const TextStyle(
-            color:
-                Colors.white,
-          ),
-          items: const [
-            DropdownMenuItem(
-              value:
-                  "Masculino",
-              child: Text(
-                "Masculino",
-              ),
-            ),
-            DropdownMenuItem(
-              value:
-                  "Femenino",
-              child: Text(
-                "Femenino",
-              ),
-            ),
-            DropdownMenuItem(
-              value:
-                  "Prefiero no decir",
-              child: Text(
-                "Prefiero no decir",
-              ),
-            ),
-          ],
-          onChanged: (v) {
-            setState(() {
-              gender = v!;
-            });
-          },
-        ),
+          const SizedBox(height: 14),
+          child,
+        ],
       ),
+    );
+  }
+
+  InputDecoration fieldDecoration(String label, {Widget? prefix}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white60),
+      prefixIcon: prefix,
+      filled: true,
+      fillColor: Colors.white10,
+      counterStyle: const TextStyle(color: Colors.white38),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Colors.pinkAccent, width: 1.5),
+      ),
+    );
+  }
+
+  Widget photosRow() {
+    final images = UserData.profile["images"] is List
+        ? UserData.profile["images"] as List
+        : [];
+
+    final first = images.isNotEmpty ? images.first.toString() : null;
+    final hasPhoto = first != null && first.startsWith("http");
+
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 38,
+          backgroundColor: Colors.white10,
+          backgroundImage: hasPhoto ? NetworkImage(first) : null,
+          child: hasPhoto
+              ? null
+              : const Icon(Icons.person, color: Colors.white38, size: 36),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${images.length} foto${images.length == 1 ? "" : "s"}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UserPhotosPage()),
+                  );
+                  if (mounted) setState(() {});
+                },
+                icon: const Icon(Icons.photo_library_outlined, size: 18),
+                label: const Text("Administrar"),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget genderChips() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final g in genders)
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => gender = g);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              decoration: BoxDecoration(
+                color: gender == g ? Colors.pinkAccent : Colors.white10,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Text(
+                g,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: gender == g ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
   @override
-  Widget build(
-      BuildContext context) {
-
-    final user =
-        UserProfileData.user;
-
-    final images =
-        user["images"] ?? [];
-
-    final mainImage =
-        images.isNotEmpty
-            ? images[0]
-            : "https://i.pravatar.cc/300";
+  Widget build(BuildContext context) {
+    final location = (UserData.profile["location"] ?? "").toString();
+    final verified = UserProfileData.user["verified"] == true;
 
     return Scaffold(
-      backgroundColor:
-          const Color(
-        0xFF0B0B0B,
-      ),
-
-      appBar: AppBar(
-        backgroundColor:
-            Colors.transparent,
-        elevation: 0,
-        title:
-            const Text(
-          "Editar propietario",
-          style:
-              TextStyle(
-            color:
-                Colors.white,
-            fontWeight:
-                FontWeight.bold,
-          ),
-        ),
-      ),
-
-      body:
-          SingleChildScrollView(
-        padding:
-            const EdgeInsets.all(
-          20,
-        ),
+      backgroundColor: bg,
+      body: SafeArea(
         child: Column(
           children: [
-
-            /// FOTO + EDITAR
-            Column(
-              children: [
-
-                Stack(
-                  alignment:
-                      Alignment.bottomRight,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 46,
+                      height: 46,
+                      decoration: const BoxDecoration(
+                        color: Colors.white10,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new,
+                          color: Colors.white, size: 18),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Text(
+                    "Editar dueño",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(18, 20, 18, 10),
+                child: Column(
                   children: [
-
-                    CircleAvatar(
-                      radius: 55,
-                      backgroundImage:
-                          NetworkImage(
-                        mainImage,
-                      ),
-                    ),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const UserPhotosPage(),
+                    section("Tus fotos", photosRow()),
+                    section(
+                      "Sobre ti",
+                      Column(
+                        children: [
+                          TextField(
+                            controller: nameController,
+                            maxLength: 30,
+                            textCapitalization: TextCapitalization.words,
+                            style: const TextStyle(color: Colors.white),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' \-]"),
+                              ),
+                            ],
+                            onChanged: (_) => setState(() {}),
+                            decoration: fieldDecoration("Nombre"),
                           ),
-                        ).then((_) {
-                          setState(() {});
-                        });
-                      },
-                      child: Container(
-                        padding:
-                            const EdgeInsets.all(
-                          8,
-                        ),
-                        decoration:
-                            const BoxDecoration(
-                          color:
-                              Colors.blue,
-                          shape:
-                              BoxShape.circle,
-                        ),
-                        child:
-                            const Icon(
-                          Icons.photo_camera,
-                          color:
-                              Colors.white,
-                          size:
-                              18,
-                        ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: bioController,
+                            maxLines: 4,
+                            maxLength: 300,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: fieldDecoration("Biografía"),
+                          ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: instagramController,
+                            style: const TextStyle(color: Colors.white),
+                            autocorrect: false,
+                            decoration: fieldDecoration(
+                              "Instagram (opcional)",
+                              prefix: const Icon(Icons.alternate_email,
+                                  color: Colors.white38, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    section(
+                      "Género",
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          genderChips(),
+                          const SizedBox(height: 10),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            activeThumbColor: Colors.pinkAccent,
+                            value: showGender,
+                            onChanged: (v) => setState(() => showGender = v),
+                            title: const Text(
+                              "Mostrar en mi perfil",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    section(
+                      "Ubicación",
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded,
+                              color: Colors.pinkAccent),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  location.isEmpty ? "Sin detectar" : location,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  "Se actualiza sola cuando cambias de provincia.",
+                                  style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: card,
+                        borderRadius: BorderRadius.circular(26),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            verified
+                                ? Icons.verified_rounded
+                                : Icons.shield_outlined,
+                            color: verified
+                                ? Colors.lightBlueAccent
+                                : Colors.white38,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              verified
+                                  ? "Tu perfil está verificado."
+                                  : "Verificación de dueño: próximamente.",
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(
-                    height: 14),
-
-                SizedBox(
-                  width:
-                      double.infinity,
-                  height: 52,
-                  child:
-                      ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const UserPhotosPage(),
-                        ),
-                      ).then((_) {
-                        setState(() {});
-                      });
-                    },
-                    icon:
-                        const Icon(
-                      Icons.photo_library,
-                      color:
-                          Colors.white,
-                    ),
-                    label:
-                        const Text(
-                      "Editar fotos",
-                      style:
-                          TextStyle(
-                        color:
-                            Colors.white,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.white10,
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
-                          18,
-                        ),
-                      ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    disabledBackgroundColor: Colors.white12,
+                    disabledForegroundColor: Colors.white38,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(40),
                     ),
                   ),
-                ),
-              ],
-            ),
-
-            const SizedBox(
-                height: 18),
-
-            Text(
-              nameController.text,
-              style:
-                  const TextStyle(
-                color:
-                    Colors.white,
-                fontSize:
-                    24,
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(
-                height: 8),
-
-            titleText(
-              "Información",
-            ),
-
-            input(
-              "Nombre",
-              nameController,
-            ),
-
-            const SizedBox(
-                height: 14),
-
-            dropdown(),
-
-            const SizedBox(
-                height: 14),
-
-            SwitchListTile(
-              value:
-                  showGender,
-              activeThumbColor:
-                  Colors.blue,
-              title:
-                  const Text(
-                "Mostrar género en perfil",
-                style:
-                    TextStyle(
-                  color:
-                      Colors.white,
-                ),
-              ),
-              onChanged:
-                  (v) {
-                setState(() {
-                  showGender =
-                      v;
-                });
-              },
-            ),
-
-            const SizedBox(
-                height: 14),
-
-            input(
-              "Instagram",
-              instagramController,
-            ),
-
-            titleText(
-              "Biografía",
-            ),
-
-            input(
-              "Cuéntanos sobre ti",
-              bioController,
-              maxLines: 4,
-            ),
-
-            const SizedBox(
-                height: 18),
-
-            SwitchListTile(
-              value:
-                  verified,
-              activeThumbColor:
-                  Colors.blue,
-              title:
-                  const Text(
-                "Perfil verificado",
-                style:
-                    TextStyle(
-                  color:
-                      Colors.white,
-                ),
-              ),
-              subtitle:
-                  const Text(
-                "Mayor confianza para matches",
-                style:
-                    TextStyle(
-                  color:
-                      Colors.white54,
-                ),
-              ),
-              onChanged:
-                  (v) {
-                setState(() {
-                  verified =
-                      v;
-                });
-              },
-            ),
-
-            const SizedBox(
-                height: 28),
-
-            Container(
-              width:
-                  double.infinity,
-              height: 58,
-              decoration:
-                  BoxDecoration(
-                gradient:
-                    const LinearGradient(
-                  colors: [
-                    Colors.blue,
-                    Colors.purple,
-                  ],
-                ),
-                borderRadius:
-                    BorderRadius.circular(
-                  18,
-                ),
-              ),
-              child:
-                  ElevatedButton(
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Colors.transparent,
-                  shadowColor:
-                      Colors.transparent,
-                ),
-                onPressed:
-                    saveProfile,
-                child:
-                    const Text(
-                  "Guardar cambios",
-                  style:
-                      TextStyle(
-                    fontSize:
-                        16,
-                    fontWeight:
-                        FontWeight.bold,
-                    color:
-                        Colors.white,
+                  onPressed: canSave ? save : null,
+                  child: const Text(
+                    "Guardar cambios",
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
             ),
-
-            const SizedBox(
-                height: 30),
           ],
         ),
       ),

@@ -16,6 +16,8 @@
 	<string>6.0</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Usamos tu ubicación para mostrarte mascotas cerca de ti. Solo se guarda tu provincia.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PawMatch usa el micrófono para enviar notas de voz y videos.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Usamos la cámara para que puedas tomar fotos de tu perfil y de tu mascota.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

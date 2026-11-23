@@ -18,6 +18,7 @@ class PetBadgeRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.6),
         boxShadow: [
           BoxShadow(
             color: color.withValues(alpha: 0.45),

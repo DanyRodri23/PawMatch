@@ -153,10 +153,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void openPetProfile() {
     final petData = _petData;
     if (petData == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => PetDetailScreen(pet: petData)),
-    );
+    PetDetailScreen.open(context, petData);
   }
 
   void cancelMatch() {

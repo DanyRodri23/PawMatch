@@ -10,6 +10,7 @@ import '../../photos/pet_photos_page.dart';
 import 'edit_pet_profile_page.dart';
 import 'edit_user_profile_page.dart';
 import 'profile_preview_screen.dart';
+import '../match/pet_detail_screen.dart';
 import 'settings_screen.dart';
 import 'favorites_screen.dart';
 import '../../data/favorites_data.dart';
@@ -287,12 +288,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> openPreview() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ProfilePreviewScreen(pet: PetProfileData.pet),
-      ),
-    );
+    await PetDetailScreen.open(context, PetProfileData.pet, preview: true);
     if (mounted) setState(() {});
   }
 

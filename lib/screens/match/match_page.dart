@@ -403,21 +403,29 @@ class MatchPageState extends State<MatchPage>
       body: Stack(
         children: [
 
-          /// FONDO LIKE / NOPE
+          /// FONDO LIKE / NOPE (brillo suave desde el borde)
           if (position != 0)
             Positioned.fill(
-              child: Container(
-                color: isLike
-                    ? Colors.green
-                        .withValues(
-                        alpha:
-                            dragOpacity * 0.35,
-                      )
-                    : Colors.red
-                        .withValues(
-                        alpha:
-                            dragOpacity * 0.35,
-                      ),
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: isLike
+                          ? Alignment.centerLeft
+                          : Alignment.centerRight,
+                      end: isLike
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      colors: [
+                        (isLike
+                                ? const Color(0xFF2EE59D)
+                                : const Color(0xFFFF4D5E))
+                            .withValues(alpha: dragOpacity * 0.55),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
 
@@ -440,7 +448,7 @@ class MatchPageState extends State<MatchPage>
 
                 rotation =
                     position *
-                        0.001;
+                        0.0014;
               });
             },
             onPanEnd: (_) {
@@ -489,61 +497,68 @@ class MatchPageState extends State<MatchPage>
             ),
           ),
 
-          /// TEXTO LIKE / NOPE
+          /// SELLO LIKE / NOPE
           if (position.abs() > 20)
             Positioned(
-              top:
-                  size.height *
-                      0.16,
-              left: isLike
-                  ? 24
-                  : null,
-              right: isLike
-                  ? null
-                  : 24,
-              child: Transform.rotate(
-                angle: isLike
-                    ? -0.25
-                    : 0.25,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal:
-                        20,
-                    vertical:
-                        10,
-                  ),
-                  decoration:
-                      BoxDecoration(
-                    border:
-                        Border.all(
-                      color: isLike
-                          ? Colors
-                              .greenAccent
-                          : Colors.redAccent,
-                      width: 4,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      10,
-                    ),
-                  ),
-                  child: Text(
-                    isLike
-                        ? "LIKE"
-                        : "NOPE",
-                    style:
-                        TextStyle(
-                      color: isLike
-                          ? Colors
-                              .greenAccent
-                          : Colors.redAccent,
-                      fontSize:
-                          34,
-                      fontWeight:
-                          FontWeight.bold,
-                      letterSpacing:
-                          2,
+              top: size.height * 0.15,
+              left: isLike ? 22 : null,
+              right: isLike ? null : 22,
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: ((position.abs() - 20) / 90).clamp(0.0, 1.0),
+                  child: Transform.scale(
+                    scale: 0.8 + dragOpacity * 0.25,
+                    child: Transform.rotate(
+                      angle: isLike ? -0.22 : 0.22,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isLike
+                                ? const Color(0xFF2EE59D)
+                                : const Color(0xFFFF4D5E),
+                            width: 4,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isLike
+                                      ? const Color(0xFF2EE59D)
+                                      : const Color(0xFFFF4D5E))
+                                  .withValues(alpha: 0.55),
+                              blurRadius: 26,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isLike
+                                  ? Icons.favorite_rounded
+                                  : Icons.close_rounded,
+                              color: isLike
+                                  ? const Color(0xFF2EE59D)
+                                  : const Color(0xFFFF4D5E),
+                              size: 34,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isLike ? "ME GUSTA" : "NO",
+                              style: TextStyle(
+                                color: isLike
+                                    ? const Color(0xFF2EE59D)
+                                    : const Color(0xFFFF4D5E),
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -643,12 +658,22 @@ class MatchPageState extends State<MatchPage>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            imgs[photo],
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) =>
-                Container(color: const Color(0xFF16161C)),
-          ),
+          index == currentIndex
+              ? Hero(
+                  tag: "petphoto_${data["id"] ?? data["name"]}",
+                  child: Image.network(
+                    imgs[photo],
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: const Color(0xFF16161C)),
+                  ),
+                )
+              : Image.network(
+                  imgs[photo],
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Container(color: const Color(0xFF16161C)),
+                ),
 
           // Sombra arriba (para leer la barra) y abajo (para leer el texto)
           Positioned(
@@ -678,29 +703,30 @@ class MatchPageState extends State<MatchPage>
             ),
           ),
 
-          // Barritas de fotos
-          Positioned(
-            top: padding.top + 6,
-            left: 14,
-            right: 14,
-            child: Row(
-              children: List.generate(imgs.length, (i) {
-                return Expanded(
-                  child: AnimatedContainer(
+          // Rayitas de fotos: cortas y centradas, debajo de las pestañas
+          if (imgs.length > 1)
+            Positioned(
+              top: padding.top + 74,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(imgs.length, (i) {
+                  return AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                    height: 3.5,
+                    width: i == photo ? 20 : 12,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: i == photo
                           ? Colors.white
-                          : Colors.white.withValues(alpha: 0.32),
+                          : Colors.white.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
-          ),
 
           // Información
           Positioned(
@@ -745,24 +771,33 @@ class MatchPageState extends State<MatchPage>
                     const Spacer(),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        PetDetailScreen.open(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => PetDetailScreen(pet: data),
-                          ),
+                          data,
+                          heroTag: "petphoto_${data["id"] ?? data["name"]}",
+                          initialPhoto: currentPhoto,
+                          onNope: swipeLeft,
+                          onLike: swipeRight,
                         );
                       },
                       child: Container(
-                        width: 46,
-                        height: 46,
-                        decoration: const BoxDecoration(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: const Icon(
-                          Icons.arrow_upward_rounded,
+                          Icons.keyboard_arrow_up_rounded,
                           color: Colors.black,
-                          size: 26,
+                          size: 34,
                         ),
                       ),
                     ),

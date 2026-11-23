@@ -1,0 +1,72 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ---------- Perfil privado (cédula, selfie, etc.) ----------
+    // Solo el propio usuario. Otros usuarios NUNCA pueden leerlo.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ---------- Perfil público de la mascota ----------
+    // Cualquiera con sesión iniciada puede verlas (Descubre).
+    // Solo el dueño puede escribir la suya, y la app NO puede poner
+    // "approved" (esa aprobación la hace PawMatch desde la consola).
+    match /pets/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && (request.resource.data.get('pedigreeStatus', 'none') != 'approved'
+            || (resource != null && resource.data.get('pedigreeStatus', 'none') == 'approved'))
+        && (request.resource.data.get('vaccineStatus', 'none') != 'approved'
+            || (resource != null && resource.data.get('vaccineStatus', 'none') == 'approved'));
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ---------- Me gusta / No ----------
+    // Documento "{de}_{a}": solo lo crea quien da el like.
+    match /swipes/{swipeId} {
+      allow read: if signedIn()
+        && (resource.data.from == request.auth.uid
+            || resource.data.to == request.auth.uid);
+      allow create, update: if signedIn()
+        && request.resource.data.from == request.auth.uid
+        && swipeId == request.auth.uid + '_' + request.resource.data.to;
+      allow delete: if signedIn() && resource.data.from == request.auth.uid;
+    }
+
+    // ---------- Matches ----------
+    // Solo se crea si los DOS se dieron like.
+    match /matches/{matchId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2
+        && bothLiked(request.resource.data.participants);
+      allow delete: if signedIn() && request.auth.uid in resource.data.participants;
+    }
+
+    function bothLiked(p) {
+      return get(/databases/$(database)/documents/swipes/$(p[0] + '_' + p[1])).data.liked == true
+          && get(/databases/$(database)/documents/swipes/$(p[1] + '_' + p[0])).data.liked == true;
+    }
+
+    // ---------- Chats ----------
+    match /chats/{chatId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if signedIn() && request.auth.uid in request.resource.data.participants;
+      allow update: if signedIn() && request.auth.uid in resource.data.participants;
+
+      match /messages/{messageId} {
+        allow read, create, update, delete: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+  }
+}

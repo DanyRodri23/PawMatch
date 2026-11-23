@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/user_profile_data.dart';
 import '../../data/pet_options.dart';
-import '../../data/sample_pets.dart';
 import '../../helpers/age_helper.dart';
 import '../../helpers/pet_badges.dart';
 import '../../widgets/pet_badge_row.dart';
@@ -82,7 +81,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   }
 
   Map<String, dynamic> get pet =>
-      widget.preview ? widget.pet : SamplePets.full(widget.pet);
+      widget.pet;
 
   String s(String k) => (pet[k] ?? "").toString();
 
@@ -807,7 +806,9 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
       );
 
   Widget _ownerCard() {
-    final user = UserProfileData.user;
+    final Map user = (!widget.preview && widget.pet["owner"] is Map)
+        ? widget.pet["owner"] as Map
+        : UserProfileData.user;
     final uImgs = user["images"] is List ? user["images"] as List : [];
     final uImg = uImgs.isNotEmpty ? uImgs.first.toString() : "";
     final uName = (user["name"] ?? "Usuario").toString();
@@ -816,7 +817,11 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
     return GestureDetector(
       onTap: () => widget.preview
           ? showPreviewOwnerSheet(context)
-          : showOwnerProfileSheet(context),
+          : showOwnerProfileSheet(
+              context,
+              owner: widget.pet["owner"] is Map ? widget.pet["owner"] as Map : null,
+              petData: widget.pet["owner"] is Map ? widget.pet : null,
+            ),
       child: Padding(
         padding: EdgeInsets.zero,
         child: Row(

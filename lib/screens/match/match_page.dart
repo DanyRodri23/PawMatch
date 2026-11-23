@@ -7,7 +7,7 @@ import '../../data/likes_data.dart';
 import '../../data/matches_data.dart';
 import '../../data/pet_options.dart';
 import '../../data/pet_profile_data.dart';
-import '../../data/sample_pets.dart';
+import '../../services/discover_service.dart';
 
 import 'match_success_screen.dart';
 import 'pet_detail_screen.dart';
@@ -40,53 +40,22 @@ class MatchPageState extends State<MatchPage>
   double position = 0;
   double rotation = 0;
 
-  final List<Map<String, dynamic>> allPets = [
-    {
-      "id": "pet1",
-      "name": "Luna",
-      "age": 2,
-      "distance": "A 2 km de distancia",
-      "pedigree": true,
-      "likedYou": true,
-      "images": [
-        "https://images.unsplash.com/photo-1558788353-f76d92427f16",
-        "https://images.unsplash.com/photo-1548199973-03cce0bbc87b",
-      ],
-    },
-    {
-      "id": "pet2",
-      "name": "Max",
-      "age": 3,
-      "distance": "A 5 km de distancia",
-      "pedigree": true,
-      "likedYou": false,
-      "images": [
-        "https://images.unsplash.com/photo-1518717758536-85ae29035b6d",
-      ],
-    },
-    {
-      "id": "pet3",
-      "name": "Rocky",
-      "age": 1,
-      "distance": "A 4 km de distancia",
-      "pedigree": false,
-      "likedYou": true,
-      "images": [
-        "https://images.unsplash.com/photo-1507146426996-ef05306b995a",
-      ],
-    },
-    {
-      "id": "pet4",
-      "name": "Nala",
-      "age": 4,
-      "distance": "A 7 km de distancia",
-      "pedigree": true,
-      "likedYou": false,
-      "images": [
-        "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9",
-      ],
-    },
-  ];
+  /// Mascotas reales (vienen de Firebase).
+  List<Map<String, dynamic>> allPets = [];
+  bool _loading = true;
+
+  Future<void> reloadDeck() async {
+    final list = await DiscoverService.loadDeck();
+    if (!mounted) return;
+    setState(() {
+      allPets = list;
+      _loading = false;
+      currentIndex = 0;
+      currentPhoto = 0;
+      position = 0;
+      rotation = 0;
+    });
+  }
 
   // ---------------- FILTROS ----------------
   String filterGender = "Todos";
@@ -98,21 +67,27 @@ class MatchPageState extends State<MatchPage>
   bool onlyVaccinated = false;
   bool onlyVerified = false;
 
-  /// Datos extra de las mascotas de ejemplo (luego vendrán de Firebase).
-  static const Map<String, Map<String, dynamic>> _extra = {
-    "pet1": {"gender": "Hembra", "breed": "Golden Retriever", "km": 2, "vaccinated": true, "verified": true, "goal": "Reproducción"},
-    "pet2": {"gender": "Macho", "breed": "Husky", "km": 5, "vaccinated": true, "verified": true, "goal": "Amistad"},
-    "pet3": {"gender": "Macho", "breed": "Labrador", "km": 4, "vaccinated": false, "verified": false, "goal": "Compañero de juego"},
-    "pet4": {"gender": "Hembra", "breed": "Poodle", "km": 7, "vaccinated": true, "verified": true, "goal": "Reproducción"},
-  };
+  /// Datos de filtro de una mascota real.
+  Map<String, dynamic> _infoOf(Map<String, dynamic> p) {
+    final owner = p["owner"];
+    return {
+      "gender": p["gender"],
+      "breed": p["breed"],
+      "km": p["km"] ?? 0,
+      "vaccinated": p["vaccineStatus"] == "approved",
+      "verified": owner is Map && owner["verifyStatus"] == "approved",
+      "goal": p["lookingFor"],
+    };
+  }
 
   static const List<String> _breedOptions = [
     "Todas", "Golden Retriever", "Labrador", "Pastor Alemán", "Poodle",
     "Bulldog", "Chihuahua", "Beagle", "Husky", "Shih Tzu", "Mestizo",
   ];
 
-  static const List<String> _goalOptions = [
-    "Todos", "Reproducción", "Amistad", "Compañero de juego", "Paseos",
+  static final List<String> _goalOptions = [
+    "Todos",
+    ...PetOptions.goals.map((g) => g["text"]!),
   ];
 
   void _loadPrefs() {
@@ -141,6 +116,7 @@ class MatchPageState extends State<MatchPage>
     if (widget.initialPedigree) onlyPedigree = true;
     if (widget.initialKm != null) filterKm = widget.initialKm!;
     DiscoverPrefs.version.addListener(_onPrefsChanged);
+    reloadDeck();
   }
 
   @override
@@ -163,7 +139,7 @@ class MatchPageState extends State<MatchPage>
   }
 
   bool _passesFilters(Map<String, dynamic> p) {
-    final e = _extra[p["id"]] ?? const {};
+    final e = _infoOf(p);
     final age = (p["age"] as num?)?.toDouble() ?? 0;
 
     if (filterGender != "Todos" && e["gender"] != filterGender) return false;
@@ -223,7 +199,18 @@ class MatchPageState extends State<MatchPage>
     });
   }
 
-  void swipeRight() {
+  void _removeFromDeck(String id) {
+    setState(() {
+      _acted.add(id);
+      currentPhoto = 0;
+      position = 0;
+      rotation = 0;
+      final n = pets.length;
+      if (n == 0 || currentIndex >= n) currentIndex = 0;
+    });
+  }
+
+  Future<void> swipeRight() async {
     if (pets.isEmpty) return;
 
     // Guardamos la mascota ANTES de pasar a la siguiente.
@@ -237,23 +224,14 @@ class MatchPageState extends State<MatchPage>
         : likedImage;
     final myName = (PetProfileData.pet["name"] ?? "").toString();
 
-    if (liked["likedYou"] == true) {
+    _removeFromDeck(liked["id"].toString());
+
+    final isMatch =
+        await DiscoverService.swipe(liked["id"].toString(), liked: true);
+
+    if (isMatch) {
       MatchesData.createMatch(liked);
-    } else {
-      LikesData.sendLike(liked);
-    }
-
-    // La mascota sale del mazo (ya no vuelve a aparecer).
-    setState(() {
-      _acted.add(liked["id"].toString());
-      currentPhoto = 0;
-      position = 0;
-      rotation = 0;
-      final n = pets.length;
-      if (n == 0 || currentIndex >= n) currentIndex = 0;
-    });
-
-    if (liked["likedYou"] == true) {
+      if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -266,11 +244,16 @@ class MatchPageState extends State<MatchPage>
           ),
         ),
       );
+    } else {
+      LikesData.sendLike(liked);
     }
   }
 
   void swipeLeft() {
-    nextPet();
+    if (pets.isEmpty) return;
+    final id = pet["id"].toString();
+    _removeFromDeck(id);
+    DiscoverService.swipe(id, liked: false);
   }
 
   void resetFilters() {
@@ -354,8 +337,8 @@ class MatchPageState extends State<MatchPage>
                   color: Colors.white24,
                 ),
                 const SizedBox(height: 18),
-                const Text(
-                  "No hay más mascotas por ahora",
+                Text(
+                  _loading ? "Buscando mascotas..." : "Aún no hay más mascotas cerca",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -365,7 +348,7 @@ class MatchPageState extends State<MatchPage>
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  "Prueba ampliando la distancia, la edad o la raza.",
+                  "Vuelve pronto o amplía tus filtros: cada día se unen más mascotas.",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white54),
                 ),
@@ -383,10 +366,14 @@ class MatchPageState extends State<MatchPage>
                     ),
                   ),
                   onPressed: () {
-                    setState(resetFilters);
+                    setState(() {
+                      resetFilters();
+                      _loading = true;
+                    });
                     widget.onFiltersChanged?.call(0);
+                    reloadDeck();
                   },
-                  child: const Text("Quitar filtros"),
+                  child: const Text("Actualizar"),
                 ),
                 const SizedBox(height: 10),
                 TextButton(
@@ -661,10 +648,11 @@ class MatchPageState extends State<MatchPage>
     final double infoBottom = actionsBottom + bigBtn + 18;
 
     final data = pets[index];
-    final imgs = List<String>.from(data["images"]);
+    final imgs0 = List<String>.from(data["images"]);
+    final imgs = imgs0.isEmpty ? <String>[""] : imgs0;
     final int photo =
         index == currentIndex ? currentPhoto.clamp(0, imgs.length - 1).toInt() : 0;
-    final extra = _extra[data["id"]] ?? const {};
+    final extra = _infoOf(data);
     final breed = extra["breed"] as String?;
     final goal = extra["goal"] as String?;
 
@@ -787,7 +775,7 @@ class MatchPageState extends State<MatchPage>
                               ),
                             ),
                           const SizedBox(width: 8),
-                          PetBadgeRow(pet: SamplePets.full(data), size: 24),
+                          PetBadgeRow(pet: data, size: 24),
                         ],
                       ),
                     ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../data/likes_data.dart';
 import '../../data/matches_data.dart';
 import '../../data/pet_profile_data.dart';
+import '../../services/discover_service.dart';
 import '../match/match_success_screen.dart';
 import '../profile/pet_full_profile.dart';
 
@@ -34,11 +35,13 @@ class _LikesPageState extends State<LikesPage> {
 
   void _pass(Map<String, dynamic> pet) {
     setState(() => LikesData.removeReceivedLike(pet));
+    DiscoverService.swipe("${pet["id"]}", liked: false);
   }
 
   void _likeBack(Map<String, dynamic> pet) {
     LikesData.removeReceivedLike(pet);
     MatchesData.createMatch(pet);
+    DiscoverService.swipe("${pet["id"]}", liked: true);
     final img = _img(pet);
     setState(() {});
     Navigator.push(

@@ -34,28 +34,28 @@ class ChatService {
     String? url,
     int? duration,
   }) async {
-    final ref =
-        _db.collection('chats')
-            .doc(chatId);
+    final ref = _db.collection('chats').doc(chatId);
 
-    await ref
-        .collection('messages')
-        .add({
+    // El id del chat es "uidA_uidB" (ordenados): de ahí salen los participantes.
+    // Primero se crea/actualiza el chat (las reglas lo necesitan para
+    // permitir los mensajes) y luego se agrega el mensaje.
+    final participants =
+        chatId.contains('_') ? chatId.split('_') : <String>[senderId];
+
+    await ref.set({
+      "participants": participants,
+      "lastMessage": text,
+      "updatedAt": FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await ref.collection('messages').add({
       "senderId": senderId,
       "text": text,
       "type": type,
       if (url != null) "url": url,
       if (duration != null) "duration": duration,
-      "createdAt":
-          FieldValue.serverTimestamp(),
+      "createdAt": FieldValue.serverTimestamp(),
     });
-
-    // set + merge: crea el chat si todavía no existe (update fallaba así).
-    await ref.set({
-      "lastMessage": text,
-      "updatedAt":
-          FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
   }
 
   /// Escuchar mensajes realtime

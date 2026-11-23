@@ -8,6 +8,7 @@ import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'data/pet_profile_data.dart';
 import 'screens/onboarding/onboarding_intro.dart';
+import 'services/discover_service.dart';
 import 'services/location_service.dart';
 import 'services/profile_store.dart';
 
@@ -108,6 +109,8 @@ class _ProfileGateState extends State<ProfileGate>
 
   Future<void> _start() async {
     await ProfileStore.load();
+    await DiscoverService.publish();
+    await DiscoverService.loadLikesAndMatches();
 
     if (!mounted) return;
 

@@ -1,4 +1,5 @@
 import '../../helpers/age_helper.dart';
+import '../../services/discover_service.dart';
 import '../../widgets/pet_badge_row.dart';
 import 'package:flutter/material.dart';
 import '../../data/app_data.dart';
@@ -238,6 +239,7 @@ class PetFullProfile extends StatelessWidget {
             LikesData.sendLike(pet);
 
             MatchesData.createMatch(pet);
+            DiscoverService.swipe("${pet["id"]}", liked: true);
 
             LikesData.removeReceivedLike(pet);
 

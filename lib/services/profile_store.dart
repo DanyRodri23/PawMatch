@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../data/pet_profile_data.dart';
 import '../data/user_data.dart';
 import '../data/user_profile_data.dart';
+import 'discover_service.dart';
 
 /// Guarda y carga el perfil del dueño y de su mascota en Firebase
 /// (colección "users", documento = uid del usuario).
@@ -105,6 +106,9 @@ class ProfileStore {
         "petProfile": PetProfileData.pet,
         "updatedAt": FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      // Perfil público de la mascota (lo ven los demás en Descubre).
+      await DiscoverService.publish();
     } catch (e) {
       debugPrint("No se pudo guardar el perfil: $e");
     }

@@ -5,12 +5,16 @@ import '../../data/pet_profile_data.dart';
 import '../match/gallery_viewer_screen.dart';
 
 class OwnerProfileSheet extends StatelessWidget {
-  const OwnerProfileSheet({super.key});
+  /// Si se pasan, se muestra el dueño y la mascota de OTRO usuario.
+  final Map? owner;
+  final Map? petData;
+
+  const OwnerProfileSheet({super.key, this.owner, this.petData});
 
   @override
   Widget build(BuildContext context) {
-    final user = UserProfileData.user;
-    final pet = PetProfileData.pet;
+    final Map user = owner ?? UserProfileData.user;
+    final Map pet = petData ?? PetProfileData.pet;
 
     final List<String> userImages =
         List<String>.from(
@@ -37,7 +41,7 @@ class OwnerProfileSheet extends StatelessWidget {
         user["gender"] ?? "-";
 
     final String city =
-        user["location"] ?? "";
+        (user["location"] ?? user["city"] ?? user["province"] ?? "").toString();
 
     final String bio =
         user["bio"] ??
@@ -525,8 +529,10 @@ class OwnerProfileSheet extends StatelessWidget {
 }
 
 void showOwnerProfileSheet(
-  BuildContext context,
-) {
+  BuildContext context, {
+  Map? owner,
+  Map? petData,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled:
@@ -534,6 +540,6 @@ void showOwnerProfileSheet(
     backgroundColor:
         Colors.transparent,
     builder: (_) =>
-        const OwnerProfileSheet(),
+        OwnerProfileSheet(owner: owner, petData: petData),
   );
 }

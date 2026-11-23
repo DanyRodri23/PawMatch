@@ -13,6 +13,7 @@ import 'package:video_player/video_player.dart';
 import '../../data/chats_data.dart';
 import '../../data/matches_data.dart';
 import '../../services/chat_service.dart';
+import '../../services/discover_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../widgets/paw_pattern.dart';
 import '../../widgets/pet_badge_row.dart';
@@ -70,7 +71,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   int recSeconds = 0;
   Timer? _recTimer;
 
-  String get chatId => widget.matchPet?["id"] ?? widget.name;
+  /// Chat real: "uidA_uidB" ordenado (el mismo para los dos dueños).
+  String get chatId {
+    final other = (widget.matchPet?["id"] ?? widget.name).toString();
+    final me = DiscoverService.myUid;
+    if (me == null || widget.matchPet == null) return other;
+    return DiscoverService.matchId(me, other);
+  }
 
   @override
   void initState() {
@@ -370,7 +377,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     try {
       await ChatService.sendMessage(
         chatId: chatId,
-        senderId: "me",
+        senderId: DiscoverService.myUid ?? "me",
         text: text,
       );
     } catch (e) {
@@ -398,7 +405,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       try {
         await ChatService.sendMessage(
           chatId: chatId,
-          senderId: "me",
+          senderId: DiscoverService.myUid ?? "me",
           text: msg["text"],
           type: type,
           url: url,

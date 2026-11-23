@@ -1168,7 +1168,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 12),
                   dataCard([
-                    dataRow("🎂", "Nacimiento", birthText, editBirth),
+                    dataRow("🎂", "Nacimiento (toca para editar)", birthText, editBirth),
                     dataRow("🎾", "Qué busco", goal, editGoal),
                     dataRow("📏", "Tamaño", size, () => editChoice(
                           title: "Tamaño",

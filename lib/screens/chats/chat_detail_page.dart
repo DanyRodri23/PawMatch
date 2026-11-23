@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show ImageFilter;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import '../../data/chats_data.dart';
 import '../../data/matches_data.dart';
 import '../../services/chat_service.dart';
 import '../../services/cloudinary_service.dart';
+import '../../widgets/paw_pattern.dart';
 import '../../widgets/pet_badge_row.dart';
 import '../match/pet_detail_screen.dart';
 
@@ -51,7 +53,20 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   /// Mensaje que se está editando (null = escribiendo uno nuevo).
   Map<String, dynamic>? editing;
 
+  /// Mensaje al que se está respondiendo.
+  Map<String, dynamic>? replying;
+
+  /// Modo selección para eliminar (como WhatsApp).
+  bool selecting = false;
+  final Set<int> _selected = {};
+
   bool recording = false;
+  bool recLocked = false; // grabación fija (desliza hacia arriba)
+  bool _cancelArmed = false;
+  bool _lockArmed = false;
+  double _dx = 0;
+  double _dy = 0;
+  Future<void>? _recStart;
   int recSeconds = 0;
   Timer? _recTimer;
 
@@ -343,6 +358,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     final msg = _push("text", text);
     if (msg == null) return;
+    if (replying != null) {
+      msg["replyTo"] = {
+        "text": _previewOf(replying!),
+        "isMe": replying!['isMe'] == true,
+      };
+      setState(() => replying = null);
+    }
     controller.clear();
 
     try {
@@ -512,6 +534,47 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
 
+  void _micDown() {
+    HapticFeedback.mediumImpact();
+    _cancelArmed = false;
+    _lockArmed = false;
+    _dx = 0;
+    _dy = 0;
+    _recStart = _startRecording();
+  }
+
+  void _micMove(Offset d) {
+    if (!recording || recLocked) return;
+    final cancel = d.dx < -110;
+    final lock = d.dy < -90;
+    if ((cancel && !_cancelArmed) || (lock && !_lockArmed)) {
+      HapticFeedback.selectionClick();
+    }
+    setState(() {
+      _dx = d.dx;
+      _dy = d.dy;
+      _cancelArmed = cancel;
+      _lockArmed = lock && !cancel;
+    });
+  }
+
+  Future<void> _micUp() async {
+    await _recStart;
+    if (!recording || recLocked) return;
+    if (_cancelArmed) {
+      HapticFeedback.heavyImpact();
+      await _stopRecording(send: false);
+    } else if (_lockArmed) {
+      setState(() {
+        recLocked = true;
+        _dx = 0;
+        _dy = 0;
+      });
+    } else {
+      await _stopRecording(send: true);
+    }
+  }
+
   Future<void> _stopRecording({required bool send}) async {
     _recTimer?.cancel();
     final seconds = recSeconds;
@@ -525,12 +588,143 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     } catch (e) {
       debugPrint("Error al parar grabación: $e");
     }
-    if (mounted) setState(() => recording = false);
+    if (mounted) {
+      setState(() {
+        recording = false;
+        recLocked = false;
+        _cancelArmed = false;
+        _lockArmed = false;
+        _dx = 0;
+        _dy = 0;
+      });
+    }
 
     if (send && path != null && seconds >= 1) {
       await _sendMedia(File(path), "audio", duration: seconds);
     } else if (send) {
       _snack("Mantén la grabación un poco más.");
+    }
+  }
+
+  // ---------------------------------------------------------- burbuja
+
+  final Map<int, GlobalKey> _bubbleKeys = {};
+  GlobalKey _keyFor(Map m) =>
+      _bubbleKeys.putIfAbsent(identityHashCode(m), () => GlobalKey());
+
+  Widget _bubbleBox(Map<String, dynamic> msg, double maxW) {
+    final isMe = msg["isMe"] == true;
+    final deleted = msg["deleted"] == true;
+    final status = "${msg["status"] ?? "sent"}";
+    return Container(
+                  constraints: BoxConstraints(maxWidth: maxW),
+                  margin: const EdgeInsets.only(bottom: 3),
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                  decoration: BoxDecoration(
+                    gradient: isMe && !deleted
+                        ? const LinearGradient(colors: [_pink, _coral])
+                        : null,
+                    color: isMe && !deleted ? null : _bubble,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: Radius.circular(isMe ? 20 : 5),
+                      bottomRight: Radius.circular(isMe ? 5 : 20),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (msg["replyTo"] is Map && !deleted)
+                        _replyQuote(msg["replyTo"] as Map, isMe),
+                      _content(msg, deleted),
+                      const SizedBox(height: 3),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (msg["edited"] == true && !deleted)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 5),
+                              child: Text(
+                                "editado",
+                                style: TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 10.5,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          Text(
+                            "${msg["time"] ?? ""}",
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                          if (isMe && !deleted) ...[
+                            const SizedBox(width: 4),
+                            if (msg["uploading"] == true)
+                              const Icon(Icons.schedule,
+                                  size: 14, color: Colors.white70)
+                            else
+                              _checks(status),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+  }
+
+  Widget _replyQuote(Map r, bool isMe) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          left: BorderSide(
+            color: isMe ? Colors.white : _pink,
+            width: 4,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            r["isMe"] == true ? "Tú" : widget.name,
+            style: TextStyle(
+              color: isMe ? Colors.white : _pink,
+              fontWeight: FontWeight.w800,
+              fontSize: 12.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            "${r["text"]}",
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _previewOf(Map m) {
+    switch ("${m["type"] ?? "text"}") {
+      case "image":
+        return "📷 Foto";
+      case "video":
+        return "🎥 Video";
+      case "audio":
+        return "🎤 Nota de voz";
+      default:
+        return "${m["text"] ?? ""}";
     }
   }
 
@@ -544,65 +738,289 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   void _messageMenu(Map<String, dynamic> m) {
     if (m["deleted"] == true || m["uploading"] == true) return;
+
+    final ctx = _keyFor(m).currentContext;
+    final box = ctx?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final origin = box.localToGlobal(Offset.zero);
+    final rect = origin & box.size;
+
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.transparent,
+        transitionDuration: const Duration(milliseconds: 180),
+        reverseTransitionDuration: const Duration(milliseconds: 140),
+        pageBuilder: (routeCtx, anim, __) => _menuOverlay(routeCtx, anim, m, rect),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+    );
+  }
+
+  Widget _menuOverlay(BuildContext routeCtx, Animation<double> anim,
+      Map<String, dynamic> m, Rect rect) {
+    final media = MediaQuery.of(routeCtx);
     final isMe = m["isMe"] == true;
     final isText = (m["type"] ?? "text") == "text";
+    final maxW = media.size.width * 0.76;
 
-    Widget opt(IconData icon, String label, VoidCallback onTap,
-        {Color color = Colors.white}) {
-      return ListTile(
-        leading: Icon(icon, color: color),
-        title: Text(label, style: TextStyle(color: color)),
-        onTap: () {
-          Navigator.pop(context);
-          onTap();
-        },
-      );
+    final items = <List<dynamic>>[
+      ["Responder", Icons.reply_rounded, Colors.white, () => setState(() => replying = m)],
+      if (isText)
+        [
+          "Copiar",
+          Icons.copy_rounded,
+          Colors.white,
+          () {
+            Clipboard.setData(ClipboardData(text: "${m["text"]}"));
+            _snack("Mensaje copiado");
+          }
+        ],
+      if (isMe && isText)
+        [
+          "Editar",
+          Icons.edit_rounded,
+          Colors.white,
+          () {
+            if (!_canEdit(m)) {
+              _snack("Solo puedes editar durante los primeros 15 minutos.");
+              return;
+            }
+            setState(() {
+              replying = null;
+              editing = m;
+            });
+            controller.text = "${m["text"]}";
+            controller.selection =
+                TextSelection.collapsed(offset: controller.text.length);
+          }
+        ],
+      [
+        "Eliminar",
+        Icons.delete_outline_rounded,
+        const Color(0xFFFF6B7A),
+        () => setState(() {
+              selecting = true;
+              _selected
+                ..clear()
+                ..add(identityHashCode(m));
+            })
+      ],
+    ];
+
+    const reactions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+    const barH = 58.0;
+    const menuW = 250.0;
+    final menuH = items.length * 52.0 + 12;
+    final total = barH + 10 + rect.height + 10 + menuH;
+
+    double top = rect.top - barH - 10;
+    final minTop = media.padding.top + 8;
+    final maxTop = media.size.height - media.padding.bottom - total - 8;
+    if (top > maxTop) top = maxTop;
+    if (top < minTop) top = minTop;
+
+    final bubbleTop = top + barH + 10;
+    final menuTop = bubbleTop + rect.height + 10;
+
+    double alignLeft(double w) {
+      final l = isMe ? rect.right - w : rect.left;
+      return l.clamp(10.0, media.size.width - w - 10).toDouble();
     }
 
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => Navigator.pop(routeCtx),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(color: Colors.black.withValues(alpha: 0.45)),
+              ),
+            ),
+          ),
+
+          // reacciones
+          Positioned(
+            top: top,
+            left: alignLeft(6 * 46.0 + 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              height: barH,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2A2A2E),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Row(
+                children: [
+                  for (final e in reactions)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(routeCtx);
+                        setState(() {
+                          if (m["reaction"] == e) {
+                            m.remove("reaction");
+                          } else {
+                            m["reaction"] = e;
+                          }
+                        });
+                      },
+                      child: SizedBox(
+                        width: 46,
+                        child: Center(
+                          child: Text(
+                            e,
+                            style: TextStyle(
+                              fontSize: m["reaction"] == e ? 34 : 29,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // el mensaje, en su lugar
+          Positioned(
+            top: bubbleTop,
+            left: rect.left,
+            child: IgnorePointer(
+              child: _bubbleBox(m, maxW),
+            ),
+          ),
+
+          // menú
+          Positioned(
+            top: menuTop,
+            left: alignLeft(menuW),
+            child: Container(
+              width: menuW,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2A2A2E),
+                borderRadius: BorderRadius.circular(26),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final it in items)
+                    InkWell(
+                      onTap: () {
+                        Navigator.pop(routeCtx);
+                        (it[3] as VoidCallback)();
+                      },
+                      child: SizedBox(
+                        height: 52,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  it[0] as String,
+                                  style: TextStyle(
+                                    color: it[2] as Color,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ),
+                              Icon(it[1] as IconData,
+                                  color: it[2] as Color, size: 22),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Como en WhatsApp: eliminar para todos (si es tuyo) o solo para ti.
+  void _deleteDialog(Map<String, dynamic> m) {
+    final isMe = m["isMe"] == true;
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF121217),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => SafeArea(
+      builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isText)
-                opt(Icons.copy_rounded, "Copiar", () {
-                  Clipboard.setData(ClipboardData(text: "${m["text"]}"));
-                  _snack("Mensaje copiado");
-                }),
-              if (isMe && isText)
-                opt(Icons.edit_rounded, "Editar", () {
-                  if (!_canEdit(m)) {
-                    _snack("Solo puedes editar durante los primeros 15 minutos.");
-                    return;
-                  }
-                  setState(() => editing = m);
-                  controller.text = "${m["text"]}";
-                  controller.selection = TextSelection.collapsed(
-                    offset: controller.text.length,
-                  );
-                }),
+              const Text(
+                "¿Eliminar mensaje?",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
               if (isMe)
-                opt(Icons.delete_outline_rounded, "Eliminar para todos", () {
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.delete_forever_rounded,
+                      color: Colors.redAccent),
+                  title: const Text("Eliminar para todos",
+                      style: TextStyle(color: Colors.redAccent)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      m["deleted"] = true;
+                      m["text"] = "Eliminaste este mensaje";
+                      m["type"] = "text";
+                      m.remove("url");
+                      m.remove("path");
+                      m.remove("duration");
+                      final chat = currentChat;
+                      if (chat != null) {
+                        final list = chat["messages"] as List;
+                        if (list.isNotEmpty && identical(list.last, m)) {
+                          chat["lastMessage"] = "Eliminaste este mensaje";
+                        }
+                      }
+                    });
+                  },
+                ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading:
+                    const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                title: const Text("Eliminar para mí",
+                    style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(ctx);
                   setState(() {
-                    m["deleted"] = true;
-                    m["text"] = "Eliminaste este mensaje";
-                    m["type"] = "text";
                     final chat = currentChat;
                     if (chat != null) {
-                      final list = chat["messages"] as List;
-                      if (list.isNotEmpty && identical(list.last, m)) {
-                        chat["lastMessage"] = "Eliminaste este mensaje";
-                      }
+                      (chat["messages"] as List).removeWhere((e) => identical(e, m));
                     }
                   });
-                }, color: Colors.redAccent),
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.close_rounded, color: Colors.white54),
+                title: const Text("Cancelar",
+                    style: TextStyle(color: Colors.white70)),
+                onTap: () => Navigator.pop(ctx),
+              ),
             ],
           ),
         ),
@@ -614,17 +1032,233 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Column(
+    return PopScope(
+      canPop: !selecting,
+      onPopInvoked: (didPop) {
+        if (!didPop && selecting) {
+          setState(() {
+            selecting = false;
+            _selected.clear();
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: _bg,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: Column(
+            children: [
+              selecting ? _selectHeader() : _buildHeader(),
+              Container(height: 1, color: Colors.white.withValues(alpha: 0.06)),
+              Expanded(
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: IgnorePointer(child: PawPattern())),
+                    _buildMessagesList(),
+                  ],
+                ),
+              ),
+              selecting ? _selectBar() : _buildInputArea(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _exitSelection() => setState(() {
+        selecting = false;
+        _selected.clear();
+      });
+
+  Widget _selectHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: _bubble,
+            backgroundImage:
+                widget.image.isEmpty ? null : NetworkImage(widget.image),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              widget.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          _circleButton(Icons.close_rounded, _exitSelection),
+        ],
+      ),
+    );
+  }
+
+  Widget _selectBar() {
+    final n = _selected.length;
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        height: 58,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2E),
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
           children: [
-            _buildHeader(),
-            Container(height: 1, color: Colors.white.withValues(alpha: 0.06)),
-            Expanded(child: _buildMessagesList()),
-            _buildInputArea(),
+            GestureDetector(
+              onTap: n == 0 ? null : _deleteSelected,
+              behavior: HitTestBehavior.opaque,
+              child: Icon(
+                Icons.delete_outline_rounded,
+                size: 28,
+                color: n == 0 ? Colors.white30 : Colors.white,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              n == 1 ? "1 seleccionado" : "$n seleccionados",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Hoja "¿Quieres eliminar este mensaje?" (como WhatsApp).
+  void _deleteSelected() {
+    final chat = currentChat;
+    if (chat == null) return;
+    final all = (chat["messages"] as List).cast<Map<String, dynamic>>();
+    final chosen =
+        all.where((m) => _selected.contains(identityHashCode(m))).toList();
+    if (chosen.isEmpty) return;
+
+    // "Eliminar para todos" solo si TODOS los elegidos son tuyos.
+    final canAll = chosen.every((m) => m["isMe"] == true && m["deleted"] != true);
+    final plural = chosen.length > 1;
+
+    Widget option(String label, VoidCallback onTap) => InkWell(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFFFF4D5E),
+                fontSize: 18,
+              ),
+            ),
+          ),
+        );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A1C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const SizedBox(width: 54),
+                  Expanded(
+                    child: Text(
+                      plural
+                          ? "¿Quieres eliminar\nestos mensajes?"
+                          : "¿Quieres eliminar\neste mensaje?",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      width: 54,
+                      height: 54,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF3A3A3E),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close_rounded,
+                          color: Colors.white, size: 28),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF262628),
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    if (canAll) ...[
+                      option("Eliminar para todos", () {
+                        Navigator.pop(ctx);
+                        setState(() {
+                          for (final m in chosen) {
+                            m["deleted"] = true;
+                            m["text"] = "Eliminaste este mensaje";
+                            m["type"] = "text";
+                            m.remove("url");
+                            m.remove("path");
+                            m.remove("duration");
+                            m.remove("reaction");
+                            m.remove("replyTo");
+                          }
+                          final list = chat["messages"] as List;
+                          if (list.isNotEmpty && chosen.contains(list.last)) {
+                            chat["lastMessage"] = "Eliminaste este mensaje";
+                          }
+                          selecting = false;
+                          _selected.clear();
+                        });
+                      }),
+                      const Divider(
+                          color: Colors.white12, height: 1, indent: 20, endIndent: 20),
+                    ],
+                    option("Eliminar para mí", () {
+                      Navigator.pop(ctx);
+                      setState(() {
+                        (chat["messages"] as List)
+                            .removeWhere((e) => chosen.contains(e));
+                        selecting = false;
+                        _selected.clear();
+                      });
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -791,7 +1425,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         final deleted = msg["deleted"] == true;
         final status = "${msg["status"] ?? "sent"}";
 
-        return Align(
+        final row = Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child: Column(
             crossAxisAlignment:
@@ -799,64 +1433,28 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             children: [
               GestureDetector(
                 onLongPress: () => _messageMenu(msg),
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: maxW),
-                  margin: const EdgeInsets.only(bottom: 3),
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-                  decoration: BoxDecoration(
-                    gradient: isMe && !deleted
-                        ? const LinearGradient(colors: [_pink, _coral])
-                        : null,
-                    color: isMe && !deleted ? null : _bubble,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(20),
-                      topRight: const Radius.circular(20),
-                      bottomLeft: Radius.circular(isMe ? 20 : 5),
-                      bottomRight: Radius.circular(isMe ? 5 : 20),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _content(msg, deleted),
-                      const SizedBox(height: 3),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (msg["edited"] == true && !deleted)
-                            const Padding(
-                              padding: EdgeInsets.only(right: 5),
-                              child: Text(
-                                "editado",
-                                style: TextStyle(
-                                  color: Colors.white60,
-                                  fontSize: 10.5,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                          Text(
-                            "${msg["time"] ?? ""}",
-                            style: const TextStyle(
-                              color: Colors.white60,
-                              fontSize: 10.5,
-                            ),
-                          ),
-                          if (isMe && !deleted) ...[
-                            const SizedBox(width: 4),
-                            if (msg["uploading"] == true)
-                              const Icon(Icons.schedule,
-                                  size: 14, color: Colors.white70)
-                            else
-                              _checks(status),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
+                child: KeyedSubtree(
+                  key: _keyFor(msg),
+                  child: _bubbleBox(msg, maxW),
                 ),
               ),
+              if (msg["reaction"] != null && !deleted)
+                Transform.translate(
+                  offset: const Offset(0, -8),
+                  child: Container(
+                    margin: EdgeInsets.only(
+                        left: isMe ? 0 : 10, right: isMe ? 10 : 0, bottom: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A2A2E),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _bg, width: 2),
+                    ),
+                    child: Text("${msg["reaction"]}",
+                        style: const TextStyle(fontSize: 15)),
+                  ),
+                ),
               if (isMe && i == lastMine && msg["uploading"] != true)
                 Padding(
                   padding: const EdgeInsets.only(right: 6, bottom: 8),
@@ -878,6 +1476,38 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ],
           ),
         );
+
+        if (!selecting) return row;
+
+        final key = identityHashCode(msg);
+        final sel = _selected.contains(key);
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() {
+            sel ? _selected.remove(key) : _selected.add(key);
+          }),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                margin: const EdgeInsets.only(right: 12, left: 2, bottom: 8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: sel ? Colors.white : Colors.transparent,
+                  border: Border.all(
+                      color: sel ? Colors.white : Colors.white38, width: 2),
+                ),
+                child: sel
+                    ? const Icon(Icons.check_rounded,
+                        size: 18, color: Colors.black)
+                    : null,
+              ),
+              Expanded(child: IgnorePointer(child: row)),
+            ],
+          ),
+        );
       },
     );
   }
@@ -890,13 +1520,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.block, size: 15, color: Colors.white38),
-            SizedBox(width: 6),
+          children: [
+            const Icon(Icons.block, size: 15, color: Colors.white38),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
-                "Se eliminó este mensaje",
-                style: TextStyle(
+                msg["isMe"] == true
+                    ? "Eliminaste este mensaje"
+                    : "Se eliminó este mensaje",
+                style: const TextStyle(
                   color: Colors.white54,
                   fontStyle: FontStyle.italic,
                   fontSize: 14.5,
@@ -1081,9 +1713,48 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                 ],
               ),
             ),
+          if (replying != null && editing == null)
+            Container(
+              margin: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              decoration: BoxDecoration(
+                color: _bubble,
+                borderRadius: BorderRadius.circular(16),
+                border: const Border(left: BorderSide(color: _pink, width: 4)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          replying!["isMe"] == true ? "Tú" : widget.name,
+                          style: const TextStyle(
+                            color: _pink,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          _previewOf(replying!),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => replying = null),
+                    icon: const Icon(Icons.close, color: Colors.white54),
+                  ),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-            child: recording ? _recordingBar() : _composer(hasText),
+            child: (recording && recLocked) ? _recordingBar() : _composer(hasText),
           ),
         ],
       ),
@@ -1091,71 +1762,188 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _composer(bool hasText) {
-    return Row(
+    final rec = recording && !recLocked;
+    final double slide = _dx.clamp(-150.0, 0.0).toDouble();
+    final double lockProgress = (-_dy / 90).clamp(0.0, 1.0).toDouble();
+
+    return Stack(
+      clipBehavior: Clip.none,
       children: [
-        GestureDetector(
-          onTap: _attachSheet,
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration:
-                const BoxDecoration(color: _bubble, shape: BoxShape.circle),
-            child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.only(left: 18, right: 6),
-            decoration: BoxDecoration(
-              color: _bubble,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    minLines: 1,
-                    maxLines: 5,
-                    style: const TextStyle(color: Colors.white),
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      hintText: "Mensaje",
-                      hintStyle: TextStyle(color: Colors.white38),
-                      border: InputBorder.none,
+        Row(
+          children: [
+            rec
+                ? const SizedBox(width: 0)
+                : GestureDetector(
+                    onTap: _attachSheet,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                          color: _bubble, shape: BoxShape.circle),
+                      child: const Icon(Icons.add_rounded,
+                          color: Colors.white, size: 26),
                     ),
                   ),
-                ),
-                if (!hasText && editing == null)
-                  IconButton(
-                    onPressed: () => _pickPhoto(ImageSource.camera),
-                    icon: const Icon(Icons.photo_camera_rounded,
-                        color: Colors.white60),
+            SizedBox(width: rec ? 0 : 8),
+            Expanded(
+              child: rec
+                  ? Container(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      decoration: BoxDecoration(
+                        color: _bubble,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        children: [
+                          _cancelArmed
+                              ? const Icon(Icons.delete_rounded,
+                                  color: Colors.redAccent, size: 22)
+                              : const _BlinkDot(),
+                          const SizedBox(width: 10),
+                          Text(
+                            _mmss(recSeconds),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const Spacer(),
+                          Opacity(
+                            opacity: (1 + slide / 150).clamp(0.2, 1.0).toDouble(),
+                            child: Transform.translate(
+                              offset: Offset(slide * 0.5, 0),
+                              child: Text(
+                                _cancelArmed
+                                    ? "Suelta para cancelar"
+                                    : "‹  Desliza para cancelar",
+                                style: TextStyle(
+                                  color: _cancelArmed
+                                      ? Colors.redAccent
+                                      : Colors.white54,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.only(left: 18, right: 6),
+                      decoration: BoxDecoration(
+                        color: _bubble,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: controller,
+                              minLines: 1,
+                              maxLines: 5,
+                              style: const TextStyle(color: Colors.white),
+                              textCapitalization:
+                                  TextCapitalization.sentences,
+                              decoration: const InputDecoration(
+                                hintText: "Mensaje",
+                                hintStyle: TextStyle(color: Colors.white38),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                          if (!hasText && editing == null)
+                            IconButton(
+                              onPressed: () => _pickPhoto(ImageSource.camera),
+                              icon: const Icon(Icons.photo_camera_rounded,
+                                  color: Colors.white60),
+                            ),
+                        ],
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 8),
+            _micButton(hasText, rec),
+          ],
+        ),
+
+        // Candado: sube con el dedo y se fija la grabación
+        if (rec)
+          Positioned(
+            right: 0,
+            bottom: 62 + lockProgress * 24,
+            child: Container(
+              width: 46,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: _lockArmed ? _pink : _bubble,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 12,
                   ),
-              ],
+                ],
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    _lockArmed ? Icons.lock_rounded : Icons.lock_open_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(height: 6),
+                  const Icon(Icons.keyboard_arrow_up_rounded,
+                      color: Colors.white54, size: 22),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: (hasText || editing != null) ? sendText : _startRecording,
-          child: Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [_pink, _coral]),
-            ),
-            child: Icon(
-              editing != null
-                  ? Icons.check_rounded
-                  : (hasText ? Icons.send_rounded : Icons.mic_rounded),
-              color: Colors.white,
-            ),
-          ),
-        ),
       ],
+    );
+  }
+
+  Widget _micButton(bool hasText, bool rec) {
+    final sendMode = hasText || editing != null;
+    return GestureDetector(
+      onTap: sendMode
+          ? sendText
+          : () => _snack("Mantén presionado el micrófono para grabar."),
+      onLongPressStart: sendMode ? null : (_) => _micDown(),
+      onLongPressMoveUpdate:
+          sendMode ? null : (d) => _micMove(d.offsetFromOrigin),
+      onLongPressEnd: sendMode ? null : (_) => _micUp(),
+      onLongPressCancel: sendMode
+          ? null
+          : () {
+              if (recording && !recLocked) _stopRecording(send: false);
+            },
+      child: AnimatedScale(
+        scale: rec ? 1.5 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(colors: [_pink, _coral]),
+            boxShadow: rec
+                ? [
+                    BoxShadow(
+                      color: _pink.withValues(alpha: 0.5),
+                      blurRadius: 20,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Icon(
+            editing != null
+                ? Icons.check_rounded
+                : (hasText ? Icons.send_rounded : Icons.mic_rounded),
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 

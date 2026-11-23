@@ -44,4 +44,23 @@ class AgeHelper {
     if (unit == "meses") return value == 1 ? "1 mes" : "$value meses";
     return value == 1 ? "1 año" : "$value años";
   }
+
+  static bool _isMonths(Map pet) {
+    final u = (pet["ageType"] ?? "").toString().toLowerCase();
+    return u.startsWith("m");
+  }
+
+  /// "2 A" (años) o "4 M" (meses). Vacío si no hay edad.
+  static String shortOf(Map pet) {
+    final a = pet["age"];
+    if (a is! num) return "";
+    return "${a.toInt()} ${_isMonths(pet) ? "M" : "A"}";
+  }
+
+  /// "2 años" / "4 meses" / "1 año".
+  static String fullOf(Map pet) {
+    final a = pet["age"];
+    if (a is! num) return "";
+    return petAgeText(a.toInt(), _isMonths(pet) ? "meses" : "años");
+  }
 }

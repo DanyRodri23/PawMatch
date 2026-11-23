@@ -1,3 +1,4 @@
+import '../../helpers/age_helper.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/likes_data.dart';
@@ -283,7 +284,7 @@ class _LikesPageState extends State<LikesPage> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      "${pet["name"]}, ${pet["age"] ?? ""}${pet["ageType"] ?? ""}",
+                      "${pet["name"]}, ${AgeHelper.shortOf(pet)}",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 30,
@@ -394,7 +395,7 @@ class _LikesPageState extends State<LikesPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "${pet["name"]}, ${pet["age"] ?? ""}${pet["ageType"] ?? ""}",
+                    "${pet["name"]}, ${AgeHelper.shortOf(pet)}",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

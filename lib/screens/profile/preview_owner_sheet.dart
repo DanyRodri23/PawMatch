@@ -1,3 +1,4 @@
+import '../../helpers/age_helper.dart';
 import 'package:flutter/material.dart';
 import '../../data/user_profile_data.dart';
 import '../../data/pet_profile_data.dart';
@@ -373,7 +374,7 @@ class PreviewOwnerSheet extends StatelessWidget {
                                           4),
 
                                   Text(
-                                    "${pet["age"] ?? 0} años • ${pet["breed"] ?? "-"}",
+                                    "${AgeHelper.fullOf(pet)} • ${pet["breed"] ?? "-"}",
                                     style:
                                         const TextStyle(
                                       color:

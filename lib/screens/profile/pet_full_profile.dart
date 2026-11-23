@@ -1,3 +1,4 @@
+import '../../helpers/age_helper.dart';
 import '../../widgets/pet_badge_row.dart';
 import 'package:flutter/material.dart';
 import '../../data/app_data.dart';
@@ -92,7 +93,7 @@ class PetFullProfile extends StatelessWidget {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        "${pet["name"]}, ${pet["age"]}",
+                                        "${pet["name"]}, ${AgeHelper.shortOf(pet)}",
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 30,

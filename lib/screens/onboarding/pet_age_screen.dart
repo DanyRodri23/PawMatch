@@ -202,6 +202,14 @@ class _PetAgeScreenState extends State<PetAgeScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 14),
+          const Text(
+            "¿No sabes la fecha exacta? Una edad aproximada está bien. "
+            "Después puedes poner su cumpleaños en tu perfil y la edad se "
+            "actualizará sola.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white54, fontSize: 13, height: 1.35),
+          ),
         ],
       ),
     );

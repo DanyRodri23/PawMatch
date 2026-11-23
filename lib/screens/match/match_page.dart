@@ -1,10 +1,13 @@
+import '../../helpers/age_helper.dart';
 import '../../widgets/pet_badge_row.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/discover_prefs.dart';
 import '../../data/likes_data.dart';
 import '../../data/matches_data.dart';
+import '../../data/pet_options.dart';
 import '../../data/pet_profile_data.dart';
+import '../../data/sample_pets.dart';
 
 import 'match_success_screen.dart';
 import 'pet_detail_screen.dart';
@@ -175,8 +178,12 @@ class MatchPageState extends State<MatchPage>
     return true;
   }
 
-  List<Map<String, dynamic>> get pets =>
-      allPets.where(_passesFilters).toList();
+  /// Mascotas a las que ya les diste me gusta / match: no vuelven a salir.
+  static final Set<String> _acted = {};
+
+  List<Map<String, dynamic>> get pets => allPets
+      .where((p) => !_acted.contains(p["id"]) && _passesFilters(p))
+      .toList();
 
   Map<String, dynamic> get pet =>
       pets[currentIndex];
@@ -217,41 +224,49 @@ class MatchPageState extends State<MatchPage>
   }
 
   void swipeRight() {
-    final likedYou =
-        pet["likedYou"] == true;
+    if (pets.isEmpty) return;
 
-    if (likedYou) {
-      MatchesData.createMatch(
-        pet,
-      );
+    // Guardamos la mascota ANTES de pasar a la siguiente.
+    final liked = Map<String, dynamic>.from(pet);
+    final likedImages = List<String>.from(liked["images"] as List);
+    final likedImage = likedImages.isNotEmpty ? likedImages.first : "";
 
+    final myImages = PetProfileData.pet["images"];
+    final myImage = (myImages is List && myImages.isNotEmpty)
+        ? myImages.first.toString()
+        : likedImage;
+    final myName = (PetProfileData.pet["name"] ?? "").toString();
+
+    if (liked["likedYou"] == true) {
+      MatchesData.createMatch(liked);
+    } else {
+      LikesData.sendLike(liked);
+    }
+
+    // La mascota sale del mazo (ya no vuelve a aparecer).
+    setState(() {
+      _acted.add(liked["id"].toString());
+      currentPhoto = 0;
+      position = 0;
+      rotation = 0;
+      final n = pets.length;
+      if (n == 0 || currentIndex >= n) currentIndex = 0;
+    });
+
+    if (liked["likedYou"] == true) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              MatchSuccessScreen(
-            matchPet: pet,
-            myPet: (PetProfileData.pet["name"] ?? "").toString().isEmpty
-                ? "Tu mascota"
-                : PetProfileData.pet["name"].toString(),
-            otherPet:
-                pet["name"],
-            image1: (PetProfileData.pet["images"] is List &&
-                    (PetProfileData.pet["images"] as List).isNotEmpty)
-                ? (PetProfileData.pet["images"] as List).first.toString()
-                : images[0],
-            image2:
-                images[0],
+          builder: (_) => MatchSuccessScreen(
+            matchPet: liked,
+            myPet: myName.isEmpty ? "Tu mascota" : myName,
+            otherPet: liked["name"],
+            image1: myImage,
+            image2: likedImage,
           ),
         ),
       );
-    } else {
-      LikesData.sendLike(
-        pet,
-      );
     }
-
-    nextPet();
   }
 
   void swipeLeft() {
@@ -340,7 +355,7 @@ class MatchPageState extends State<MatchPage>
                 ),
                 const SizedBox(height: 18),
                 const Text(
-                  "No hay mascotas con esos filtros",
+                  "No hay más mascotas por ahora",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -350,7 +365,7 @@ class MatchPageState extends State<MatchPage>
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  "Prueba ampliando la distancia o la edad.",
+                  "Prueba ampliando la distancia, la edad o la raza.",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white54),
                 ),
@@ -740,35 +755,43 @@ class MatchPageState extends State<MatchPage>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Flexible(
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "${data["name"]}",
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              "${data["name"]}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            TextSpan(
-                              text: "  ${data["age"]}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w400,
+                          ),
+                          if (data["hideAge"] != true &&
+                              AgeHelper.shortOf(data).isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: Text(
+                                AgeHelper.shortOf(data),
+                                maxLines: 1,
+                                softWrap: false,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                        ),
+                          const SizedBox(width: 8),
+                          PetBadgeRow(pet: SamplePets.full(data), size: 24),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 8),
-                    PetBadgeRow(pet: data, size: 24),
-                    const Spacer(),
                     GestureDetector(
                       onTap: () {
                         PetDetailScreen.open(
@@ -950,6 +973,16 @@ class _FilterSheetState extends State<_FilterSheet> {
       vaccinated = false;
       verified = false;
     });
+  }
+
+  Future<void> _pickBreed() async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BreedPicker(selected: breed),
+    );
+    if (result != null) setState(() => breed = result);
   }
 
   static const Color _card = Color(0xFF1C1C21);
@@ -1228,16 +1261,46 @@ class _FilterSheetState extends State<_FilterSheet> {
 
                     _title(
                       "Raza",
-                      hint: "Elige una raza o deja Todas.",
+                      hint: "Elige una raza o toca \"Ver todas\" para buscar.",
                     ),
                     _box(
                       child: Wrap(
                         spacing: 10,
                         runSpacing: 10,
-                        children: widget.breedOptions
-                            .map((b) => _chip(b, breed == b,
-                                () => setState(() => breed = b)))
-                            .toList(),
+                        children: [
+                          ...widget.breedOptions.map((b) => _chip(
+                              b, breed == b, () => setState(() => breed = b))),
+                          if (breed != "Todas" &&
+                              !widget.breedOptions.contains(breed))
+                            _chip(breed, true, () {}),
+                          GestureDetector(
+                            onTap: _pickBreed,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(color: Colors.pinkAccent),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.search_rounded,
+                                      color: Colors.pinkAccent, size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "Ver todas",
+                                    style: TextStyle(
+                                      color: Colors.pinkAccent,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -1277,8 +1340,8 @@ class _FilterSheetState extends State<_FilterSheet> {
                           ),
                           const Divider(color: Colors.white12, height: 1),
                           _switch(
-                            "Solo verificados",
-                            "Perfiles con verificación",
+                            "Solo dueños verificados",
+                            "Dueños con identidad verificada",
                             Icons.verified,
                             verified,
                             (v) => setState(() => verified = v),
@@ -1289,6 +1352,116 @@ class _FilterSheetState extends State<_FilterSheet> {
                   ],
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _BreedPicker extends StatefulWidget {
+  final String selected;
+  const _BreedPicker({required this.selected});
+
+  @override
+  State<_BreedPicker> createState() => _BreedPickerState();
+}
+
+class _BreedPickerState extends State<_BreedPicker> {
+  String query = "";
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MediaQuery.of(context).size.height * 0.85;
+    final kb = MediaQuery.of(context).viewInsets.bottom;
+    final q = query.trim().toLowerCase();
+    final list = <String>[
+      "Todas",
+      ...PetOptions.breeds.where((b) => q.isEmpty || b.toLowerCase().contains(q)),
+    ];
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: kb),
+      child: Container(
+        height: h,
+        decoration: const BoxDecoration(
+          color: Color(0xFF101013),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Todas las razas",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: TextField(
+                style: const TextStyle(color: Colors.white),
+                onChanged: (v) => setState(() => query = v),
+                decoration: InputDecoration(
+                  hintText: "Buscar raza...",
+                  hintStyle: const TextStyle(color: Colors.white38),
+                  prefixIcon:
+                      const Icon(Icons.search_rounded, color: Colors.white54),
+                  filled: true,
+                  fillColor: const Color(0xFF1C1C21),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: list.length == 1 && q.isNotEmpty
+                  ? const Center(
+                      child: Text("No encontramos esa raza",
+                          style: TextStyle(color: Colors.white54)),
+                    )
+                  : ListView.builder(
+                      itemCount: list.length,
+                      itemBuilder: (_, i) {
+                        final b = list[i];
+                        final sel = b == widget.selected;
+                        return ListTile(
+                          title: Text(
+                            b,
+                            style: TextStyle(
+                              color: sel ? Colors.pinkAccent : Colors.white,
+                              fontWeight:
+                                  sel ? FontWeight.w800 : FontWeight.w500,
+                            ),
+                          ),
+                          trailing: sel
+                              ? const Icon(Icons.check_rounded,
+                                  color: Colors.pinkAccent)
+                              : null,
+                          onTap: () => Navigator.pop(context, b),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

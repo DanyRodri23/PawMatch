@@ -381,7 +381,9 @@ class _NewsScreenState extends State<NewsScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      body: ListView(
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
         padding: EdgeInsets.only(bottom: bottom + 110),
         physics: const BouncingScrollPhysics(),
         children: [
@@ -460,6 +462,7 @@ class _NewsScreenState extends State<NewsScreen> {
             for (final n in list.skip(1)) row(n),
           ],
         ],
+      ),
       ),
     );
   }

@@ -26,7 +26,9 @@ class HotelsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bg,
-      body: ListView(
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.only(bottom: bottom + 110),
         children: [
@@ -153,6 +155,7 @@ class HotelsScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

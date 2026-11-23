@@ -87,6 +87,10 @@ class ProfileStore {
       }
     } catch (e) {
       debugPrint("No se pudo cargar el perfil: $e");
+    } finally {
+      // Las edades se calculan con la fecha de hoy.
+      PetProfileData.refreshAge();
+      UserProfileData.refreshAge();
     }
   }
 

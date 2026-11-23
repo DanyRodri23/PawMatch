@@ -1,3 +1,5 @@
+import '../helpers/age_helper.dart';
+import 'user_data.dart';
 import '../services/profile_store.dart';
 
 class UserProfileData {
@@ -16,6 +18,10 @@ class UserProfileData {
         "Amante de los animales y listo para encontrar la mejor conexión para mi mascota.",
     "instagram": "@daniel",
     "verified": false,
+    // Verificación de identidad: "none" | "pending" | "approved"
+    "verifyStatus": "none",
+    "selfieUrl": "",
+    "idUrl": "",
     "joinedDate": "2026",
 
     /// UBICACIÓN
@@ -53,9 +59,14 @@ class UserProfileData {
     bool? verified,
     bool? showGender,
     List<String>? images,
+    DateTime? birthDate,
   }) {
+    if (birthDate != null) {
+      user["birthDate"] = birthDate;
+      user["age"] = AgeHelper.yearsBetween(birthDate, DateTime.now());
+    }
     if (name != null) user["name"] = name;
-    if (age != null) user["age"] = age;
+    if (age != null && birthDate == null) user["age"] = age;
     if (gender != null) user["gender"] = gender;
 
     if (location != null) {
@@ -87,6 +98,38 @@ class UserProfileData {
     if (verified != null) user["verified"] = verified;
     if (showGender != null) user["showGender"] = showGender;
   
+    ProfileStore.save();
+  }
+
+  /// Recalcula la edad del dueño según su fecha de nacimiento.
+  static void refreshAge() {
+    final b = user["birthDate"] is DateTime
+        ? user["birthDate"]
+        : UserData.profile["birthDate"];
+    if (b is DateTime) {
+      final a = AgeHelper.yearsBetween(b, DateTime.now());
+      user["birthDate"] = b;
+      user["age"] = a;
+      UserData.profile["age"] = a;
+    }
+  }
+
+  // ==================================================
+  // VERIFICACIÓN DE IDENTIDAD
+  // ==================================================
+  static void updateVerification({
+    String? status,
+    String? selfieUrl,
+    String? idUrl,
+  }) {
+    if (selfieUrl != null) user["selfieUrl"] = selfieUrl;
+    if (idUrl != null) user["idUrl"] = idUrl;
+    if (status != null) {
+      user["verifyStatus"] = status;
+      // Solo una revisión aprobada marca el perfil como verificado.
+      user["verified"] = status == "approved";
+    }
+
     ProfileStore.save();
   }
 

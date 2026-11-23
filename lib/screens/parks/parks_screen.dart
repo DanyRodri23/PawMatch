@@ -1,296 +1,359 @@
 import 'package:flutter/material.dart';
+
 import '../../data/parks_data.dart';
+import 'park_detail_screen.dart';
 import 'parks_by_region_screen.dart';
 
 class ParksScreen extends StatelessWidget {
   const ParksScreen({super.key});
 
+  static const Color bg = Color(0xFF0B0B0F);
+  static const Color card = Color(0xFF16161C);
+  static const Color green = Color(0xFF3DDC84);
+
+  /// Todos los parques en una sola lista, con su región.
+  static List<Map<String, dynamic>> _allParks() {
+    final out = <Map<String, dynamic>>[];
+    for (final country in parksData.values) {
+      final regions = country["regions"] as Map<String, dynamic>;
+      for (final parks in regions.values) {
+        for (final p in (parks as List)) {
+          out.add(Map<String, dynamic>.from(p as Map));
+        }
+      }
+    }
+    return out;
+  }
+
+  static Widget _img(String url, {double? h, double? w}) => Image.network(
+        url,
+        height: h,
+        width: w,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          height: h,
+          width: w,
+          color: card,
+          child: const Icon(Icons.park_rounded, color: Colors.white24, size: 44),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final all = _allParks();
+    final top = [...all]..sort((a, b) => (double.tryParse("${b["rating"]}") ?? 0)
+        .compareTo(double.tryParse("${a["rating"]}") ?? 0));
+    final bottom = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF050505),
-
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              /// HEADER
-              Row(
-                children: [
-
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.greenAccent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.park_rounded,
-                      color: Colors.greenAccent,
-                      size: 30,
-                    ),
+      backgroundColor: bg,
+      body: ListView(
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.only(bottom: bottom + 110),
+        children: [
+          // Encabezado
+          const Padding(
+            padding: EdgeInsets.fromLTRB(22, 4, 22, 0),
+            child: Row(
+              children: [
+                Icon(Icons.park_rounded, color: green, size: 30),
+                SizedBox(width: 10),
+                Text(
+                  "Dog Parks",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1,
                   ),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(22, 6, 22, 16),
+            child: Text(
+              "Encuentra dónde pasear y jugar con tu mascota.",
+              style: TextStyle(color: Colors.white54, fontSize: 15),
+            ),
+          ),
 
-                  const SizedBox(width: 14),
-
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          // Países
+          for (final country in parksData.keys)
+            Builder(builder: (context) {
+              final regions =
+                  parksData[country]!["regions"] as Map<String, dynamic>;
+              int total = 0;
+              String? photo;
+              for (final r in regions.values) {
+                total += (r as List).length;
+                if (photo == null && r.isNotEmpty) {
+                  photo = (r.first as Map)["image"]?.toString();
+                }
+              }
+              return GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ParksByRegionScreen(country: country),
+                  ),
+                ),
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                  height: 190,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: green.withValues(alpha: 0.18),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-
-                        Text(
-                          "Dog Parks",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1,
+                        if (photo != null) _img(photo, h: 190),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.05),
+                                Colors.black.withValues(alpha: 0.9),
+                              ],
+                            ),
                           ),
                         ),
-
-                        SizedBox(height: 4),
-
-                        Text(
-                          "Explora parques y espacios pet-friendly",
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 14,
+                        Positioned(
+                          left: 20,
+                          right: 20,
+                          bottom: 18,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      country,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$total parques · ${regions.length} regiones",
+                                      style: const TextStyle(
+                                          color: Colors.white70, fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.arrow_forward_rounded,
+                                    color: Colors.black),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
+              );
+            }),
+
+          // Mejor valorados
+          if (top.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.fromLTRB(22, 14, 22, 12),
+              child: Text(
+                "Mejor valorados ⭐",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-
-              const SizedBox(height: 28),
-
-              /// GLOBAL STATS
-              Row(
-                children: [
-
-                  Expanded(
-                    child: _statCard(
-                      title: _getTotalParks().toString(),
-                      subtitle: "Parques",
-                      icon: Icons.forest,
-                    ),
-                  ),
-
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: _statCard(
-                      title: parksData.length.toString(),
-                      subtitle: "Países",
-                      icon: Icons.public,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              /// COUNTRY CARDS DINÁMICAS
-              ...parksData.keys.map((country) {
-                final regionsMap =
-                    parksData[country]!["regions"] as Map<String, dynamic>;
-
-                final regionCount = regionsMap.length;
-
-                int totalParks = 0;
-                for (final parks in regionsMap.values) {
-                  totalParks += (parks as List).length;
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 22),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ParksByRegionScreen(
-                            country: country,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF151515),
-                            Color(0xFF0E0E0E),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: Colors.white10,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.greenAccent.withValues(alpha: 0.08),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
+            ),
+            SizedBox(
+              height: 220,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: top.length.clamp(0, 8),
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, i) {
+                  final p = top[i];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ParkDetailScreen(park: p),
                       ),
-                      child: Row(
+                    ),
+                    child: Container(
+                      width: 170,
+                      decoration: BoxDecoration(
+                        color: card,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-
-                          Container(
-                            width: 68,
-                            height: 68,
-                            decoration: BoxDecoration(
-                              color: Colors.greenAccent.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(22),
-                            ),
-                            child: const Icon(
-                              Icons.public,
-                              color: Colors.greenAccent,
-                              size: 34,
-                            ),
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(22)),
+                            child: _img("${p["image"]}", h: 120, w: 170),
                           ),
-
-                          const SizedBox(width: 18),
-
-                          Expanded(
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-
                                 Text(
-                                  country,
+                                  "${p["name"]}",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
-
-                                const SizedBox(height: 6),
-
-                                Text(
-                                  "$totalParks parques • $regionCount regiones",
-                                  style: const TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 13,
-                                  ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star_rounded,
+                                        color: Colors.amber, size: 16),
+                                    const SizedBox(width: 3),
+                                    Text("${p["rating"]}",
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13)),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        "${p["size"]}",
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            color: Colors.white38,
+                                            fontSize: 13),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.white38,
-                            size: 18,
-                          ),
                         ],
                       ),
                     ),
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 10),
-
-              /// INFO FOOTER
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(26),
-                  color: const Color(0xFF111111),
-                ),
-                child: const Row(
-                  children: [
-
-                    Icon(
-                      Icons.star,
-                      color: Colors.orange,
-                    ),
-
-                    SizedBox(width: 12),
-
-                    Expanded(
-                      child: Text(
-                        "Los parques mejor calificados aparecerán primero para mejorar la experiencia.",
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-            ],
+            ),
+          ],
+
+          // Próximamente
+          const Padding(
+            padding: EdgeInsets.fromLTRB(22, 26, 22, 12),
+            child: Text(
+              "Próximamente",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 21,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: const [
+                _Soon(Icons.near_me_rounded, "Parques cerca de ti",
+                    "Con tu ubicación te mostramos los más cercanos."),
+                _Soon(Icons.pin_drop_rounded, "Check-in en el parque",
+                    "Avisa que llegaste y mira qué mascotas hay."),
+                _Soon(Icons.event_rounded, "Eventos en parques",
+                    "Quedadas y caminatas de la comunidad."),
+                _Soon(Icons.rate_review_rounded, "Reseñas",
+                    "Califica los parques y sube fotos."),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  static int _getTotalParks() {
-    int total = 0;
+class _Soon extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String sub;
+  const _Soon(this.icon, this.title, this.sub);
 
-    for (final country in parksData.values) {
-      final regions = country["regions"] as Map<String, dynamic>;
-
-      for (final parks in regions.values) {
-        total += (parks as List).length;
-      }
-    }
-
-    return total;
-  }
-
-  static Widget _statCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: const Color(0xFF111111),
+        color: ParksScreen.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
       ),
-      child: Column(
+      child: Row(
         children: [
-
-          Icon(
-            icon,
-            color: Colors.greenAccent,
-            size: 28,
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: ParksScreen.green.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: ParksScreen.green),
           ),
-
-          const SizedBox(height: 14),
-
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(sub,
+                    style:
+                        const TextStyle(color: Colors.white54, fontSize: 12.5)),
+              ],
             ),
           ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 13,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.amber,
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: const Text("Pronto",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800)),
           ),
         ],
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../widgets/favorite_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HotelDetailScreen extends StatelessWidget {
@@ -44,6 +46,12 @@ class HotelDetailScreen extends StatelessWidget {
             backgroundColor: Colors.black,
             expandedHeight: 320,
             pinned: true,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: FavoriteButton(kind: "hotel", item: hotel, size: 40),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: PageView.builder(
                 itemCount: images.length,

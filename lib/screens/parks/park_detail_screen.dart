@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../widgets/favorite_button.dart';
+
 class ParkDetailScreen extends StatelessWidget {
   final Map<String, dynamic> park;
 
@@ -51,6 +53,12 @@ class ParkDetailScreen extends StatelessWidget {
             expandedHeight: 280,
             pinned: true,
             backgroundColor: Colors.black,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: FavoriteButton(kind: "park", item: park, size: 40),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Image.network(
                 park["image"],

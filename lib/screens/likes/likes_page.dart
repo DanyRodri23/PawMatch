@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/likes_data.dart';
 import '../../data/matches_data.dart';
+import '../../data/pet_profile_data.dart';
 import '../match/match_success_screen.dart';
 import '../profile/pet_full_profile.dart';
 
@@ -44,9 +45,14 @@ class _LikesPageState extends State<LikesPage> {
       MaterialPageRoute(
         builder: (_) => MatchSuccessScreen(
           matchPet: pet,
-          myPet: "Tu mascota",
+          myPet: (PetProfileData.pet["name"] ?? "").toString().isEmpty
+              ? "Tu mascota"
+              : PetProfileData.pet["name"].toString(),
           otherPet: "${pet["name"]}",
-          image1: img,
+          image1: (PetProfileData.pet["images"] is List &&
+                  (PetProfileData.pet["images"] as List).isNotEmpty)
+              ? (PetProfileData.pet["images"] as List).first.toString()
+              : img,
           image2: img,
         ),
       ),

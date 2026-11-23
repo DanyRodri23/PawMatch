@@ -1,3 +1,4 @@
+import '../helpers/age_helper.dart';
 import '../services/profile_store.dart';
 
 class PetProfileData {
@@ -87,6 +88,7 @@ class PetProfileData {
     List<String>? traits,
     String? description,
     String? lookingFor,
+    DateTime? birthDate,
   }) {
     if (name != null) {
       pet["name"] = name;
@@ -204,10 +206,45 @@ class PetProfileData {
           lookingFor;
     }
 
+    // La edad se guarda como fecha de nacimiento para que avance sola.
+    if (birthDate != null) {
+      pet["birthDate"] = birthDate;
+      refreshAge();
+    } else if (age != null || ageType != null) {
+      final a = (pet["age"] as num?)?.toInt() ?? 0;
+      final u = (pet["ageType"] ?? "años").toString();
+      pet["birthDate"] = AgeHelper.birthFromAge(a, u);
+    }
+
     pet["updatedAt"] =
         DateTime.now();
   
     ProfileStore.save();
+  }
+
+  /// Guarda campos sueltos (tamaño, energía, etc.).
+  static void setFields(Map<String, dynamic> fields) {
+    pet.addAll(fields);
+    pet["updatedAt"] = DateTime.now();
+    ProfileStore.save();
+  }
+
+  /// Recalcula "age" y "ageType" según la fecha de nacimiento y la fecha de hoy.
+  static void refreshAge() {
+    final b = pet["birthDate"];
+    if (b is DateTime) {
+      final r = AgeHelper.petAge(b);
+      pet["age"] = r.value;
+      pet["ageType"] = r.unit;
+    } else {
+      final a = pet["age"];
+      if (a is num && a > 0) {
+        pet["birthDate"] = AgeHelper.birthFromAge(
+          a.toInt(),
+          (pet["ageType"] ?? "años").toString(),
+        );
+      }
+    }
   }
 
   static void resetPet() {
@@ -237,6 +274,11 @@ class PetProfileData {
       "traits": <String>[],
       "description": "",
       "lookingFor": "",
+      "birthDate": null,
+      "size": "",
+      "energy": "",
+      "neutered": "",
+      "goodWith": <String>[],
       "createdAt":
           DateTime.now(),
       "updatedAt":

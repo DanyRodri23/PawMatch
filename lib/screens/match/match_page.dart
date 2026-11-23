@@ -1,8 +1,10 @@
 import '../../widgets/pet_badge_row.dart';
 import 'package:flutter/material.dart';
 
+import '../../data/discover_prefs.dart';
 import '../../data/likes_data.dart';
 import '../../data/matches_data.dart';
+import '../../data/pet_profile_data.dart';
 
 import 'match_success_screen.dart';
 import 'pet_detail_screen.dart';
@@ -110,12 +112,38 @@ class MatchPageState extends State<MatchPage>
     "Todos", "Reproducción", "Amistad", "Compañero de juego", "Paseos",
   ];
 
+  void _loadPrefs() {
+    filterGender = DiscoverPrefs.gender;
+    filterAge = RangeValues(DiscoverPrefs.ageMin, DiscoverPrefs.ageMax);
+    filterKm = DiscoverPrefs.km;
+  }
+
+  void _onPrefsChanged() {
+    if (!mounted) return;
+    setState(() {
+      _loadPrefs();
+      currentIndex = 0;
+      currentPhoto = 0;
+      position = 0;
+      rotation = 0;
+    });
+    widget.onFiltersChanged?.call(activeFilters);
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadPrefs();
     if (widget.initialGoal != null) filterGoal = widget.initialGoal!;
     if (widget.initialPedigree) onlyPedigree = true;
     if (widget.initialKm != null) filterKm = widget.initialKm!;
+    DiscoverPrefs.version.addListener(_onPrefsChanged);
+  }
+
+  @override
+  void dispose() {
+    DiscoverPrefs.version.removeListener(_onPrefsChanged);
+    super.dispose();
   }
 
   int get activeFilters {
@@ -203,11 +231,15 @@ class MatchPageState extends State<MatchPage>
           builder: (_) =>
               MatchSuccessScreen(
             matchPet: pet,
-            myPet: "Max",
+            myPet: (PetProfileData.pet["name"] ?? "").toString().isEmpty
+                ? "Tu mascota"
+                : PetProfileData.pet["name"].toString(),
             otherPet:
                 pet["name"],
-            image1:
-                images[0],
+            image1: (PetProfileData.pet["images"] is List &&
+                    (PetProfileData.pet["images"] as List).isNotEmpty)
+                ? (PetProfileData.pet["images"] as List).first.toString()
+                : images[0],
             image2:
                 images[0],
           ),
@@ -258,6 +290,10 @@ class MatchPageState extends State<MatchPage>
             filterGender = r.gender;
             filterAge = r.age;
             filterKm = r.km;
+            DiscoverPrefs.gender = r.gender;
+            DiscoverPrefs.ageMin = r.age.start;
+            DiscoverPrefs.ageMax = r.age.end;
+            DiscoverPrefs.km = r.km;
             filterBreed = r.breed;
             filterGoal = r.goal;
             onlyPedigree = r.pedigree;

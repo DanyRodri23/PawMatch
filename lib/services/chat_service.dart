@@ -34,6 +34,7 @@ class ChatService {
     String? url,
     int? duration,
     String? messageId,
+    Map<String, dynamic>? replyTo,
   }) async {
     final ref = _db.collection('chats').doc(chatId);
 
@@ -64,6 +65,7 @@ class ChatService {
       "type": type,
       if (url != null) "url": url,
       if (duration != null) "duration": duration,
+      if (replyTo != null) "replyTo": replyTo,
       "createdAt": FieldValue.serverTimestamp(),
     });
   }

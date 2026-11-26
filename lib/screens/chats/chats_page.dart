@@ -252,9 +252,12 @@ class _ChatsPageState extends State<ChatsPage> {
                 final messages = List<Map<String, dynamic>>.from(
                   chat["messages"] ?? [],
                 );
-                final previewText = messages.isNotEmpty
-                    ? messages.last["text"] ?? ""
-                    : chat["lastMessage"] ?? "";
+                // El último mensaje real viene de Firebase (lastMessage); la lista
+                // de la pantalla solo se usa si todavía no llegó nada.
+                final lastFromFirebase = "${chat["lastMessage"] ?? ""}";
+                final previewText = lastFromFirebase.isNotEmpty
+                    ? lastFromFirebase
+                    : (messages.isNotEmpty ? messages.last["text"] ?? "" : "");
                 final typing = chat["typing"] == true;
                 final unread = (chat["unread"] ?? 0) is num &&
                     (chat["unread"] as num) > 0;

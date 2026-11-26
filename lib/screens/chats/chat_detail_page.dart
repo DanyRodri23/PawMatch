@@ -258,6 +258,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             : text,
         if (deleted) "deleted": true,
         if (edited && !deleted) "edited": true,
+        if (!deleted && data["replyTo"] is Map)
+          "replyTo": {
+            "text": (data["replyTo"] as Map)["text"]?.toString() ?? "",
+            "isMe": (data["replyTo"] as Map)["fromId"] == me,
+          },
         "isMe": mine,
         "time":
             "${when.hour}:${when.minute.toString().padLeft(2, '0')}",
@@ -564,10 +569,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     final msg = _push("text", text);
     if (msg == null) return;
+    Map<String, dynamic>? replyData;
     if (replying != null) {
+      final replyText = _previewOf(replying!);
+      final replyIsMe = replying!['isMe'] == true;
       msg["replyTo"] = {
-        "text": _previewOf(replying!),
-        "isMe": replying!['isMe'] == true,
+        "text": replyText,
+        "isMe": replyIsMe,
+      };
+      // En Firebase se guarda quién escribió el mensaje citado (para verlo bien en el otro teléfono).
+      replyData = {
+        "text": replyText,
+        "fromId": replyIsMe ? (DiscoverService.myUid ?? "") : (_otherUid ?? ""),
       };
       setState(() => replying = null);
     }
@@ -579,6 +592,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         senderId: DiscoverService.myUid ?? "me",
         text: text,
         messageId: msg["id"]?.toString(),
+        replyTo: replyData,
       );
     } catch (e) {
       debugPrint("No se pudo guardar el mensaje en Firebase: $e");

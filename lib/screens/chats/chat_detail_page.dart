@@ -152,6 +152,25 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       final mine = data["senderId"] == me;
       final type = (data["type"] ?? "text").toString();
       final text = (data["text"] ?? "").toString();
+      final seen = data["seen"] == true;
+
+      // Mensaje del otro que estoy viendo ahora: se marca como visto.
+      if (!mine && !seen) {
+        d.reference
+            .update({"seen": true})
+            .catchError((e) => debugPrint("No se pudo marcar visto: $e"));
+      }
+
+      // Mensaje mío que ya está en pantalla: se actualiza su estado real.
+      for (final m in list) {
+        if (m is Map && m["id"] == d.id && mine) {
+          final next = seen ? "seen" : "sent";
+          if (m["status"] != next) {
+            m["status"] = next;
+            changed = true;
+          }
+        }
+      }
 
       final alreadyThere = list.any((m) => m is Map && m["id"] == d.id) ||
           (mine &&
@@ -174,7 +193,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         "time":
             "${when.hour}:${when.minute.toString().padLeft(2, '0')}",
         "sentAt": when,
-        "status": mine ? "delivered" : "seen",
+        "status": mine ? (seen ? "seen" : "sent") : "seen",
         if (data["url"] != null) "url": data["url"],
         if (data["duration"] != null) "duration": data["duration"],
         "uploading": false,
@@ -402,16 +421,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   /// Estados: sent (✓) → delivered (✓✓ gris) → seen (✓✓ azul).
   /// Por ahora son simulados; serán reales cuando haya dos usuarios en Firebase.
   void _simulateStatus(Map<String, dynamic> msg) {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (msg["deleted"] == true) return;
-      msg["status"] = "delivered";
-      if (mounted) setState(() {});
-    });
-    Future.delayed(const Duration(seconds: 2), () {
-      if (msg["deleted"] == true) return;
-      msg["status"] = "seen";
-      if (mounted) setState(() {});
-    });
+    // Ya no se simula: ✓ = enviado, ✓✓ azul = la otra persona abrió el chat y lo leyó.
   }
 
   String _preview(String type, String text) {

@@ -2354,6 +2354,20 @@ class _AudioBubbleState extends State<_AudioBubble> {
           final Source src = widget.url != null
               ? UrlSource(widget.url!)
               : DeviceFileSource(widget.path!);
+          // Sonido por el parlante y a volumen de medios (en iPhone, después de
+          // grabar, el sistema deja el audio en modo "llamada" y suena bajito o mudo).
+          try {
+            await _player.setAudioContext(
+              AudioContextConfig(
+                route: AudioContextConfigRoute.speaker,
+                focus: AudioContextConfigFocus.gain,
+                respectSilence: false,
+              ).build(),
+            );
+            await _player.setVolume(1.0);
+          } catch (e) {
+            debugPrint("No se pudo configurar el audio: $e");
+          }
           await _player.play(src);
         } else {
           await _player.resume();

@@ -18,7 +18,8 @@ class LikesData {
   }
 
   static void removeReceivedLike(Map<String, dynamic> pet) {
-    receivedLikes.remove(pet);
+    // Se quita por id (no por objeto) para que funcione desde cualquier pantalla.
+    receivedLikes.removeWhere((p) => p["id"] == pet["id"]);
   }
 
   static void removeSentLike(Map<String, dynamic> pet) {

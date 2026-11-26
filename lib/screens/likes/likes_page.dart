@@ -6,7 +6,7 @@ import '../../data/matches_data.dart';
 import '../../data/pet_profile_data.dart';
 import '../../services/discover_service.dart';
 import '../match/match_success_screen.dart';
-import '../profile/pet_full_profile.dart';
+import '../match/pet_detail_screen.dart';
 
 class LikesPage extends StatefulWidget {
   const LikesPage({super.key});
@@ -64,11 +64,17 @@ class _LikesPageState extends State<LikesPage> {
   }
 
   void _open(Map<String, dynamic> pet) async {
-    await Navigator.push(
+    // Mismo perfil que se ve en Descubre; abajo salen los botones de No / Me gusta.
+    await PetDetailScreen.open(
       context,
-      MaterialPageRoute(
-        builder: (_) => PetFullProfile(pet: pet, mode: ProfileMode.likes),
-      ),
+      pet,
+      heroTag: "petphoto_${pet["id"] ?? pet["name"]}",
+      onNope: () {
+        LikesData.removeReceivedLike(pet);
+        DiscoverService.swipe("${pet["id"]}", liked: false);
+        if (mounted) setState(() {});
+      },
+      onLike: () => _likeBack(pet),
     );
     if (mounted) setState(() {});
   }

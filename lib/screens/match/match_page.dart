@@ -230,6 +230,9 @@ class MatchPageState extends State<MatchPage>
         await DiscoverService.swipe(liked["id"].toString(), liked: true);
 
     if (isMatch) {
+      // Ya hay match: deja de estar en "Likes" y pasa a "Nuevos matches".
+      LikesData.removeReceivedLike(liked);
+      LikesData.sentLikes.removeWhere((p) => p["id"] == liked["id"]);
       MatchesData.createMatch(liked);
       if (!mounted) return;
       Navigator.push(

@@ -10,6 +10,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart'
+    show QuerySnapshot, Timestamp;
+
 import '../../data/chats_data.dart';
 import '../../data/matches_data.dart';
 import '../../services/chat_service.dart';
@@ -50,6 +53,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final AudioRecorder _rec = AudioRecorder();
 
   StreamSubscription? chatSubscription;
+  StreamSubscription? _typingSub;
+  Timer? _typingTimer;
+  bool _iAmTyping = false;
+  bool _otherTyping = false;
+
+  String? get _otherUid => widget.matchPet?["id"]?.toString();
 
   /// Mensaje que se está editando (null = escribiendo uno nuevo).
   Map<String, dynamic>? editing;
@@ -82,16 +91,120 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   void initState() {
     super.initState();
-    controller.addListener(() => setState(() {}));
+    controller.addListener(() {
+      setState(() {});
+      _onTypingChanged();
+    });
 
     chatSubscription = ChatService.getMessages(chatId).listen(
-      (_) {},
+      _onMessages,
       onError: (e) => debugPrint("Error leyendo mensajes: $e"),
     );
+
+    _typingSub = ChatService.chatDoc(chatId).listen(
+      (doc) {
+        final other = _otherUid;
+        final t = doc.data()?["typing"];
+        final value = other != null && t is Map && t[other] == true;
+        if (value != _otherTyping && mounted) {
+          setState(() => _otherTyping = value);
+        }
+      },
+      onError: (e) => debugPrint("Error leyendo 'escribiendo': $e"),
+    );
+  }
+
+  // ----------------------------------------------- escribiendo… y mensajes
+
+  void _setTyping(bool value) {
+    final me = DiscoverService.myUid;
+    if (me == null || widget.matchPet == null) return;
+    if (_iAmTyping == value) return;
+    _iAmTyping = value;
+    ChatService.setTyping(chatId: chatId, uid: me, typing: value)
+        .catchError((e) => debugPrint("No se pudo avisar que escribo: $e"));
+  }
+
+  void _onTypingChanged() {
+    final hasText = controller.text.trim().isNotEmpty;
+    _typingTimer?.cancel();
+    if (!hasText) {
+      _setTyping(false);
+      return;
+    }
+    _setTyping(true);
+    _typingTimer = Timer(const Duration(seconds: 3), () => _setTyping(false));
+  }
+
+  /// Recibe los mensajes de Firebase y agrega los que todavía no están en pantalla.
+  void _onMessages(QuerySnapshot snap) {
+    if (widget.matchPet == null) return;
+    final me = DiscoverService.myUid;
+    if (me == null) return;
+
+    final chat = _ensureChat() ?? currentChat;
+    if (chat == null) return;
+    final list = chat["messages"] as List;
+
+    var changed = false;
+    for (final d in snap.docs) {
+      final data = d.data() as Map<String, dynamic>;
+      final mine = data["senderId"] == me;
+      final type = (data["type"] ?? "text").toString();
+      final text = (data["text"] ?? "").toString();
+
+      final alreadyThere = list.any((m) => m is Map && m["id"] == d.id) ||
+          (mine &&
+              list.any((m) =>
+                  m is Map &&
+                  m["id"] == null &&
+                  m["isMe"] == true &&
+                  m["type"] == type &&
+                  m["text"] == text));
+      if (alreadyThere) continue;
+
+      final ts = data["createdAt"];
+      final when = ts is Timestamp ? ts.toDate() : DateTime.now();
+
+      list.add({
+        "id": d.id,
+        "type": type,
+        "text": text,
+        "isMe": mine,
+        "time":
+            "${when.hour}:${when.minute.toString().padLeft(2, '0')}",
+        "sentAt": when,
+        "status": mine ? "delivered" : "seen",
+        if (data["url"] != null) "url": data["url"],
+        if (data["duration"] != null) "duration": data["duration"],
+        "uploading": false,
+      });
+      changed = true;
+    }
+
+    if (!changed) return;
+
+    list.sort((a, b) {
+      final x = (a is Map ? a["sentAt"] : null);
+      final y = (b is Map ? b["sentAt"] : null);
+      if (x is DateTime && y is DateTime) return x.compareTo(y);
+      return 0;
+    });
+
+    if (list.isNotEmpty && list.last is Map) {
+      chat["lastMessage"] = (list.last as Map)["text"];
+    }
+    if (mounted) {
+      setState(() {});
+      scrollToBottom();
+    }
   }
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
+    _setTyping(false);
+    _typingSub?.cancel();
     chatSubscription?.cancel();
     _recTimer?.cancel();
     _rec.dispose();
@@ -320,6 +433,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     if (chat == null) return null;
 
     final msg = <String, dynamic>{
+      "id": ChatService.newMessageId(chatId),
       "type": type,
       "text": _preview(type, text),
       "isMe": true,
@@ -379,6 +493,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         chatId: chatId,
         senderId: DiscoverService.myUid ?? "me",
         text: text,
+        messageId: msg["id"]?.toString(),
       );
     } catch (e) {
       debugPrint("No se pudo guardar el mensaje en Firebase: $e");
@@ -410,6 +525,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           type: type,
           url: url,
           duration: duration,
+          messageId: msg["id"]?.toString(),
         );
       } catch (e) {
         debugPrint("No se pudo guardar el archivo en Firebase: $e");
@@ -1317,9 +1433,17 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const Text(
-                          "Toca para ver perfil",
-                          style: TextStyle(color: Colors.white54, fontSize: 12),
+                        Text(
+                          _otherTyping ? "escribiendo…" : "Toca para ver perfil",
+                          style: TextStyle(
+                            color: _otherTyping
+                                ? const Color(0xFF53BDEB)
+                                : Colors.white54,
+                            fontSize: 12,
+                            fontStyle: _otherTyping
+                                ? FontStyle.italic
+                                : FontStyle.normal,
+                          ),
                         ),
                       ],
                     ),

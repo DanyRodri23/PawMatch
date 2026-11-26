@@ -33,6 +33,7 @@ class ChatService {
     String type = "text",
     String? url,
     int? duration,
+    String? messageId,
   }) async {
     final ref = _db.collection('chats').doc(chatId);
 
@@ -48,7 +49,11 @@ class ChatService {
       "updatedAt": FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    await ref.collection('messages').add({
+    final msgRef = messageId != null
+        ? ref.collection('messages').doc(messageId)
+        : ref.collection('messages').doc();
+
+    await msgRef.set({
       "senderId": senderId,
       "text": text,
       "type": type,
@@ -56,6 +61,30 @@ class ChatService {
       if (duration != null) "duration": duration,
       "createdAt": FieldValue.serverTimestamp(),
     });
+  }
+
+  /// Id nuevo para un mensaje (se crea antes de enviarlo para no duplicarlo).
+  static String newMessageId(String chatId) =>
+      _db.collection('chats').doc(chatId).collection('messages').doc().id;
+
+  /// Avisa si estoy escribiendo (se ve como "escribiendo…" en el otro teléfono).
+  static Future<void> setTyping({
+    required String chatId,
+    required String uid,
+    required bool typing,
+  }) async {
+    final participants =
+        chatId.contains('_') ? chatId.split('_') : <String>[uid];
+    await _db.collection('chats').doc(chatId).set({
+      "participants": participants,
+      "typing": {uid: typing},
+    }, SetOptions(merge: true));
+  }
+
+  /// Escuchar el chat completo (para saber si el otro está escribiendo).
+  static Stream<DocumentSnapshot<Map<String, dynamic>>> chatDoc(
+      String chatId) {
+    return _db.collection('chats').doc(chatId).snapshots();
   }
 
   /// Escuchar mensajes realtime

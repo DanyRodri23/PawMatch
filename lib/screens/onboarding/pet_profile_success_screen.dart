@@ -3,6 +3,7 @@ import '../../data/pet_profile_data.dart';
 import '../../data/user_data.dart';
 import '../../services/user_services.dart';
 import '../../widgets/success_scaffold.dart';
+import '../../main.dart' show ProfileGate;
 
 class PetProfileSuccessScreen extends StatelessWidget {
   const PetProfileSuccessScreen({
@@ -29,6 +30,7 @@ class PetProfileSuccessScreen extends StatelessWidget {
 
     // Vuelve a la pantalla raíz; ProfileGate muestra el dashboard.
     Navigator.of(context).popUntil((route) => route.isFirst);
+    ProfileGate.profileChanged.value++;
   }
 
   @override

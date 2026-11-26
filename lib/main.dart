@@ -77,6 +77,9 @@ class AuthGate extends StatelessWidget {
 class ProfileGate extends StatefulWidget {
   const ProfileGate({super.key});
 
+  /// Se avisa desde el final del registro para que se muestre el dashboard.
+  static final ValueNotifier<int> profileChanged = ValueNotifier<int>(0);
+
   @override
   State<ProfileGate> createState() => _ProfileGateState();
 }
@@ -89,11 +92,23 @@ class _ProfileGateState extends State<ProfileGate>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ProfileGate.profileChanged.addListener(_onProfileChanged);
     _start();
+  }
+
+  void _onProfileChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _openOnboarding() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const OnboardingIntro()),
+    );
   }
 
   @override
   void dispose() {
+    ProfileGate.profileChanged.removeListener(_onProfileChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -146,7 +161,51 @@ class _ProfileGateState extends State<ProfileGate>
       );
     }
 
-    // Siempre se muestra el dashboard; el registro se abre encima.
+    // Sin mascota registrada no se muestra el dashboard: primero el registro.
+    if (PetProfileData.pet["profileCompleted"] != true) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Termina tu registro",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Necesitas registrar a tu mascota para usar PawMatch.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _openOnboarding,
+                      child: const Text("Continuar"),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => FirebaseAuth.instance.signOut(),
+                    child: const Text("Cerrar sesión"),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     if (!kDebugMode) return const DashboardScreen();
 
     // Botón SOLO de pruebas (no aparece en la app final).

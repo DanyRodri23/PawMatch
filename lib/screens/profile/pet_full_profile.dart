@@ -138,11 +138,12 @@ class PetFullProfile extends StatelessWidget {
                         runSpacing: 10,
                         children: [
                           _chip(Icons.location_on,
-                              pet["distance"] ?? ""),
+                              (pet["distance"] ?? "").toString()),
                           _chip(Icons.flag,
-                              pet["goal"] ?? ""),
+                              (pet["goal"] ?? pet["lookingFor"] ?? "")
+                                  .toString()),
                           _chip(Icons.pets,
-                              pet["gender"] ?? ""),
+                              (pet["gender"] ?? "").toString()),
                         ],
                       ),
 
@@ -151,8 +152,10 @@ class PetFullProfile extends StatelessWidget {
                       /// BIO
                       _sectionTitle("Biografía"),
                       _sectionCard(
-                        pet["bio"] ??
-                            "Esta mascota aún no tiene biografía.",
+                        (pet["bio"] ??
+                                pet["description"] ??
+                                "Esta mascota aún no tiene biografía.")
+                            .toString(),
                       ),
 
                       const SizedBox(height: 20),
@@ -193,7 +196,10 @@ class PetFullProfile extends StatelessWidget {
                                   CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  pet["owner"] ?? "Dueño",
+                                  pet["owner"] is Map
+                                      ? ((pet["owner"] as Map)["name"] ?? "Dueño")
+                                          .toString()
+                                      : (pet["owner"] ?? "Dueño").toString(),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

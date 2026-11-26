@@ -126,6 +126,7 @@ class _ProfileGateState extends State<ProfileGate>
     await ProfileStore.load();
     await DiscoverService.publish();
     await DiscoverService.loadLikesAndMatches();
+    DiscoverService.startInbox();
 
     if (!mounted) return;
 

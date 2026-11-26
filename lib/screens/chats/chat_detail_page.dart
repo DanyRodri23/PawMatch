@@ -136,6 +136,39 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     _typingTimer = Timer(const Duration(seconds: 3), () => _setTyping(false));
   }
 
+  bool _isLastLocal(Map<String, dynamic> m) {
+    final chat = currentChat;
+    if (chat == null) return false;
+    final list = chat["messages"] as List;
+    return list.isNotEmpty && identical(list.last, m);
+  }
+
+  void _syncEdit(Map<String, dynamic> m, String text) {
+    final id = m["id"]?.toString();
+    if (id == null) return;
+    ChatService.editMessage(
+      chatId: chatId,
+      messageId: id,
+      text: text,
+      isLast: _isLastLocal(m),
+    ).catchError((e) => debugPrint("No se pudo editar en Firebase: $e"));
+  }
+
+  void _syncDeleteAll(Map<String, dynamic> m, {required bool wasLast}) {
+    final id = m["id"]?.toString();
+    if (id == null) return;
+    ChatService.deleteForAll(chatId: chatId, messageId: id, isLast: wasLast)
+        .catchError((e) => debugPrint("No se pudo eliminar en Firebase: $e"));
+  }
+
+  void _syncHide(Map<String, dynamic> m) {
+    final id = m["id"]?.toString();
+    final me = DiscoverService.myUid;
+    if (id == null || me == null) return;
+    ChatService.hideForMe(chatId: chatId, messageId: id, uid: me)
+        .catchError((e) => debugPrint("No se pudo ocultar en Firebase: $e"));
+  }
+
   /// Recibe los mensajes de Firebase y agrega los que todavía no están en pantalla.
   void _onMessages(QuerySnapshot snap) {
     if (widget.matchPet == null) return;
@@ -153,6 +186,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       final type = (data["type"] ?? "text").toString();
       final text = (data["text"] ?? "").toString();
       final seen = data["seen"] == true;
+      final deleted = data["deleted"] == true;
+      final edited = data["edited"] == true;
+      final hidden = data["hiddenFor"] is List &&
+          (data["hiddenFor"] as List).contains(me);
+
+      // Lo que yo eliminé "para mí" no se muestra.
+      if (hidden) {
+        final before = list.length;
+        list.removeWhere((m) => m is Map && m["id"] == d.id);
+        if (list.length != before) changed = true;
+        continue;
+      }
 
       // Mensaje del otro que estoy viendo ahora: se marca como visto.
       if (!mine && !seen) {
@@ -161,16 +206,36 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             .catchError((e) => debugPrint("No se pudo marcar visto: $e"));
       }
 
-      // Mensaje mío que ya está en pantalla: se actualiza su estado real.
+      // Mensaje que ya está en pantalla: se actualiza estado, edición y eliminado.
+      var known = false;
       for (final m in list) {
-        if (m is Map && m["id"] == d.id && mine) {
-          final next = seen ? "seen" : "sent";
-          if (m["status"] != next) {
-            m["status"] = next;
+        if (m is Map && m["id"] == d.id) {
+          known = true;
+          if (mine) {
+            final next = seen ? "seen" : "sent";
+            if (m["status"] != next) {
+              m["status"] = next;
+              changed = true;
+            }
+          }
+          if (deleted && m["deleted"] != true) {
+            m["deleted"] = true;
+            m["text"] = mine ? "Eliminaste este mensaje" : "Se eliminó este mensaje";
+            m["type"] = "text";
+            m.remove("url");
+            m.remove("path");
+            m.remove("duration");
+            m.remove("reaction");
+            m.remove("replyTo");
+            changed = true;
+          } else if (!deleted && edited && m["text"] != text) {
+            m["text"] = text;
+            m["edited"] = true;
             changed = true;
           }
         }
       }
+      if (known) continue;
 
       final alreadyThere = list.any((m) => m is Map && m["id"] == d.id) ||
           (mine &&
@@ -187,8 +252,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
       list.add({
         "id": d.id,
-        "type": type,
-        "text": text,
+        "type": deleted ? "text" : type,
+        "text": deleted
+            ? (mine ? "Eliminaste este mensaje" : "Se eliminó este mensaje")
+            : text,
+        if (deleted) "deleted": true,
+        if (edited && !deleted) "edited": true,
         "isMe": mine,
         "time":
             "${when.hour}:${when.minute.toString().padLeft(2, '0')}",
@@ -200,6 +269,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       });
       changed = true;
     }
+
+    // Estoy viendo el chat: no tengo mensajes sin leer aquí.
+    ChatService.clearUnread(chatId, me)
+        .catchError((e) => debugPrint("No se pudo limpiar no leídos: $e"));
+    chat["unread"] = 0;
 
     if (!changed) return;
 
@@ -471,6 +545,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     // Editar un mensaje ya enviado.
     if (editing != null) {
       final m = editing!;
+      _syncEdit(m, text);
       setState(() {
         m["text"] = text;
         m["edited"] = true;
@@ -1114,6 +1189,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       style: TextStyle(color: Colors.redAccent)),
                   onTap: () {
                     Navigator.pop(ctx);
+                    _syncDeleteAll(m, wasLast: _isLastLocal(m));
                     setState(() {
                       m["deleted"] = true;
                       m["text"] = "Eliminaste este mensaje";
@@ -1139,6 +1215,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
+                  _syncHide(m);
                   setState(() {
                     final chat = currentChat;
                     if (chat != null) {
@@ -1356,6 +1433,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     if (canAll) ...[
                       option("Eliminar para todos", () {
                         Navigator.pop(ctx);
+                        for (final m in chosen) {
+                          _syncDeleteAll(m, wasLast: _isLastLocal(m));
+                        }
                         setState(() {
                           for (final m in chosen) {
                             m["deleted"] = true;
@@ -1380,6 +1460,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     ],
                     option("Eliminar para mí", () {
                       Navigator.pop(ctx);
+                      for (final m in chosen) {
+                        _syncHide(m);
+                      }
                       setState(() {
                         (chat["messages"] as List)
                             .removeWhere((e) => chosen.contains(e));

@@ -43,10 +43,15 @@ class ChatService {
     final participants =
         chatId.contains('_') ? chatId.split('_') : <String>[senderId];
 
+    final others = participants.where((p) => p != senderId).toList();
+
     await ref.set({
       "participants": participants,
       "lastMessage": text,
+      "lastSender": senderId,
       "updatedAt": FieldValue.serverTimestamp(),
+      if (others.isNotEmpty)
+        "unread": {others.first: FieldValue.increment(1)},
     }, SetOptions(merge: true));
 
     final msgRef = messageId != null
@@ -78,6 +83,75 @@ class ChatService {
     await _db.collection('chats').doc(chatId).set({
       "participants": participants,
       "typing": {uid: typing},
+    }, SetOptions(merge: true));
+  }
+
+  /// Editar un mensaje mío: se ve editado en los dos teléfonos.
+  static Future<void> editMessage({
+    required String chatId,
+    required String messageId,
+    required String text,
+    bool isLast = false,
+  }) async {
+    await _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({"text": text, "edited": true});
+    if (isLast) {
+      await _db
+          .collection('chats')
+          .doc(chatId)
+          .set({"lastMessage": text}, SetOptions(merge: true));
+    }
+  }
+
+  /// Eliminar para todos: el mensaje queda como "eliminado" en los dos teléfonos.
+  static Future<void> deleteForAll({
+    required String chatId,
+    required String messageId,
+    bool isLast = false,
+  }) async {
+    await _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      "deleted": true,
+      "text": "",
+      "type": "text",
+      "url": FieldValue.delete(),
+      "duration": FieldValue.delete(),
+    });
+    if (isLast) {
+      await _db.collection('chats').doc(chatId).set(
+          {"lastMessage": "Se eliminó este mensaje"},
+          SetOptions(merge: true));
+    }
+  }
+
+  /// Eliminar para mí: solo se oculta en mi teléfono (y sigue oculto al reabrir).
+  static Future<void> hideForMe({
+    required String chatId,
+    required String messageId,
+    required String uid,
+  }) async {
+    await _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      "hiddenFor": FieldValue.arrayUnion([uid]),
+    });
+  }
+
+  /// Pone en 0 mis mensajes sin leer de este chat.
+  static Future<void> clearUnread(String chatId, String uid) async {
+    await _db.collection('chats').doc(chatId).set({
+      "unread": {uid: 0},
     }, SetOptions(merge: true));
   }
 

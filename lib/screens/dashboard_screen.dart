@@ -3,6 +3,7 @@ import 'package:pawmatch/screens/hotels/hotels_entry_screen.dart';
 import 'package:pawmatch/screens/parks/parks_entry_screen.dart';
 import 'dart:ui';
 
+import '../data/chats_data.dart';
 import '../data/likes_data.dart';
 import 'match/match_page.dart';
 import 'discover/discover_page.dart';
@@ -20,6 +21,22 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  void _refreshBadges() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    ChatsData.changes.addListener(_refreshBadges);
+  }
+
+  @override
+  void dispose() {
+    ChatsData.changes.removeListener(_refreshBadges);
+    super.dispose();
+  }
+
   int currentIndex = 2;
   int activeFilters = 0;
 
@@ -165,7 +182,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _navItem(Icons.explore_outlined, "Explorar", 1),
                     _navItem(Icons.favorite_border, "Likes", 3,
                         badge: LikesData.receivedLikes.length),
-                    _navItem(Icons.chat_bubble_outline, "Chat", 4),
+                    _navItem(Icons.chat_bubble_outline, "Chat", 4,
+                        badge: ChatsData.totalUnread),
                     _navItem(Icons.person_outline, "Perfil", 6),
                   ],
                 ),

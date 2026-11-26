@@ -11,6 +11,21 @@ class ChatsPage extends StatefulWidget {
 }
 
 class _ChatsPageState extends State<ChatsPage> {
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    ChatsData.changes.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    ChatsData.changes.removeListener(_refresh);
+    super.dispose();
+  }
 
   String getRelativeMatchTime(DateTime date) {
     final now = DateTime.now();
@@ -62,12 +77,17 @@ class _ChatsPageState extends State<ChatsPage> {
     final matches = [...MatchesData.matches];
     // Un chat solo aparece en "Mensajes" cuando ya tiene al menos un mensaje.
     final chats = ChatsData.chats
-        .where((c) => ((c["messages"] ?? []) as List).isNotEmpty)
+        .where((c) =>
+            ((c["messages"] ?? []) as List).isNotEmpty ||
+            "${c["lastMessage"] ?? ""}".isNotEmpty)
         .toList();
 
-    chats.sort(
-      (a, b) => (b["time"] ?? "").compareTo(a["time"] ?? ""),
-    );
+    chats.sort((a, b) {
+      final x = a["updatedAt"];
+      final y = b["updatedAt"];
+      if (x is DateTime && y is DateTime) return y.compareTo(x);
+      return (b["time"] ?? "").toString().compareTo((a["time"] ?? "").toString());
+    });
 
     final bottom = MediaQuery.of(context).padding.bottom;
 
@@ -235,6 +255,7 @@ class _ChatsPageState extends State<ChatsPage> {
                 final previewText = messages.isNotEmpty
                     ? messages.last["text"] ?? ""
                     : chat["lastMessage"] ?? "";
+                final typing = chat["typing"] == true;
                 final unread = (chat["unread"] ?? 0) is num &&
                     (chat["unread"] as num) > 0;
                 final image = "${chat["image"] ?? ""}";
@@ -280,11 +301,16 @@ class _ChatsPageState extends State<ChatsPage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "$previewText",
+                                typing ? "escribiendo…" : "$previewText",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: unread
+                                  fontStyle: typing
+                                      ? FontStyle.italic
+                                      : FontStyle.normal,
+                                  color: typing
+                                      ? const Color(0xFF53BDEB)
+                                      : unread
                                       ? Colors.white
                                       : Colors.white54,
                                   fontWeight: unread

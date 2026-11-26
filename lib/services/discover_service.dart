@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+import '../data/chats_data.dart';
 import '../data/likes_data.dart';
 import '../data/matches_data.dart';
 import '../data/pet_profile_data.dart';
@@ -199,6 +202,64 @@ class DiscoverService {
     return _toPet(d.id, data);
   }
 
+  static StreamSubscription? _inboxSub;
+
+  /// Escucha todos mis chats: cuando llega un mensaje, la lista y el aviso se actualizan solos.
+  static void startInbox() {
+    final uid = myUid;
+    _inboxSub?.cancel();
+    if (uid == null) return;
+
+    _inboxSub = _db
+        .collection("chats")
+        .where("participants", arrayContains: uid)
+        .snapshots()
+        .listen((snap) async {
+      var changed = false;
+      for (final d in snap.docs) {
+        final data = d.data();
+        final last = (data["lastMessage"] ?? "").toString();
+        if (last.isEmpty) continue;
+
+        final parts = List<String>.from(data["participants"] ?? []);
+        final other = parts.firstWhere((p) => p != uid, orElse: () => "");
+        if (other.isEmpty) continue;
+
+        var chat = ChatsData.getChatById(other);
+        if (chat == null) {
+          final pet = await _petById(other);
+          if (pet == null) continue;
+          ChatsData.createChat(pet);
+          chat = ChatsData.getChatById(other);
+          if (chat == null) continue;
+          final idx = MatchesData.matches.indexWhere((m) => m["id"] == other);
+          if (idx >= 0) {
+            chat["matchDate"] = MatchesData.matches[idx]["matchDate"];
+            MatchesData.matches.removeAt(idx);
+          }
+        } else {
+          MatchesData.matches.removeWhere((m) => m["id"] == other);
+        }
+
+        final unreadMap = data["unread"];
+        final unread =
+            (unreadMap is Map && unreadMap[uid] is num) ? (unreadMap[uid] as num).toInt() : 0;
+        final at = data["updatedAt"];
+        final when = at is Timestamp ? at.toDate() : DateTime.now();
+
+        final typingMap = data["typing"];
+        chat["typing"] = typingMap is Map && typingMap[other] == true;
+        chat["lastMessage"] = last;
+        chat["unread"] = unread;
+        chat["updatedAt"] = when;
+        chat["time"] =
+            "${when.hour}:${when.minute.toString().padLeft(2, '0')}";
+        changed = true;
+      }
+      if (changed) ChatsData.changes.value++;
+    }, onError: (e) => debugPrint("Error escuchando chats: $e"));
+  }
+
   static Future<void> loadLikesAndMatches() async {
     final uid = myUid;
     if (uid == null) return;
@@ -206,6 +267,7 @@ class DiscoverService {
     LikesData.receivedLikes.clear();
     LikesData.sentLikes.clear();
     MatchesData.matches.clear();
+    ChatsData.chats.clear();
 
     try {
       // Matches
@@ -222,10 +284,34 @@ class DiscoverService {
         final pet = await _petById(other);
         if (pet == null) continue;
         final at = m.data()["createdAt"];
-        MatchesData.matches.add({
-          ...pet,
-          "matchDate": at is Timestamp ? at.toDate() : DateTime.now(),
-        });
+        final matchDate = at is Timestamp ? at.toDate() : DateTime.now();
+
+        // ¿Ya hay conversación con mensajes? Entonces va a "Mensajes", no a "Nuevos matches".
+        final msgs = await _db
+            .collection("chats")
+            .doc(m.id)
+            .collection("messages")
+            .orderBy("createdAt", descending: true)
+            .limit(50)
+            .get();
+
+        if (msgs.docs.isNotEmpty) {
+          final last = msgs.docs.first.data();
+          final unread = msgs.docs
+              .where((d) =>
+                  d.data()["senderId"] != uid && d.data()["seen"] != true)
+              .length;
+          ChatsData.createChat(pet);
+          final chat = ChatsData.getChatById(pet["id"]);
+          if (chat != null) {
+            chat["lastMessage"] = (last["text"] ?? "").toString();
+            chat["unread"] = unread;
+            chat["matchDate"] = matchDate;
+            chat["time"] = "";
+          }
+        } else {
+          MatchesData.matches.add({...pet, "matchDate": matchDate});
+        }
       }
 
       // Likes que recibí y aún no respondí

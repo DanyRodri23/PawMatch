@@ -1,5 +1,13 @@
+import 'package:flutter/foundation.dart';
+
 class ChatsData {
   static List<Map<String, dynamic>> chats = [];
+
+  /// Sube cada vez que llega algo nuevo en un chat (las pantallas se refrescan solas).
+  static final ValueNotifier<int> changes = ValueNotifier<int>(0);
+
+  static int get totalUnread => chats.fold<int>(
+      0, (sum, c) => sum + ((c["unread"] ?? 0) is num ? (c["unread"] as num).toInt() : 0));
 
   static List<String> blockedUsers = [];
   static List<String> reports = [];

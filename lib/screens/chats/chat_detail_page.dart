@@ -742,7 +742,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       final dir = await getTemporaryDirectory();
       final path =
           "${dir.path}/pm_${DateTime.now().millisecondsSinceEpoch}.m4a";
-      await _rec.start(const RecordConfig(encoder: AudioEncoder.aacLc),
+      await _rec.start(
+          const RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            numChannels: 1,
+            sampleRate: 44100,
+            // Sube el volumen de la voz al grabar (en los simuladores sale muy bajito).
+            autoGain: true,
+            noiseSuppress: true,
+          ),
           path: path);
 
       recSeconds = 0;
